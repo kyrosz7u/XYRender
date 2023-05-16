@@ -80,12 +80,12 @@ static void drawTorus(void)
                     s = (i + k) % TORUS_MINOR_RES + 0.5;
                     t = j % TORUS_MAJOR_RES;
 
-                    // Calculate point on surface
+                    // Calculate point on window
                     x = (TORUS_MAJOR + TORUS_MINOR * cos(s * twopi / TORUS_MINOR_RES)) * cos(t * twopi / TORUS_MAJOR_RES);
                     y = TORUS_MINOR * sin(s * twopi / TORUS_MINOR_RES);
                     z = (TORUS_MAJOR + TORUS_MINOR * cos(s * twopi / TORUS_MINOR_RES)) * sin(t * twopi / TORUS_MAJOR_RES);
 
-                    // Calculate surface normal
+                    // Calculate window normal
                     nx = x - TORUS_MAJOR * cos(t * twopi / TORUS_MAJOR_RES);
                     ny = y;
                     nz = z - TORUS_MAJOR * sin(t * twopi / TORUS_MAJOR_RES);

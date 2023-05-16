@@ -1,5 +1,5 @@
 //
-// Created by 樱吹雪 on 4/7/23.
+// Created by kyrosz7u on 4/7/23.
 //
 
 #ifndef VULKANRENDER_VULKAN_MANAGER_H
@@ -10,6 +10,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vulkan/vulkan.h>
 #include "vulkan_context.h"
+
+#include <iostream>
 
 namespace VulkanRender
 {

@@ -347,7 +347,7 @@ static const struct zxdg_toplevel_decoration_v1_listener xdgDecorationListener =
     xdgDecorationHandleConfigure,
 };
 
-// Makes the surface considered as XRGB instead of ARGB.
+// Makes the window considered as XRGB instead of ARGB.
 static void setOpaqueRegion(_GLFWwindow* window)
 {
     struct wl_region* region;
@@ -558,7 +558,7 @@ static GLFWbool createShellSurface(_GLFWwindow* window)
     if (!window->wl.shellSurface)
     {
         _glfwInputError(GLFW_PLATFORM_ERROR,
-                        "Wayland: Shell surface creation failed");
+                        "Wayland: Shell window creation failed");
         return GLFW_FALSE;
     }
 
@@ -707,7 +707,7 @@ static GLFWbool createXdgSurface(_GLFWwindow* window)
     if (!window->wl.xdg.surface)
     {
         _glfwInputError(GLFW_PLATFORM_ERROR,
-                        "Wayland: xdg-surface creation failed");
+                        "Wayland: xdg-window creation failed");
         return GLFW_FALSE;
     }
 
@@ -1271,7 +1271,7 @@ int _glfwPlatformWindowFocused(_GLFWwindow* window)
 int _glfwPlatformWindowIconified(_GLFWwindow* window)
 {
     // wl_shell doesn't have any iconified concept, and xdg-shell doesn’t give
-    // any way to request whether a surface is iconified.
+    // any way to request whether a window is iconified.
     return GLFW_FALSE;
 }
 
@@ -1876,7 +1876,7 @@ VkResult _glfwPlatformCreateWindowSurface(VkInstance instance,
     if (err)
     {
         _glfwInputError(GLFW_PLATFORM_ERROR,
-                        "Wayland: Failed to create Vulkan surface: %s",
+                        "Wayland: Failed to create Vulkan window: %s",
                         _glfwGetVulkanResultString(err));
     }
 

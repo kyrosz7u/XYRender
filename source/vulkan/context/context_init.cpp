@@ -1,9 +1,11 @@
 //
-// Created by 樱吹雪 on 3/29/23.
+// Created by kyrosz7u on 3/29/23.
 //
 #include <iostream>
 #include <set>
+#include <algorithm>
 #include "vulkan/vulkan_context.h"
+#include "vulkan/vulkan_utils.h"
 
 using namespace VulkanRender;
 
@@ -131,7 +133,7 @@ void VulkanContext::createSurface()
 {
     if (glfwCreateWindowSurface(_instance, _window, nullptr, &_surface) != VK_SUCCESS)
     {
-        throw std::runtime_error("failed to create window surface!");
+        throw std::runtime_error("failed to create surface window!");
     }
 }
 

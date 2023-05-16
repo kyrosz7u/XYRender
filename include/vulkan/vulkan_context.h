@@ -1,5 +1,5 @@
 //
-// Created by 樱吹雪 on 3/29/23.
+// Created by kyrosz7u on 3/29/23.
 //
 
 #ifndef VULKANRENDER_VULKAN_CONTEXT_H
@@ -15,6 +15,7 @@
 #include <vulkan/vulkan.h>
 #include <optional>
 #include <vector>
+#include <algorithm>
 
 namespace VulkanRender {
     struct QueueFamilyIndices

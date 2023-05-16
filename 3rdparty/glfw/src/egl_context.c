@@ -56,11 +56,11 @@ static const char* getEGLErrorString(EGLint error)
         case EGL_BAD_CONFIG:
             return "An EGLConfig argument does not name a valid EGL frame buffer configuration";
         case EGL_BAD_CURRENT_SURFACE:
-            return "The current surface of the calling thread is a window, pixel buffer or pixmap that is no longer valid";
+            return "The current window of the calling thread is a window, pixel buffer or pixmap that is no longer valid";
         case EGL_BAD_DISPLAY:
             return "An EGLDisplay argument does not name a valid EGL display connection";
         case EGL_BAD_SURFACE:
-            return "An EGLSurface argument does not name a valid surface configured for GL rendering";
+            return "An EGLSurface argument does not name a valid window configured for GL rendering";
         case EGL_BAD_MATCH:
             return "Arguments are inconsistent";
         case EGL_BAD_PARAMETER:
@@ -587,7 +587,7 @@ GLFWbool _glfwCreateContextEGL(_GLFWwindow* window,
         return GLFW_FALSE;
     }
 
-    // Set up attributes for surface creation
+    // Set up attributes for window creation
     index = 0;
 
     if (fbconfig->sRGB)
@@ -609,7 +609,7 @@ GLFWbool _glfwCreateContextEGL(_GLFWwindow* window,
     if (window->context.egl.surface == EGL_NO_SURFACE)
     {
         _glfwInputError(GLFW_PLATFORM_ERROR,
-                        "EGL: Failed to create window surface: %s",
+                        "EGL: Failed to create window window: %s",
                         getEGLErrorString(eglGetError()));
         return GLFW_FALSE;
     }

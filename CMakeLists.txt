@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(VulkanRender)
+project(XExample)
 
 set(CMAKE_CXX_STANDARD 17)
 set(RENDER_TARGET_NAME VulkanRender)

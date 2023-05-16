@@ -1,5 +1,5 @@
 //
-// Created by 樱吹雪 on 4/7/23.
+// Created by kyrosz7u on 4/7/23.
 //
 #include "vulkan/vulkan_manager.h"
 
@@ -33,6 +33,8 @@ int VulkanManager::initialize(GLFWwindow* window, class Scene& scene, PilotRende
 //        return 1;
 //    else
 //        return 0;
+
+    return 0;
 }
 
 // command pool for submitting drawing commands

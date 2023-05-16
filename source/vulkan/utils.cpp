@@ -1,5 +1,5 @@
 //
-// Created by 樱吹雪 on 4/6/23.
+// Created by kyrosz7u on 4/6/23.
 //
 
 #include "vulkan/vulkan_utils.h"
@@ -177,7 +177,7 @@ VkImageView VulkanUtil::createImageView(VkDevice device,
     return image_view;
 }
 
-void VulkanUtil::transitionImageLayout(PVulkanContext *context,
+void VulkanUtil::transitionImageLayout(VulkanContext *context,
                                        VkImage image,
                                        VkImageLayout old_layout,
                                        VkImageLayout new_layout,

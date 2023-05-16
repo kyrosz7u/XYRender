@@ -920,7 +920,7 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
         else if (ctxconfig->source == GLFW_EGL_CONTEXT_API)
         {
             // EGL implementation on macOS use CALayer* EGLNativeWindowType so we
-            // need to get the layer for EGL window surface creation.
+            // need to get the layer for EGL window window creation.
             [window->ns.view setWantsLayer:YES];
             window->ns.layer = [window->ns.view layer];
 
@@ -1796,7 +1796,7 @@ VkResult _glfwPlatformCreateWindowSurface(VkInstance instance,
         sci.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
         sci.pLayer = window->ns.layer;
 
-        err = vkCreateMetalSurfaceEXT(instance, &sci, allocator, surface);
+        err = vkCreateMetalSurfaceEXT(instance, &sci, allocator, window);
     }
     else
     {
@@ -1816,13 +1816,13 @@ VkResult _glfwPlatformCreateWindowSurface(VkInstance instance,
         sci.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;
         sci.pView = window->ns.view;
 
-        err = vkCreateMacOSSurfaceMVK(instance, &sci, allocator, surface);
+        err = vkCreateMacOSSurfaceMVK(instance, &sci, allocator, window);
     }
 
     if (err)
     {
         _glfwInputError(GLFW_PLATFORM_ERROR,
-                        "Cocoa: Failed to create Vulkan surface: %s",
+                        "Cocoa: Failed to create Vulkan window: %s",
                         _glfwGetVulkanResultString(err));
     }
 

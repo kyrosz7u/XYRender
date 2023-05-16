@@ -1,5 +1,5 @@
 //
-// Created by 樱吹雪 on 4/5/23.
+// Created by kyrosz7u on 4/5/23.
 //
 #include "vulkan/vulkan_context.h"
 
@@ -77,7 +77,7 @@ bool VulkanContext::isDeviceSuitable(VkPhysicalDevice physical_device)
     return true;
 }
 
-QueueFamilyIndices VulkanContext::findQueueFamilies(VkPhysicalDevice physical_device) // for device and surface
+QueueFamilyIndices VulkanContext::findQueueFamilies(VkPhysicalDevice physical_device) // for device and window
 {
     QueueFamilyIndices indices;
     uint32_t           queue_family_count = 0;
@@ -97,7 +97,7 @@ QueueFamilyIndices VulkanContext::findQueueFamilies(VkPhysicalDevice physical_de
         vkGetPhysicalDeviceSurfaceSupportKHR(physical_device,
                                              i,
                                              _surface,
-                                             &is_present_support); // if support surface presentation
+                                             &is_present_support); // if support window presentation
         if (is_present_support)
         {
             indices.presentFamily = i;
@@ -174,7 +174,7 @@ VkSurfaceFormatKHR VulkanContext::chooseSwapchainSurfaceFormatFromDetails(
 {
     for (const auto& surface_format : available_surface_formats)
     {
-        // TODO: select the VK_FORMAT_B8G8R8A8_SRGB surface format,
+        // TODO: select the VK_FORMAT_B8G8R8A8_SRGB window format,
         // there is no need to do gamma correction in the fragment shader
         if (surface_format.format == VK_FORMAT_B8G8R8A8_UNORM &&
             surface_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)

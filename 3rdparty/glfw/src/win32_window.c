@@ -2270,7 +2270,7 @@ VkResult _glfwPlatformCreateWindowSurface(VkInstance instance,
     if (err)
     {
         _glfwInputError(GLFW_PLATFORM_ERROR,
-                        "Win32: Failed to create Vulkan surface: %s",
+                        "Win32: Failed to create Vulkan window: %s",
                         _glfwGetVulkanResultString(err));
     }
 

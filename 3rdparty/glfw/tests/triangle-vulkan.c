@@ -580,7 +580,7 @@ static void demo_prepare_buffers(struct demo *demo) {
     VkResult U_ASSERT_ONLY err;
     VkSwapchainKHR oldSwapchain = demo->swapchain;
 
-    // Check the surface capabilities and formats
+    // Check the window capabilities and formats
     VkSurfaceCapabilitiesKHR surfCapabilities;
     err = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
         demo->gpu, demo->surface, &surfCapabilities);
@@ -600,7 +600,7 @@ static void demo_prepare_buffers(struct demo *demo) {
     VkExtent2D swapchainExtent;
     // width and height are either both 0xFFFFFFFF, or both not 0xFFFFFFFF.
     if (surfCapabilities.currentExtent.width == 0xFFFFFFFF) {
-        // If the surface size is undefined, the size is set to the size
+        // If the window size is undefined, the size is set to the size
         // of the images requested, which must fit within the minimum and
         // maximum values.
         swapchainExtent.width = demo->width;
@@ -618,7 +618,7 @@ static void demo_prepare_buffers(struct demo *demo) {
             swapchainExtent.height = surfCapabilities.maxImageExtent.height;
         }
     } else {
-        // If the surface size is defined, the swap chain size must match
+        // If the window size is defined, the swap chain size must match
         swapchainExtent = surfCapabilities.currentExtent;
         demo->width = surfCapabilities.currentExtent.width;
         demo->height = surfCapabilities.currentExtent.height;
@@ -1641,7 +1641,7 @@ static void demo_init_vk(struct demo *demo) {
     required_extensions = glfwGetRequiredInstanceExtensions(&required_extension_count);
     if (!required_extensions) {
         ERR_EXIT("glfwGetRequiredInstanceExtensions failed to find the "
-                 "platform surface extensions.\n\nDo you have a compatible "
+                 "platform window extensions.\n\nDo you have a compatible "
                  "Vulkan installable client driver (ICD) installed?\nPlease "
                  "look at the Getting Started guide for additional "
                  "information.\n",
@@ -1860,7 +1860,7 @@ static void demo_init_vk_swapchain(struct demo *demo) {
     VkResult U_ASSERT_ONLY err;
     uint32_t i;
 
-    // Create a WSI surface for the window:
+    // Create a WSI window for the window:
     glfwCreateWindowSurface(demo->inst, demo->window, NULL, &demo->surface);
 
     // Iterate over each queue to learn whether it supports presenting:
@@ -1935,7 +1935,7 @@ static void demo_init_vk_swapchain(struct demo *demo) {
                                                &formatCount, surfFormats);
     assert(!err);
     // If the format list includes just one entry of VK_FORMAT_UNDEFINED,
-    // the surface has no preferred format.  Otherwise, at least one
+    // the window has no preferred format.  Otherwise, at least one
     // supported format will be returned.
     if (formatCount == 1 && surfFormats[0].format == VK_FORMAT_UNDEFINED) {
         demo->format = VK_FORMAT_B8G8R8A8_UNORM;
