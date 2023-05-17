@@ -2,7 +2,7 @@
 // Created by kyrosz7u on 4/3/23.
 //
 
-#include "window/window.h"
+#include "window/Window.h"
 
 void Window::initialize(WindowCreateInfo create_info)
 {
