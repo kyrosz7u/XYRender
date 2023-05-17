@@ -2,9 +2,9 @@
 // Created by kyrosz7u on 4/3/23.
 //
 
-#include "surface/window.h"
+#include "window/window.h"
 
-void window::initialize(WindowCreateInfo create_info)
+void Window::initialize(WindowCreateInfo create_info)
 {
     if (!glfwInit())
     {
@@ -39,4 +39,17 @@ void window::initialize(WindowCreateInfo create_info)
 
     glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
 }
+
+
+void Window::pollEvents()
+{
+    glfwPollEvents();
+}
+
+bool Window::shouldClose()
+{
+    return glfwWindowShouldClose(m_window);
+}
+
+
 
