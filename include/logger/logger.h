@@ -86,6 +86,4 @@ private:
     std::shared_ptr<spdlog::logger> m_logger;
 };
 
-Logger* Logger::m_instance = nullptr;
-
 #endif //XEXAMPLE_LOGGER_H

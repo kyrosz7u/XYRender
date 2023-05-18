@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cassert>
+#include <cfloat>
 
 #ifndef XEXAMPLE_CONSTANTSDEFINE_H
 #define XEXAMPLE_CONSTANTSDEFINE_H

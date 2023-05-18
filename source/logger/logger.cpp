@@ -4,5 +4,5 @@
 
 #include "logger/logger.h"
 
-
+Logger* Logger::m_instance = nullptr;
 

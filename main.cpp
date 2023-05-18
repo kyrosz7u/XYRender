@@ -1,6 +1,6 @@
 #include <iostream>
 #include "macros.h"
-#include "window/window.h"
+#include "window/Window.h"
 
 int main() {
     WindowCreateInfo windowCreateInfo;
