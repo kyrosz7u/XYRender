@@ -29,6 +29,8 @@ public:
     void initialize(WindowCreateInfo create_info);
     void pollEvents();
     bool shouldClose();
+    GLFWwindow* getWindowHandler(){return m_window;}
+
 private:
     GLFWwindow* m_window {nullptr};
     int         m_width {0};

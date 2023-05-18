@@ -23,6 +23,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
 void VulkanContext::initialize(GLFWwindow *window)
 {
+    _window = window;
+
     createInstance();
 
     initializeDebugMessenger();

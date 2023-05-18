@@ -12,8 +12,8 @@ public:
     
 public:
     static void initialize(GLFWwindow* window);
-    void renderFrame();
-    void terminate();
+//    void renderFrame();
+//    void terminate();
 private:
     static std::shared_ptr<VulkanContext> m_vulkan_context;
     static std::unique_ptr<VulkanManager> m_vulkan_manager;

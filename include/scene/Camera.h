@@ -17,7 +17,9 @@ enum CameraMode
 
 class Camera
 {
-private:
+
+
+public:
     Vector3 position;
     EulerAngle rotation;
 
@@ -27,6 +29,8 @@ private:
     float fov;
     float nearZ;
     float farZ;
+
+
 };
 
 #endif //XEXAMPLE_CAMERA_H

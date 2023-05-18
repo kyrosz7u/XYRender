@@ -8,7 +8,7 @@ void Window::initialize(WindowCreateInfo create_info)
 {
     if (!glfwInit())
     {
-//        LOG_FATAL(__FUNCTION__, "failed to initialize GLFW");
+        LOG_FATAL(__FUNCTION__, "failed to initialize GLFW");
         return;
     }
 
@@ -19,7 +19,7 @@ void Window::initialize(WindowCreateInfo create_info)
     m_window = glfwCreateWindow(create_info.width, create_info.height, create_info.title, nullptr, nullptr);
     if (!m_window)
     {
-//        LOG_FATAL(__FUNCTION__, "failed to create window");
+        LOG_FATAL(__FUNCTION__, "failed to create window");
         glfwTerminate();
         return;
     }

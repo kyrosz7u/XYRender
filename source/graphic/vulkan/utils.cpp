@@ -6,7 +6,7 @@
 #include "graphic/vulkan/vulkan_context.h"
 
 using namespace VulkanAPI;
-
+std::unordered_map<uint32_t, VkSampler> VulkanUtil::m_mipmap_sampler_map;
 VkSampler                               VulkanUtil::m_nearest_sampler = VK_NULL_HANDLE;
 VkSampler                               VulkanUtil::m_linear_sampler = VK_NULL_HANDLE;
 

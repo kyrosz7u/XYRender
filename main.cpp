@@ -1,6 +1,8 @@
 #include <iostream>
 #include "macros.h"
 #include "window/Window.h"
+#include "scene/Camera.h"
+#include "render/RenderBase.h"
 
 int main() {
     WindowCreateInfo windowCreateInfo;
@@ -9,11 +11,15 @@ int main() {
 
     window.initialize(windowCreateInfo);
 
+    Camera mainCamera;
+
+    RenderBases::initialize(window.getWindowHandler());
+
     while(!window.shouldClose())
     {
         window.pollEvents();
     }
-    
+
 
     LOG_INFO("12345")
     LOG_DEBUG("67890")
