@@ -13,8 +13,10 @@
 
 #include <iostream>
 
-namespace VulkanRender
+namespace VulkanAPI
 {
+
+// Vk中图形或计算管线执行接口的封装
     class VulkanManager
     {
     public:
@@ -24,7 +26,7 @@ namespace VulkanRender
         void clear();
 
         // initialize vulkan from io->window
-        int initialize(GLFWwindow* window);
+        int initialize(std::shared_ptr<VulkanContext> _context);
 
 
         // rendering config
@@ -50,10 +52,10 @@ namespace VulkanRender
         // prepare context
         void prepareContext();
 
-        void renderFrame();
+        int getCurrentSwapchainImageIndex();
 
         // vulkan context include device creation, default command buffer, etc
-        VulkanContext m_vulkan_context;
+        std::shared_ptr<VulkanContext> m_vulkan_context;
 
         static uint32_t const m_max_frames_in_flight = 3;
         uint32_t              m_current_frame_index  = 0;

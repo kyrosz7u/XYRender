@@ -17,7 +17,7 @@
 #include <vector>
 #include <algorithm>
 
-namespace VulkanRender {
+namespace VulkanAPI {
     struct QueueFamilyIndices
         {
         std::optional <uint32_t> graphicsFamily;
@@ -35,6 +35,7 @@ namespace VulkanRender {
         std::vector <VkPresentModeKHR> presentModes;
     };
 
+    // api中所有与管线执行无关的接口封装在这里
     class VulkanContext {
     public:
         GLFWwindow *_window = nullptr;
@@ -62,6 +63,8 @@ namespace VulkanRender {
 
         void initialize(GLFWwindow *window);
 
+        int getCurrentSwapchainImageIndex();
+
         void clear();
 
         VkCommandBuffer beginSingleTimeCommands();
@@ -71,7 +74,7 @@ namespace VulkanRender {
         // debug functions
         PFN_vkCmdBeginDebugUtilsLabelEXT _vkCmdBeginDebugUtilsLabelEXT;
         PFN_vkCmdEndDebugUtilsLabelEXT _vkCmdEndDebugUtilsLabelEXT;
-
+        
         PFN_vkWaitForFences _vkWaitForFences;
         PFN_vkResetFences _vkResetFences;
         PFN_vkResetCommandPool _vkResetCommandPool;

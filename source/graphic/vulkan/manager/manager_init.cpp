@@ -1,15 +1,22 @@
 //
 // Created by kyrosz7u on 4/7/23.
 //
-#include "render/vulkan/vulkan_manager.h"
+#include "graphic/vulkan/vulkan_manager.h"
 
-using namespace VulkanRender;
+using namespace VulkanAPI;
 
+#ifndef NDEBUG
+bool VulkanManager::m_enable_validation_Layers = true;
+bool VulkanManager::m_enable_debug_utils_label = true;
+#else
+bool VulkanManager::m_enable_validation_Layers  = false;
+bool VulkanManager::m_enable_debug_utils_label  = false;
+#endif
 
-int VulkanManager::initialize(GLFWwindow* window)
+int VulkanManager::initialize(std::shared_ptr<VulkanContext> _context)
 {
-    m_vulkan_context.initialize(window);
-
+    m_vulkan_context = _context;
+    
 //    m_global_render_resource.initialize(m_vulkan_context, m_max_frames_in_flight);
 //
 //    PRenderPassBase::m_render_config._enable_debug_untils_label = m_enable_debug_utils_label;
@@ -28,6 +35,7 @@ int VulkanManager::initialize(GLFWwindow* window)
 //            m_global_render_resource.getColorGradingTextureData(&scene, pilot_renderer);
 //    updateGlobalTexturesForColorGrading(color_grading_resource_data);
 //
+
 //    if (initializeCommandPool() && initializeDescriptorPool() && createSyncPrimitives() && initializeCommandBuffers() &&
 //        initializeRenderPass())
 //        return 1;
@@ -44,11 +52,11 @@ bool VulkanManager::initializeCommandPool()
     command_pool_create_info.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     command_pool_create_info.pNext            = NULL;
     command_pool_create_info.flags            = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-    command_pool_create_info.queueFamilyIndex = m_vulkan_context._queue_indices.graphicsFamily.value();
+    command_pool_create_info.queueFamilyIndex = m_vulkan_context->_queue_indices.graphicsFamily.value();
 
     for (uint32_t i = 0; i < m_max_frames_in_flight; ++i)
     {
-        if (vkCreateCommandPool(m_vulkan_context._device, &command_pool_create_info, NULL, &m_command_pools[i]) !=
+        if (vkCreateCommandPool(m_vulkan_context->_device, &command_pool_create_info, NULL, &m_command_pools[i]) !=
             VK_SUCCESS)
         {
             throw std::runtime_error("vk create command pool");
@@ -69,7 +77,7 @@ bool VulkanManager::initializeCommandBuffers()
     {
         command_buffer_allocate_info.commandPool = m_command_pools[i];
 
-        if (vkAllocateCommandBuffers(m_vulkan_context._device, &command_buffer_allocate_info, &m_command_buffers[i]) !=
+        if (vkAllocateCommandBuffers(m_vulkan_context->_device, &command_buffer_allocate_info, &m_command_buffers[i]) !=
             VK_SUCCESS)
         {
             throw std::runtime_error("vk allocate command buffers");
@@ -106,7 +114,7 @@ bool VulkanManager::initializeDescriptorPool()
             1 + 1 + 1 + m_max_material_count + m_max_vertex_blending_mesh_count + 1 + 1; // +skybox + axis descriptor set
     pool_info.flags = 0U;
 
-    if (vkCreateDescriptorPool(m_vulkan_context._device, &pool_info, nullptr, &m_descriptor_pool) != VK_SUCCESS)
+    if (vkCreateDescriptorPool(m_vulkan_context->_device, &pool_info, nullptr, &m_descriptor_pool) != VK_SUCCESS)
     {
         throw std::runtime_error("create descriptor pool");
     }

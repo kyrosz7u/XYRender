@@ -1,13 +1,13 @@
 //
 // Created by kyrosz7u on 4/5/23.
 //
-#include "render/vulkan/vulkan_context.h"
+#include "graphic/vulkan/vulkan_context.h"
 
 #include <iostream>
 #include <set>
 #include <string>
 
-using namespace VulkanRender;
+using namespace VulkanAPI;
 
 bool VulkanContext::checkDeviceExtensionSupport(VkPhysicalDevice physical_device)
 {

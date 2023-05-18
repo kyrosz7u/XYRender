@@ -24,7 +24,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace VulkanRender
+namespace VulkanAPI
 {
     class VulkanUtil
     {

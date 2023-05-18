@@ -2,10 +2,10 @@
 // Created by kyrosz7u on 4/6/23.
 //
 
-#include "render/vulkan/vulkan_utils.h"
-#include "render/vulkan/vulkan_context.h"
+#include "graphic/vulkan/vulkan_utils.h"
+#include "graphic/vulkan/vulkan_context.h"
 
-using namespace VulkanRender;
+using namespace VulkanAPI;
 
 VkSampler                               VulkanUtil::m_nearest_sampler = VK_NULL_HANDLE;
 VkSampler                               VulkanUtil::m_linear_sampler = VK_NULL_HANDLE;

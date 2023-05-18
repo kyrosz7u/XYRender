@@ -4,10 +4,10 @@
 #include <iostream>
 #include <set>
 #include <algorithm>
-#include "render/vulkan/vulkan_context.h"
-#include "render/vulkan/vulkan_utils.h"
+#include "graphic/vulkan/vulkan_context.h"
+#include "graphic/vulkan/vulkan_utils.h"
 
-using namespace VulkanRender;
+using namespace VulkanAPI;
 
 // debug callback
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -87,7 +87,7 @@ void VulkanContext::createInstance()
     // fill the application info
     VkApplicationInfo appInfo = {};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "VulkanRender";
+    appInfo.pApplicationName = "VulkanAPI";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "No Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -320,7 +320,7 @@ void VulkanContext::createSwapchain()
     {
         throw std::runtime_error("vk create swapchain khr");
     }
-
+    
     vkGetSwapchainImagesKHR(_device, _swapchain, &image_count, nullptr);
     _swapchain_images.resize(image_count);
     vkGetSwapchainImagesKHR(_device, _swapchain, &image_count, _swapchain_images.data());
