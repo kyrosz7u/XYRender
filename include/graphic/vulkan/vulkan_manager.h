@@ -16,11 +16,10 @@
 namespace VulkanAPI
 {
 
-// Vk中图形或计算管线执行接口的封装
+    // Vk中图形或计算管线执行接口的封装
     class VulkanManager
     {
     public:
-        VulkanManager();
 
         // clear module resource
         void clear();
@@ -47,12 +46,14 @@ namespace VulkanAPI
         // swapchain clear or recreate
         void clearSwapChain();
         // recreate swapchain
-        bool recreateSwapChain();
+        void recreateSwapChain();
 
         // prepare context
         void prepareContext();
 
-        int getCurrentSwapchainImageIndex();
+        uint32_t getCurrentSwapchainImageIndex();
+
+        void presentCurrentSwapchainImage(uint32_t current_swapchain_image_index);
 
         // vulkan context include device creation, default command buffer, etc
         std::shared_ptr<VulkanContext> m_vulkan_context;

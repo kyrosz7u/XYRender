@@ -9,6 +9,37 @@
 
 using namespace VulkanAPI;
 
+/* 注册一个回调函数，该函数在 Vulkan API 发生错误、产生警告或输出调试信息时被调用。
+ * 该回调函数可以执行一些操作，如输出错误消息、记录调试信息或触发断点，以进行调试和错误排查。
+ * */
+
+VkResult VulkanContext::createDebugUtilsMessengerEXT(VkInstance                                instance,
+                                                             const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                                             const VkAllocationCallbacks*              pAllocator,
+                                                             VkDebugUtilsMessengerEXT*                 pDebugMessenger)
+{
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr)
+    {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    }
+    else
+    {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+
+void VulkanContext::destroyDebugUtilsMessengerEXT(VkInstance                   instance,
+                                                          VkDebugUtilsMessengerEXT     debugMessenger,
+                                                          const VkAllocationCallbacks* pAllocator)
+{
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr)
+    {
+        func(instance, debugMessenger, pAllocator);
+    }
+}
+
 bool VulkanContext::checkDeviceExtensionSupport(VkPhysicalDevice physical_device)
 {
     uint32_t extension_count;
@@ -33,7 +64,6 @@ bool VulkanContext::checkValidationLayerSupport()
     vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
     std::vector<VkLayerProperties> availableLayers(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
 
     for (auto validationLayerName : m_validation_layers)
     {
@@ -262,4 +292,3 @@ void VulkanContext::clear()
 {
     destroyDebugUtilsMessengerEXT(_instance, m_debug_messenger, nullptr);
 }
-

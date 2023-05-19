@@ -9,9 +9,18 @@ using namespace VulkanAPI;
 class RenderBases
 {
 public:
-    
+    struct ImageAttachment
+    {
+        VkImage        image;
+        VkDeviceMemory mem;
+        VkImageView    view;
+        VkFormat       format;
+    };
+
 public:
     static void initialize(GLFWwindow* window);
+
+    virtual void Tick() = 0;
 //    void renderFrame();
 //    void terminate();
 private:

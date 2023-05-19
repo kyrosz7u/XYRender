@@ -6,8 +6,16 @@
 
 using namespace VulkanAPI;
 
-int VulkanManager::getCurrentSwapchainImageIndex()
+uint32_t VulkanManager::getCurrentSwapchainImageIndex()
 {
+    // sync device
+    VkResult res_wait_for_fences = m_vulkan_context->_vkWaitForFences(
+            m_vulkan_context->_device, 1, &m_is_frame_in_flight_fences[m_current_frame_index], VK_TRUE, UINT64_MAX);
+    assert(VK_SUCCESS == res_wait_for_fences);
+
+    VkResult res_reset_command_pool =
+            m_vulkan_context->_vkResetCommandPool(m_vulkan_context->_device, m_command_pools[m_current_frame_index], 0);
+    assert(VK_SUCCESS == res_reset_command_pool);
 
     uint32_t current_swapchain_image_index;
     VkResult acquire_image_result =
@@ -69,6 +77,50 @@ int VulkanManager::getCurrentSwapchainImageIndex()
     // assert(VK_SUCCESS == res_end_command_buffer);
 
     return current_swapchain_image_index;
+
+}
+
+void VulkanManager::presentCurrentSwapchainImage(uint32_t current_swapchain_image_index)
+{
+    // present swapchain
+    VkPresentInfoKHR present_info   = {};
+    present_info.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores    = &m_image_finished_for_presentation_semaphores[m_current_frame_index];
+    present_info.swapchainCount     = 1;
+    present_info.pSwapchains        = &m_vulkan_context->_swapchain;
+    present_info.pImageIndices      = &current_swapchain_image_index;
+
+    VkResult present_result = vkQueuePresentKHR(m_vulkan_context->_present_queue, &present_info);
+    if (VK_ERROR_OUT_OF_DATE_KHR == present_result || VK_SUBOPTIMAL_KHR == present_result)
+    {
+//        recreateSwapChain();
+    }
+    else
+    {
+        assert(VK_SUCCESS == present_result);
+    }
+
+    m_current_frame_index = (m_current_frame_index + 1) % m_max_frames_in_flight;
+}
+
+void VulkanManager::recreateSwapChain()
+{
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(m_vulkan_context->_window, &width, &height);
+    while (width == 0 || height == 0) // minimized 0,0 ,pause for now
+    {
+        glfwGetFramebufferSize(m_vulkan_context->_window, &width, &height);
+        glfwWaitEvents();
+    }
+
+    VkResult res_wait_for_fences = m_vulkan_context->_vkWaitForFences(
+            m_vulkan_context->_device, m_max_frames_in_flight, m_is_frame_in_flight_fences, VK_TRUE, UINT64_MAX);
+    assert(VK_SUCCESS == res_wait_for_fences);
+
+    m_vulkan_context->clearSwapchain();
+    m_vulkan_context->createSwapchain();
+    m_vulkan_context->createSwapchainImageViews();
 
 }
 

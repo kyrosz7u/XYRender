@@ -11,3 +11,4 @@ void RenderBases::initialize(GLFWwindow* window)
     m_vulkan_manager->initialize(m_vulkan_context);
 }
 
+

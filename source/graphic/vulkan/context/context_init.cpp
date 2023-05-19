@@ -7,6 +7,16 @@
 #include "graphic/vulkan/vulkan_context.h"
 #include "graphic/vulkan/vulkan_utils.h"
 
+#define MACRO_XSTR(s) MACRO_STR(s)
+#define MACRO_STR(s) #s
+
+
+#if defined(_MSC_VER)
+// https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros
+#include <sdkddkver.h>
+#include <Windows.h>
+#endif
+
 using namespace VulkanAPI;
 
 // debug callback
@@ -24,6 +34,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 void VulkanContext::initialize(GLFWwindow *window)
 {
     _window = window;
+
+#if defined(_MSC_VER)
+    // https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros
+    char const* vk_layer_path = MACRO_XSTR(VK_LAYER_PATH);
+    SetEnvironmentVariableA("VK_LAYER_PATH", vk_layer_path);
+    SetEnvironmentVariableA("DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1", "1");
+#else
+#error Unknown Compiler
+#endif
 
     createInstance();
 
@@ -91,7 +110,7 @@ void VulkanContext::createInstance()
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "VulkanAPI";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "No Engine";
+    appInfo.pEngineName = "X Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = m_vulkan_api_version;
     appInfo.pNext = NULL;
@@ -111,7 +130,8 @@ void VulkanContext::createInstance()
 
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.pApplicationInfo = &appInfo;
-    instanceCreateInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+//    instanceCreateInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+    instanceCreateInfo.flags = 0;
 
 //  SDK 1.3.216 introduced a change in how devices are enumerated on MacOSX,
 //  and your code must make use of the portability subset extension to discover your devices (again).
@@ -267,6 +287,23 @@ void VulkanContext::createCommandPool()
     }
 }
 
+void VulkanContext::createSwapchainImageViews()
+{
+    _swapchain_imageviews.resize(_swapchain_images.size());
+
+    // create imageview (one for each this time) for all swapchain images
+    for (size_t i = 0; i < _swapchain_images.size(); i++)
+    {
+        _swapchain_imageviews[i] = VulkanUtil::createImageView(_device,
+                                                               _swapchain_images[i],
+                                                               _swapchain_image_format,
+                                                               VK_IMAGE_ASPECT_COLOR_BIT,
+                                                               VK_IMAGE_VIEW_TYPE_2D,
+                                                               1,
+                                                               1);
+    }
+}
+
 void VulkanContext::createSwapchain()
 {
     // query all supports of this physical device
@@ -340,41 +377,5 @@ void VulkanContext::clearSwapchain()
     vkDestroySwapchainKHR(_device, _swapchain, NULL); // also swapchain images
 }
 
-void VulkanContext::createFramebufferImageAndView()
-{
-    VulkanUtil::createImage(_physical_device,
-                            _device,
-                            _swapchain_extent.width,
-                            _swapchain_extent.height,
-                            _depth_image_format,
-                            VK_IMAGE_TILING_OPTIMAL,
-                            VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-                            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
-                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                            _depth_image,
-                            _depth_image_memory,
-                            0,
-                            1,
-                            1);
 
-    _depth_image_view = VulkanUtil::createImageView(
-            _device, _depth_image, _depth_image_format, VK_IMAGE_ASPECT_DEPTH_BIT, VK_IMAGE_VIEW_TYPE_2D, 1, 1);
-}
-
-void VulkanContext::createSwapchainImageViews()
-{
-    _swapchain_imageviews.resize(_swapchain_images.size());
-
-    // create imageview (one for each this time) for all swapchain images
-    for (size_t i = 0; i < _swapchain_images.size(); i++)
-    {
-        _swapchain_imageviews[i] = VulkanUtil::createImageView(_device,
-                                                               _swapchain_images[i],
-                                                               _swapchain_image_format,
-                                                               VK_IMAGE_ASPECT_COLOR_BIT,
-                                                               VK_IMAGE_VIEW_TYPE_2D,
-                                                               1,
-                                                               1);
-    }
-}
 

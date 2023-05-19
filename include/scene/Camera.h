@@ -6,6 +6,7 @@
 #define XEXAMPLE_CAMERA_H
 
 #include "math/Math.h"
+#include "render/MainCameraRender.h"
 
 using namespace Math;
 
@@ -17,7 +18,8 @@ enum CameraMode
 
 class Camera
 {
-
+public:
+    void Tick(){render->Tick(); }
 
 public:
     Vector3 position;
@@ -27,10 +29,12 @@ public:
     float height;
     float aspect;
     float fov;
-    float nearZ;
-    float farZ;
+    float zNear;
+    float zFar;
 
-
+private:
+    std::shared_ptr<RenderBases> render;
+    std::vector<RenderBases::ImageAttachment> renderTarget;
 };
 
 #endif //XEXAMPLE_CAMERA_H

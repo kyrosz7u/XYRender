@@ -12,7 +12,7 @@
 #endif
 
 #include "GLFW/glfw3.h"
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 #include <optional>
 #include <vector>
 #include <algorithm>
@@ -99,8 +99,6 @@ namespace VulkanAPI {
         void recreateSwapchain();
 
         void createSwapchainImageViews();
-
-        void createFramebufferImageAndView();
 
     private:
         const std::vector<char const *> m_validation_layers = {"VK_LAYER_KHRONOS_validation"};
