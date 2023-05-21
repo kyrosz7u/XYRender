@@ -49,7 +49,7 @@ void VulkanContext::initialize(GLFWwindow *window)
     // set MoltenVK icd in macos
     char const* vk_icd_filenames = MACRO_XSTR(VK_ICD_FILENAMES);
     setenv("VK_LAYER_PATH", vk_layer_path, 1);
-//    setenv("VK_ICD_FILENAMES", vk_icd_filenames, 1);
+    setenv("VK_ICD_FILENAMES", vk_icd_filenames, 1);
     #endif
 #else
 #error Unknown Compiler
@@ -77,7 +77,7 @@ void VulkanContext::initializeDebugMessenger()
     messengerCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     // 设置Debug的级别
     messengerCreateInfo.messageSeverity =
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+//            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     // 设置Debug的消息类型
@@ -145,7 +145,7 @@ void VulkanContext::createInstance()
 //  SDK 1.3.216 introduced a change in how devices are enumerated on MacOSX,
 //  and your code must make use of the portability subset extension to discover your devices (again).
 //  https://stackoverflow.com/questions/72789012/why-does-vkcreateinstance-return-vk-error-incompatible-driver-on-macos-despite
-//    required_extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    required_extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 //    required_extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 
     instance_create_info.enabledExtensionCount = static_cast<uint32_t>(required_extensions.size());
@@ -159,7 +159,7 @@ void VulkanContext::createInstance()
     debugger_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     // 设置Debug的级别
     debugger_create_info.messageSeverity =
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+//            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     // 设置Debug的消息类型
@@ -260,7 +260,13 @@ void VulkanContext::createLogicalDevice()
     physical_device_features.samplerAnisotropy = VK_TRUE;
     physical_device_features.fragmentStoresAndAtomics = VK_TRUE;
     physical_device_features.independentBlend = VK_TRUE;
+#if defined(__MACH__)
+    // M1 Pro GPU不支持GeometryShader，原因暂时未知
+    physical_device_features.geometryShader = VK_FALSE;
+#else
     physical_device_features.geometryShader = VK_TRUE;
+#endif
+
 
     VkDeviceCreateInfo device_create_info{};
     device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
