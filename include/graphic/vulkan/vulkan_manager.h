@@ -5,10 +5,11 @@
 #ifndef VULKANRENDER_VULKAN_MANAGER_H
 #define VULKANRENDER_VULKAN_MANAGER_H
 
-#include "GLFW/glfw3.h"
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "vulkan_context.h"
 
 #include <iostream>

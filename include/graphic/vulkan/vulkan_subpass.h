@@ -6,17 +6,14 @@
 #define VULKANRENDER_VULKAN_SUBPASS_H
 
 #include <vulkan/vulkan.h>
+#include "vulkan_context.h"
+#include "vulkan_utils.h"
+
+#include <vector>
+#include <map>
 
 namespace VulkanAPI
-{   
-    /*    
-        VK_SHADER_STAGE_VERTEX_BIT = 0x00000001,
-        VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT = 0x00000002,
-        VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT = 0x00000004,
-        VK_SHADER_STAGE_GEOMETRY_BIT = 0x00000008,
-        VK_SHADER_STAGE_FRAGMENT_BIT = 0x00000010,
-        VK_SHADER_STAGE_COMPUTE_BIT = 0x00000020, 
-     */
+{
     enum ShaderType
     {
         VERTEX_SHADER = 0,
@@ -28,31 +25,54 @@ namespace VulkanAPI
         ShaderTypeCount
     };
 
-    class Subpass
+    struct Descriptor
+    {
+        VkDescriptorSetLayout layout;
+        VkDescriptorSet       descriptor_set;
+    };
+
+    class SubPassInitInfo
+    {
+        VkRenderPass render_pass;
+        uint32_t subpass_index;
+    };
+
+    class VulkanSubPassBase
     {
     public:
-        Subpass()
+        std::string name="dummy_subpass";
+        VulkanSubPassBase()
         {
-            shaderList.resize(ShaderTypeCount, VK_NULL_HANDLE);
+            assert(m_p_vulkan_context!= nullptr);
+            m_shader_list.resize(ShaderTypeCount, std::vector<unsigned char>(0));
         }
-        void initialize(VkRenderPass render_pass, VkImageView input_attachment);
-        void draw();
-        void setShader(ShaderType type, VkShaderModule* shader)
+        static void setVulkanContext(std::shared_ptr<VulkanContext> vulkanContext)
         {
-            shaderList[type] = shader;
+            m_p_vulkan_context = vulkanContext;
         }
-    private:
-        void setupDescriptorSetLayout();
-        void setupPipelines();
-        void setupDescriptorSet();
-    private:
-        VkPipelineLayout pipelineLayout;
-        VkPipeline       pipeline;
-        VkDescriptorSetLayout descriptorSetLayout;
-        VkDescriptorSet       descriptorSet;
-        VkRenderPass renderPass;
+        virtual void initialize(SubPassInitInfo* subPassInitInfo) = 0;
+        virtual void draw() = 0;
+        void setShader(ShaderType type, std::vector<unsigned char> shader)
+        {
+            m_shader_list[type] = shader;
+        }
 
-        std::vector<VkShaderModule*> shaderList;
+    protected:
+        virtual void setupDescriptorSetLayout() = 0;
+        virtual void setupPipelines() = 0;
+        virtual void setupDescriptorSet();
+
+        VkRenderPass renderPass;
+        uint32_t subpass_index;
+
+        const VkViewport* m_p_viewport;
+        const VkRect2D* m_p_scissor;
+
+        VkPipelineLayout pipeline_layout;
+        VkPipeline       pipeline;
+        std::vector<Descriptor> m_descriptor_list;
+        std::vector<std::vector<unsigned char>> m_shader_list;
+        static std::shared_ptr<VulkanContext> m_p_vulkan_context;
     };
 }
 

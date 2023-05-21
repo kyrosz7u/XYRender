@@ -9,6 +9,10 @@ void RenderBases::initialize(GLFWwindow* window)
     m_vulkan_context->initialize(window);
     m_vulkan_manager = std::make_unique<VulkanManager>();
     m_vulkan_manager->initialize(m_vulkan_context);
+
+    VulkanAPI::RenderPassBase::setVulkanContext(m_vulkan_context);
+    VulkanAPI::VulkanSubPassBase::setVulkanContext(m_vulkan_context);
 }
+
 
 

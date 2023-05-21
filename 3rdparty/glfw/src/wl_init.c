@@ -89,7 +89,7 @@ static void pointerHandleEnter(void* data,
                                wl_fixed_t sx,
                                wl_fixed_t sy)
 {
-    // Happens in the case we just destroyed the window.
+    // Happens in the case we just destroyed the surface.
     if (!surface)
         return;
 
@@ -473,7 +473,7 @@ static void keyboardHandleEnter(void* data,
                                 struct wl_surface* surface,
                                 struct wl_array* keys)
 {
-    // Happens in the case we just destroyed the window.
+    // Happens in the case we just destroyed the surface.
     if (!surface)
         return;
 

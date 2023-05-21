@@ -3104,7 +3104,7 @@ VkResult _glfwPlatformCreateWindowSurface(VkInstance instance,
         if (err)
         {
             _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "X11: Failed to create Vulkan XCB window: %s",
+                            "X11: Failed to create Vulkan XCB surface: %s",
                             _glfwGetVulkanResultString(err));
         }
 
@@ -3134,7 +3134,7 @@ VkResult _glfwPlatformCreateWindowSurface(VkInstance instance,
         if (err)
         {
             _glfwInputError(GLFW_PLATFORM_ERROR,
-                            "X11: Failed to create Vulkan X11 window: %s",
+                            "X11: Failed to create Vulkan X11 surface: %s",
                             _glfwGetVulkanResultString(err));
         }
 

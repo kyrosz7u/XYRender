@@ -201,11 +201,11 @@ const char* _glfwGetVulkanResultString(VkResult result)
         case VK_ERROR_FORMAT_NOT_SUPPORTED:
             return "A requested format is not supported on this device";
         case VK_ERROR_SURFACE_LOST_KHR:
-            return "A window is no longer available";
+            return "A surface is no longer available";
         case VK_SUBOPTIMAL_KHR:
-            return "A swapchain no longer matches the window properties exactly, but can still be used";
+            return "A swapchain no longer matches the surface properties exactly, but can still be used";
         case VK_ERROR_OUT_OF_DATE_KHR:
-            return "A window has changed in such a way that it is no longer compatible with the swapchain";
+            return "A surface has changed in such a way that it is no longer compatible with the swapchain";
         case VK_ERROR_INCOMPATIBLE_DISPLAY_KHR:
             return "The display used by a swapchain does not use the same presentable image layout";
         case VK_ERROR_NATIVE_WINDOW_IN_USE_KHR:
@@ -287,7 +287,7 @@ GLFWAPI int glfwGetPhysicalDevicePresentationSupport(VkInstance instance,
     if (!_glfw.vk.extensions[0])
     {
         _glfwInputError(GLFW_API_UNAVAILABLE,
-                        "Vulkan: Window window creation extensions not found");
+                        "Vulkan: Window surface creation extensions not found");
         return GLFW_FALSE;
     }
 
@@ -316,14 +316,14 @@ GLFWAPI VkResult glfwCreateWindowSurface(VkInstance instance,
     if (!_glfw.vk.extensions[0])
     {
         _glfwInputError(GLFW_API_UNAVAILABLE,
-                        "Vulkan: Window window creation extensions not found");
+                        "Vulkan: Window surface creation extensions not found");
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 
     if (window->context.client != GLFW_NO_API)
     {
         _glfwInputError(GLFW_INVALID_VALUE,
-                        "Vulkan: Window window creation requires the window to have the client API set to GLFW_NO_API");
+                        "Vulkan: Window surface creation requires the window to have the client API set to GLFW_NO_API");
         return VK_ERROR_NATIVE_WINDOW_IN_USE_KHR;
     }
 

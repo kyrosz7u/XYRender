@@ -15,6 +15,8 @@
 // https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros
 #include <sdkddkver.h>
 #include <Windows.h>
+#elif defined(__GNUC__)
+#include <stdlib.h>
 #endif
 
 using namespace VulkanAPI;
@@ -40,6 +42,15 @@ void VulkanContext::initialize(GLFWwindow *window)
     char const* vk_layer_path = MACRO_XSTR(VK_LAYER_PATH);
     SetEnvironmentVariableA("VK_LAYER_PATH", vk_layer_path);
     SetEnvironmentVariableA("DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1", "1");
+#elif defined(__GNUC__)
+    #if defined(__MACH__)
+    // https://stackoverflow.com/questions/32110858/how-to-set-environment-variable-in-mac-os-x-using-c-c
+    char const* vk_layer_path    = MACRO_XSTR(VK_LAYER_PATH);
+    // set MoltenVK icd in macos
+    char const* vk_icd_filenames = MACRO_XSTR(VK_ICD_FILENAMES);
+    setenv("VK_LAYER_PATH", vk_layer_path, 1);
+//    setenv("VK_ICD_FILENAMES", vk_icd_filenames, 1);
+    #endif
 #else
 #error Unknown Compiler
 #endif
@@ -61,7 +72,6 @@ void VulkanContext::initialize(GLFWwindow *window)
 
 void VulkanContext::initializeDebugMessenger()
 {
-    // 3.5 set up debug messenger
     VkDebugUtilsMessengerCreateInfoEXT messengerCreateInfo = {};
 
     messengerCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -110,42 +120,58 @@ void VulkanContext::createInstance()
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "VulkanAPI";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "X Engine";
+    appInfo.pEngineName = "No Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = m_vulkan_api_version;
     appInfo.pNext = NULL;
 
+
+    // fill the instance create info and create
+    VkInstanceCreateInfo instance_create_info = {};
+
+    instance_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    instance_create_info.pApplicationInfo = &appInfo;
+    instance_create_info.flags = 0;
 
     // get required extensions
     uint32_t glfwExtensionCount = 0;
     const char **glfwExtensions;
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-    // 3.3 add validation layer required extension
+    // add validation layer required extension
     std::vector<const char *> required_extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
     required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-
-    // 3.4 fill the instance create info and create
-    VkInstanceCreateInfo instanceCreateInfo = {};
-
-    instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instanceCreateInfo.pApplicationInfo = &appInfo;
-//    instanceCreateInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-    instanceCreateInfo.flags = 0;
 
 //  SDK 1.3.216 introduced a change in how devices are enumerated on MacOSX,
 //  and your code must make use of the portability subset extension to discover your devices (again).
 //  https://stackoverflow.com/questions/72789012/why-does-vkcreateinstance-return-vk-error-incompatible-driver-on-macos-despite
-    required_extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    required_extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+//    required_extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+//    required_extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 
-    instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(required_extensions.size());
-    instanceCreateInfo.ppEnabledExtensionNames = required_extensions.data();
+    instance_create_info.enabledExtensionCount = static_cast<uint32_t>(required_extensions.size());
+    instance_create_info.ppEnabledExtensionNames = required_extensions.data();
 
-    instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(m_validation_layers.size());
-    instanceCreateInfo.ppEnabledLayerNames = m_validation_layers.data();
+    instance_create_info.enabledLayerCount = static_cast<uint32_t>(m_validation_layers.size());
+    instance_create_info.ppEnabledLayerNames = m_validation_layers.data();
 
-    if ((vkCreateInstance(&instanceCreateInfo, nullptr, &_instance)) != VK_SUCCESS)
+    VkDebugUtilsMessengerCreateInfoEXT debugger_create_info = {};
+
+    debugger_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    // 设置Debug的级别
+    debugger_create_info.messageSeverity =
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    // 设置Debug的消息类型
+    debugger_create_info.messageType =
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    debugger_create_info.pfnUserCallback = debugCallback;
+
+    instance_create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugger_create_info;
+
+    if ((vkCreateInstance(&instance_create_info, nullptr, &_instance)) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create instance!");
     }
@@ -153,9 +179,10 @@ void VulkanContext::createInstance()
 
 void VulkanContext::createSurface()
 {
-    if (glfwCreateWindowSurface(_instance, _window, nullptr, &_surface) != VK_SUCCESS)
+    auto res = glfwCreateWindowSurface(_instance, _window, nullptr, &_surface);
+    if (res != VK_SUCCESS)
     {
-        throw std::runtime_error("failed to create surface window!");
+        throw std::runtime_error("failed to create window surface!");
     }
 }
 

@@ -16,10 +16,10 @@ void Window::initialize(WindowCreateInfo create_info)
     m_height = create_info.height;
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    m_window = glfwCreateWindow(create_info.width, create_info.height, create_info.title, nullptr, nullptr);
+
+    m_window = glfwCreateWindow(create_info.width, create_info.height, "123", nullptr, nullptr);
     if (!m_window)
     {
-        LOG_FATAL(__FUNCTION__, "failed to create window");
         glfwTerminate();
         return;
     }
@@ -37,7 +37,7 @@ void Window::initialize(WindowCreateInfo create_info)
 //    glfwSetWindowSizeCallback(m_window, windowSizeCallback);
 //    glfwSetWindowCloseCallback(m_window, windowCloseCallback);
 
-    glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+//    glfwSetInputMode(m_window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
 }
 
 

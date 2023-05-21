@@ -5,7 +5,7 @@
 #ifndef XEXAMPLE_MACROS_H
 #define XEXAMPLE_MACROS_H
 
-#include "logger/logger.h"
+#include "logger/Logger.h"
 
 #define LOG_HELPER(LOG_LEVEL, ...) \
     Logger::Instance()->logger(LOG_LEVEL, "[" + std::string(__FUNCTION__) + "] " + __VA_ARGS__);

@@ -39,11 +39,11 @@ namespace VulkanAPI {
     class VulkanContext {
     public:
         GLFWwindow *_window = nullptr;
-        VkInstance _instance = VK_NULL_HANDLE;
-        VkSurfaceKHR _surface = VK_NULL_HANDLE;
-        VkPhysicalDevice _physical_device = VK_NULL_HANDLE;
+        VkInstance _instance;
+        VkSurfaceKHR _surface;
+        VkPhysicalDevice _physical_device;
         QueueFamilyIndices _queue_indices;
-        VkDevice _device = VK_NULL_HANDLE;
+        VkDevice _device;
         VkFormat _depth_image_format = VK_FORMAT_UNDEFINED;
         VkQueue _graphics_queue = VK_NULL_HANDLE;
         VkQueue _present_queue = VK_NULL_HANDLE;
