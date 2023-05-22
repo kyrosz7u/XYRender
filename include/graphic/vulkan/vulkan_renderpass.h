@@ -9,6 +9,24 @@
 
 namespace VulkanAPI
 {
+    struct ImageAttachment
+    {
+        VkImage        image;
+        VkDeviceMemory mem;
+        VkImageView    view;
+        VkFormat       format;
+    };
+
+    struct Framebuffer
+    {
+        int           width;
+        int           height;
+        VkFramebuffer framebuffer;
+        VkRenderPass  render_pass;
+
+        std::vector<ImageAttachment> attachments;
+    };
+
     class RenderPassInitInfo{};
 
     class RenderPassBase
@@ -24,9 +42,8 @@ namespace VulkanAPI
         }
         virtual void initialize(RenderPassInitInfo* renderPassInitInfo) = 0;
         virtual void draw() = 0;
-    private:
+    protected:
         static std::shared_ptr<VulkanContext> m_p_vulkan_context;
-
         std::vector<std::shared_ptr<VulkanSubPassBase>> m_subPass_list;
     };
 }

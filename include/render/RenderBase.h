@@ -24,13 +24,7 @@ struct RenderCommandInfo
 class RenderBases
 {
 public:
-    struct ImageAttachment
-    {
-        VkImage        image;
-        VkDeviceMemory mem;
-        VkImageView    view;
-        VkFormat       format;
-    };
+
 
 public:
     static void initialize(GLFWwindow* window);

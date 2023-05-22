@@ -430,3 +430,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/3rdparty/assimp/cmake-modules/
+/3rdparty/assimp/code/
+/3rdparty/assimp/contrib/
+/3rdparty/assimp/fuzz/

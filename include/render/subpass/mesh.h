@@ -18,7 +18,9 @@ namespace subPass
         {
             name="mesh_subpass";
             m_descriptor_list.resize(1);
+
         }
+        void initialize(SubPassInitInfo* subPassInitInfo) override;
         void setupDescriptorSetLayout() override;
         void updateDescriptorSet();
         void setupPipelines() override;
