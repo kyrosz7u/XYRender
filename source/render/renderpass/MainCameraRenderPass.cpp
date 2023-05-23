@@ -6,12 +6,16 @@
 #include "graphic/vulkan/vulkan_utils.h"
 #include "render/subpass/mesh.h"
 #include "render/renderpass/MainCameraRenderPass.h"
+#include "mesh_vert.h"
+#include "MainCameraRenderPass.h"
 
-void MainCameraRenderPass::initialize(RenderPassInitInfo *renderPassInitInfo)
+
+void MainCameraRenderPass::initialize(RenderPassInitInfo *renderpass_init_info)
 {
+    m_p_render_command_info = renderpass_init_info->renderCommandInfo;
     setupRenderpassAttachments();
     setupRenderPass();
-    setupFrameBuffer(renderPassInitInfo->renderTargets);
+    setupFrameBuffer(renderpass_init_info->renderTargets);
 }
 
 void MainCameraRenderPass::setupRenderpassAttachments()
@@ -92,16 +96,14 @@ void MainCameraRenderPass::setupRenderPass()
     base_pass.preserveAttachmentCount = 0;
     base_pass.pPreserveAttachments    = NULL;
 
-    VkSubpassDependency dependencies[0] = {};
-
     VkRenderPassCreateInfo renderpass_create_info {};
     renderpass_create_info.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderpass_create_info.attachmentCount = (sizeof(attachments) / sizeof(attachments[0]));
     renderpass_create_info.pAttachments    = attachments;
     renderpass_create_info.subpassCount    = (sizeof(subpasses) / sizeof(subpasses[0]));
     renderpass_create_info.pSubpasses      = subpasses;
-    renderpass_create_info.dependencyCount = (sizeof(dependencies) / sizeof(dependencies[0]));
-    renderpass_create_info.pDependencies   = dependencies;
+    renderpass_create_info.dependencyCount = 0;
+    renderpass_create_info.pDependencies   = nullptr;
 
     if (vkCreateRenderPass(
             m_p_vulkan_context->_device, &renderpass_create_info, nullptr, &m_vk_renderpass) != VK_SUCCESS)
@@ -151,10 +153,37 @@ void MainCameraRenderPass::setupSubpass()
 
     m_subpass_list[_main_camera_subpass_mesh] = std::make_shared<subPass::MeshPass>();
     m_subpass_list[_main_camera_subpass_mesh]->initialize(&mesh_pass_init_info);
+
+   m_subpass_list[_main_camera_subpass_mesh]->setShader(VulkanAPI::VERTEX_SHADER, MESH_VERT);
 }
 
-void MainCameraRenderPass::draw()
+void MainCameraRenderPass::draw(int render_target_index, VkCommandBuffer command_buffer)
 {
+    VkCommandBufferBeginInfo command_buffer_begin_info {};
+    command_buffer_begin_info.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    command_buffer_begin_info.flags            = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+    command_buffer_begin_info.pInheritanceInfo = nullptr;
+
+    VkClearValue clear_values[_main_camera_framebuffer_attachment_count] = {};
+    clear_values[_main_camera_framebuffer_attachment_color].color        = {0.0f, 0.0f, 0.0f, 1.0f};
+    clear_values[_main_camera_framebuffer_attachment_depth].depthStencil = {1.0f, 0};
+
+    VkRenderPassBeginInfo renderpass_begin_info {};
+    renderpass_begin_info.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderpass_begin_info.renderPass        = m_vk_renderpass;
+    renderpass_begin_info.framebuffer       = m_framebuffer_per_rendertarget[render_target_index].framebuffer;
+    renderpass_begin_info.renderArea.offset = {0, 0};
+    renderpass_begin_info.renderArea.extent = m_p_vulkan_context->_swapchain_extent;
+    renderpass_begin_info.clearValueCount   = (sizeof(clear_values) / sizeof(clear_values[0]));
+    renderpass_begin_info.pClearValues      = clear_values;
+
+    vkBeginCommandBuffer(command_buffer, &command_buffer_begin_info);
+
+    vkCmdBeginRenderPass(command_buffer, &renderpass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+
+    m_subpass_list[_main_camera_subpass_mesh]->draw(command_buffer);
+
+    vkCmdEndRenderPass(command_buffer);
 
 }
 

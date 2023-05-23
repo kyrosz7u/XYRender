@@ -30,12 +30,13 @@ public:
         m_subpass_list.resize(_main_camera_subpass_count);
         
     }
-    void initialize(RenderPassInitInfo* renderPassInitInfo) override;
+    void initialize(RenderPassInitInfo* renderpass_init_info) override;
     void setupRenderPass();
     void setupRenderpassAttachments();
     void setupFrameBuffer(std::vector<ImageAttachment> renderTargets);
     void setupSubpass() override;
-    void draw() override;
+    void draw(int render_target_index, VkCommandBuffer command_buffer);
+
 private:
     VkRenderPass m_vk_renderpass;
     std::vector<ImageAttachment> m_renderpass_attachments;

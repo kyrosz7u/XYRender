@@ -9,8 +9,9 @@ using namespace subPass;
 
 void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
 {
-    renderpass = subPassInitInfo->renderpass;
     subpass_index = subPassInitInfo->subpass_index;
+    renderpass = subPassInitInfo->renderpass;
+    m_p_render_command_info = subPassInitInfo->renderCommandInfo;
 }
 
 void MeshPass::setupDescriptorSetLayout()
@@ -176,6 +177,23 @@ void MeshPass::setupPipelines()
     {
         vkDestroyShaderModule(m_p_vulkan_context->_device, shader_module.second, nullptr);
     }
+}
+
+void MeshPass::draw(VkCommandBuffer command_buffer)
+{
+    m_p_vulkan_context->_vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    m_p_vulkan_context->_vkCmdSetViewport(command_buffer, 0, 1, );
+    m_p_vulkan_context->_vkCmdSetScissor(command_buffer, 0, 1, *m_p_scissor);
+    m_p_vulkan_context->_vkCmdBindDescriptorSets(command_buffer,
+                                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                    pipeline_layout,
+                                                    0,
+                                                    1,
+                                                    NULL,
+                                                    0,
+                                                    NULL);
+
+    vkCmdDraw(command_buffer, 3, 1, 0, 0);
 }
 
 

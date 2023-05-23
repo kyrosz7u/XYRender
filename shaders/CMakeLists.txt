@@ -1,7 +1,7 @@
 set(TARGET_NAME ${SHADER_COMPILE_TARGET})
 
-file(GLOB_RECURSE SHADER_FILES CONFIGURE_DEPENDS "
-         ${CMAKE_CURRENT_SOURCE_DIR}/*.vert"
+file(GLOB_RECURSE SHADER_FILES CONFIGURE_DEPENDS 
+        "${CMAKE_CURRENT_SOURCE_DIR}/*.vert"
         "${CMAKE_CURRENT_SOURCE_DIR}/*.frag"
         "${CMAKE_CURRENT_SOURCE_DIR}/*.comp"
         "${CMAKE_CURRENT_SOURCE_DIR}/*.geom"
@@ -12,7 +12,8 @@ file(GLOB_RECURSE SHADER_FILES CONFIGURE_DEPENDS "
         "${CMAKE_CURRENT_SOURCE_DIR}/*.rgen"
         "${CMAKE_CURRENT_SOURCE_DIR}/*.rchit"
         "${CMAKE_CURRENT_SOURCE_DIR}/*.rmiss"
-        "${CMAKE_CURRENT_SOURCE_DIR}/*.rcall")
+        "${CMAKE_CURRENT_SOURCE_DIR}/*.rcall"
+        )
 
 SOURCE_GROUP("shaders" FILES ${SHADER_FILES})
 
@@ -29,6 +30,8 @@ endif()
 
 include(${PROJECT_SOURCE_DIR}/cmake/ShaderCompile.cmake)
 
+# message("SHADER_FILES is:  ${SHADER_FILES}")
+
 compile_shader(
         "${SHADER_FILES}"
         "${TARGET_NAME}"
@@ -36,6 +39,6 @@ compile_shader(
         "${GENERATED_SHADER_FOLDER}"
         "${glslangValidator_executable}")
 
-set_target_properties("${TARGET_NAME}" PROPERTIES FOLDER "Engine" )
+#set_target_properties("${TARGET_NAME}" PROPERTIES FOLDER "Engine" )
 
 

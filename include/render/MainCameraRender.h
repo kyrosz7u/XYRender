@@ -6,10 +6,26 @@
 #define XEXAMPLE_MAINCAMERARENDER_H
 
 #include "RenderBase.h"
+#include "render/renderpass/MainCameraRenderPass.h"
 
 class MainCameraRender:public RenderBases
 {
-    void Tick();
+public:
+    void initialize();
+
+    void Tick() override;
+
+private:
+    void setupCommandBuffer();
+
+
+private:
+    VkCommandPool commandPool;
+    std::vector<VkCommandBuffer> m_command_buffers;
+    MainCameraRenderPass renderPass;
+    std::vector<ImageAttachment> renderTargets;
+
+    void setupRenderpass();
 };
 
 #endif //XEXAMPLE_MAINCAMERARENDER_H

@@ -7,6 +7,8 @@
 
 #include "vulkan_subpass.h"
 
+class RenderCommandInfo;
+
 namespace VulkanAPI
 {
     struct ImageAttachment
@@ -15,7 +17,7 @@ namespace VulkanAPI
         VkDeviceMemory mem;
         VkImageView    view;
         VkFormat       format;
-        VkImageLayout  layout;
+        VkImageLayout  layout; // 使用图像之前，需要将其转换为适当的布局
     };
 
     struct Framebuffer
@@ -30,6 +32,7 @@ namespace VulkanAPI
     class RenderPassInitInfo
     {
     public:
+        RenderPassInitInfo* renderpass_init_info
         std::vector<ImageAttachment> renderTargets;
         std::vector<VkClearValue> clearValues;
 //        std::vector<VkSubpassDependency> subpassDependencies;
@@ -43,15 +46,18 @@ namespace VulkanAPI
         {
             assert(m_p_vulkan_context!= nullptr);
         }
+        
         static void setVulkanContext(std::shared_ptr<VulkanContext> vulkanContext)
         {
             m_p_vulkan_context = vulkanContext;
         }
-        virtual void initialize(RenderPassInitInfo* renderPassInitInfo) = 0;
+
+        virtual void initialize(RenderPassInitInfo* renderpass_init_info) = 0;
         virtual void setupSubpass() = 0;
-        virtual void draw() = 0;
+        virtual void draw(int render_target_index, VkCommandBuffer command_buffer) = 0;
     protected:
         static std::shared_ptr<VulkanContext> m_p_vulkan_context;
+        RenderCommandInfo* m_p_render_command_info;
         std::vector<std::shared_ptr<VulkanSubPassBase>> m_subpass_list;
     };
 }

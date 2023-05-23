@@ -24,7 +24,7 @@ namespace subPass
         void setupDescriptorSetLayout() override;
         void updateDescriptorSet();
         void setupPipelines() override;
-        void draw();
+        void draw(VkCommandBuffer command_buffer);
     };
 }
 

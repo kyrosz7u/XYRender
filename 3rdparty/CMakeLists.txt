@@ -30,3 +30,5 @@ endif()
 #    add_subdirectory(assimp)
 #    set_target_properties(assimp PROPERTIES FOLDER /assimp)
 #endif()
+
+#add_subdirectory(assimp)

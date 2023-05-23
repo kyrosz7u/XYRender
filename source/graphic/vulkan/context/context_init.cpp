@@ -68,44 +68,8 @@ void VulkanContext::initialize(GLFWwindow *window)
     createCommandPool();
 
     createSwapchain();
-}
 
-void VulkanContext::initializeDebugMessenger()
-{
-    VkDebugUtilsMessengerCreateInfoEXT messengerCreateInfo = {};
-
-    messengerCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    // 设置Debug的级别
-    messengerCreateInfo.messageSeverity =
-//            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    // 设置Debug的消息类型
-    messengerCreateInfo.messageType =
-            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    messengerCreateInfo.pfnUserCallback = debugCallback;
-    messengerCreateInfo.pUserData = nullptr;
-
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
-            _instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func == NULL)
-    {
-        throw std::runtime_error("get vkCreateDebugUtilsMessengerEXT fault.");
-    }
-
-    if (func(_instance, &messengerCreateInfo, NULL, &m_debug_messenger) != VK_SUCCESS)
-    {
-        throw std::runtime_error("set debug messenger fault.");
-    }
-
-    _vkCmdBeginDebugUtilsLabelEXT =
-            (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(
-                    _instance, "vkCmdBeginDebugUtilsLabelEXT");
-    _vkCmdEndDebugUtilsLabelEXT =
-            (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(
-                    _instance, "vkCmdEndDebugUtilsLabelEXT");
+    createSwapchainImageViews();
 }
 
 void VulkanContext::createInstance()
@@ -175,6 +139,44 @@ void VulkanContext::createInstance()
     {
         throw std::runtime_error("failed to create instance!");
     }
+}
+
+void VulkanContext::initializeDebugMessenger()
+{
+    VkDebugUtilsMessengerCreateInfoEXT messengerCreateInfo = {};
+
+    messengerCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    // 设置Debug的级别
+    messengerCreateInfo.messageSeverity =
+//            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    // 设置Debug的消息类型
+    messengerCreateInfo.messageType =
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    messengerCreateInfo.pfnUserCallback = debugCallback;
+    messengerCreateInfo.pUserData = nullptr;
+
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
+            _instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func == NULL)
+    {
+        throw std::runtime_error("get vkCreateDebugUtilsMessengerEXT fault.");
+    }
+
+    if (func(_instance, &messengerCreateInfo, NULL, &m_debug_messenger) != VK_SUCCESS)
+    {
+        throw std::runtime_error("set debug messenger fault.");
+    }
+
+    _vkCmdBeginDebugUtilsLabelEXT =
+            (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(
+                    _instance, "vkCmdBeginDebugUtilsLabelEXT");
+    _vkCmdEndDebugUtilsLabelEXT =
+            (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(
+                    _instance, "vkCmdEndDebugUtilsLabelEXT");
 }
 
 void VulkanContext::createSurface()
@@ -320,23 +322,6 @@ void VulkanContext::createCommandPool()
     }
 }
 
-void VulkanContext::createSwapchainImageViews()
-{
-    _swapchain_imageviews.resize(_swapchain_images.size());
-
-    // create imageview (one for each this time) for all swapchain images
-    for (size_t i = 0; i < _swapchain_images.size(); i++)
-    {
-        _swapchain_imageviews[i] = VulkanUtil::createImageView(_device,
-                                                               _swapchain_images[i],
-                                                               _swapchain_image_format,
-                                                               VK_IMAGE_ASPECT_COLOR_BIT,
-                                                               VK_IMAGE_VIEW_TYPE_2D,
-                                                               1,
-                                                               1);
-    }
-}
-
 void VulkanContext::createSwapchain()
 {
     // query all supports of this physical device
@@ -399,6 +384,23 @@ void VulkanContext::createSwapchain()
 
     _swapchain_image_format = chosen_surface_format.format;
     _swapchain_extent = chosen_extent;
+}
+
+void VulkanContext::createSwapchainImageViews()
+{
+    _swapchain_imageviews.resize(_swapchain_images.size());
+
+    // create imageview (one for each this time) for all swapchain images
+    for (size_t i = 0; i < _swapchain_images.size(); i++)
+    {
+        _swapchain_imageviews[i] = VulkanUtil::createImageView(_device,
+                                                               _swapchain_images[i],
+                                                               _swapchain_image_format,
+                                                               VK_IMAGE_ASPECT_COLOR_BIT,
+                                                               VK_IMAGE_VIEW_TYPE_2D,
+                                                               1,
+                                                               1);
+    }
 }
 
 void VulkanContext::clearSwapchain()

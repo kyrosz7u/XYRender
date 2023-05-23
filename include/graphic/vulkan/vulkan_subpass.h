@@ -12,6 +12,7 @@
 #include <vector>
 #include <map>
 
+class RenderCommandInfo;
 namespace VulkanAPI
 {
     enum ShaderType
@@ -33,9 +34,9 @@ namespace VulkanAPI
 
     struct SubPassInitInfo
     {
-        VkRenderPass renderpass;
+        RenderCommandInfo* render_command_info;
         uint32_t subpass_index;
-
+        VkRenderPass renderpass;
     };
 
     class VulkanSubPassBase
@@ -51,8 +52,9 @@ namespace VulkanAPI
         {
             m_p_vulkan_context = vulkanContext;
         }
+
         virtual void initialize(SubPassInitInfo* subPassInitInfo) = 0;
-        virtual void draw() = 0;
+        virtual void draw(VkCommandBuffer command_buffer) = 0;
         void setShader(ShaderType type, std::vector<unsigned char> shader)
         {
             m_shader_list[type] = shader;
@@ -63,17 +65,15 @@ namespace VulkanAPI
         virtual void setupPipelines() = 0;
         virtual void setupDescriptorSet();
 
+        static std::shared_ptr<VulkanContext> m_p_vulkan_context;
+        RenderCommandInfo* m_p_render_command_info;
+
         VkRenderPass renderpass;
         uint32_t subpass_index;
-
-        const VkViewport* m_p_viewport;
-        const VkRect2D* m_p_scissor;
-
         VkPipelineLayout pipeline_layout;
         VkPipeline       pipeline;
         std::vector<Descriptor> m_descriptor_list;
         std::vector<std::vector<unsigned char>> m_shader_list;
-        static std::shared_ptr<VulkanContext> m_p_vulkan_context;
     };
 }
 
