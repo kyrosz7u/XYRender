@@ -68,11 +68,7 @@ namespace VulkanAPI {
         VkDeviceMemory _depth_image_memory = VK_NULL_HANDLE;
         VkImageView _depth_image_view = VK_NULL_HANDLE;
 
-        std::vector <VkFramebuffer> _swapchain_framebuffers;
-
         void initialize(GLFWwindow *window);
-
-        int getCurrentSwapchainImageIndex();
 
         void clear();
 
@@ -83,7 +79,7 @@ namespace VulkanAPI {
         // debug functions
         PFN_vkCmdBeginDebugUtilsLabelEXT _vkCmdBeginDebugUtilsLabelEXT;
         PFN_vkCmdEndDebugUtilsLabelEXT _vkCmdEndDebugUtilsLabelEXT;
-        
+        // API function
         PFN_vkWaitForFences _vkWaitForFences;
         PFN_vkResetFences _vkResetFences;
         PFN_vkResetCommandPool _vkResetCommandPool;
@@ -110,6 +106,14 @@ namespace VulkanAPI {
         void createSwapchainImageViews();
 
         VkFormat findDepthFormat();
+
+        int getCurrentSwapchainImageIndex();
+
+        void presentCurrentSwapchainImage(uint32_t current_swapchain_image_index);
+
+        uint32_t getCurrentSwapchainImageIndex();
+
+        void presentCurrentSwapchainImage(uint32_t current_swapchain_image_index);
 
     private:
         const std::vector<char const *> m_validation_layers = {"VK_LAYER_KHRONOS_validation"};
