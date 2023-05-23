@@ -53,20 +53,10 @@ namespace VulkanAPI {
         VkPhysicalDevice _physical_device;
         QueueFamilyIndices _queue_indices;
         VkDevice _device;
-        VkFormat _depth_image_format = VK_FORMAT_UNDEFINED;
         VkQueue _graphics_queue = VK_NULL_HANDLE;
         VkQueue _present_queue = VK_NULL_HANDLE;
         VkCommandPool _command_pool = VK_NULL_HANDLE;
-
         VkSwapchainKHR _swapchain = VK_NULL_HANDLE;
-        VkFormat _swapchain_image_format = VK_FORMAT_UNDEFINED;
-        VkExtent2D _swapchain_extent;
-        std::vector <VkImage> _swapchain_images;
-        std::vector <VkImageView> _swapchain_imageviews;
-
-        VkImage _depth_image = VK_NULL_HANDLE;
-        VkDeviceMemory _depth_image_memory = VK_NULL_HANDLE;
-        VkImageView _depth_image_view = VK_NULL_HANDLE;
 
         void initialize(GLFWwindow *window);
 
@@ -97,23 +87,30 @@ namespace VulkanAPI {
         PFN_vkCmdDrawIndexed _vkCmdDrawIndexed;
         PFN_vkCmdClearAttachments _vkCmdClearAttachments;
 
+        VkFormat _swapchain_image_format = VK_FORMAT_UNDEFINED;
+        VkExtent2D _swapchain_extent;
+        std::vector <VkImage> _swapchain_images;
+        std::vector <VkImageView> _swapchain_imageviews;
+
+        VkImage _depth_image = VK_NULL_HANDLE;
+        VkDeviceMemory _depth_image_memory = VK_NULL_HANDLE;
+        VkImageView _depth_image_view = VK_NULL_HANDLE;
+        VkFormat _depth_image_format = VK_FORMAT_UNDEFINED;
+
+        static uint32_t const m_max_frames_in_flight = 3;
+        uint32_t              m_current_frame_index  = 0;
+        VkSemaphore     m_image_available_for_render_semaphores[m_max_frames_in_flight];
+        VkSemaphore     m_image_finished_for_presentation_semaphores[m_max_frames_in_flight];
+        VkFence         m_is_frame_in_flight_fences[m_max_frames_in_flight];
+
         void createSwapchain();
-
         void clearSwapchain();
-
-        void recreateSwapchain();
-
-        void createSwapchainImageViews();
-
+        void recreateSwapChain();
         VkFormat findDepthFormat();
-
-        int getCurrentSwapchainImageIndex();
-
-        void presentCurrentSwapchainImage(uint32_t current_swapchain_image_index);
-
-        uint32_t getCurrentSwapchainImageIndex();
-
-        void presentCurrentSwapchainImage(uint32_t current_swapchain_image_index);
+        void createSwapchainImageViews();
+        void submitDrawSwapchainImageCmdBuffer(VkCommandBuffer* p_command_buffer);
+        void presentSwapchainImage(uint32_t swapchain_image_index);
+        uint32_t getNextSwapchainImageIndex();
 
     private:
         const std::vector<char const *> m_validation_layers = {"VK_LAYER_KHRONOS_validation"};
@@ -122,27 +119,21 @@ namespace VulkanAPI {
 
     private:
         void createInstance();
-
         void initializeDebugMessenger();
-
         void createSurface();
-
         void pickPhysicalDevice();
-
         void createLogicalDevice();
-
         void createCommandPool();
-
         void createAssetAllocator();
 
     private:
+        VkDebugUtilsMessengerEXT m_debug_messenger = VK_NULL_HANDLE;
+
         bool checkValidationLayerSupport();
 
         std::vector<const char *> getRequiredExtensions();
 
         void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
-
-        VkDebugUtilsMessengerEXT m_debug_messenger = VK_NULL_HANDLE;
 
         VkResult createDebugUtilsMessengerEXT(VkInstance instance,
                                               const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,

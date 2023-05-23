@@ -62,7 +62,7 @@ namespace VulkanAPI
     protected:
         virtual void setupDescriptorSetLayout() = 0;
         virtual void setupPipelines() = 0;
-        virtual void setupDescriptorSet();
+        virtual void setupDescriptorSet() = 0;
 
         static std::shared_ptr<VulkanContext> m_p_vulkan_context;
         RenderCommandInfo* m_p_render_command_info;

@@ -19,8 +19,12 @@ enum CameraMode
 class Camera
 {
 public:
+    Camera()
+    {
+        render = std::make_shared<MainCameraRender>();
+        render->initialize();
+    }
     void Tick(){render->Tick(); }
-
 public:
     Vector3 position;
     EulerAngle rotation;

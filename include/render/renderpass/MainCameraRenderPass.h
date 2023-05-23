@@ -35,7 +35,7 @@ public:
     void setupRenderpassAttachments();
     void setupFrameBuffer(std::vector<ImageAttachment> renderTargets);
     void setupSubpass() override;
-    void draw(int render_target_index);
+    void draw(int render_target_index) override;
 
 private:
     VkRenderPass m_vk_renderpass;

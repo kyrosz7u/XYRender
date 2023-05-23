@@ -19,6 +19,11 @@ void MeshPass::setupDescriptorSetLayout()
 
 }
 
+void MeshPass::setupDescriptorSet()
+{
+
+}
+
 void MeshPass::updateDescriptorSet()
 {
 

@@ -4,7 +4,6 @@
 
 #include "render/MainCameraRender.h"
 
-
 void MainCameraRender::initialize()
 {
     int renderTarget_nums=m_vulkan_context->_swapchain_images.size();
@@ -20,7 +19,9 @@ void MainCameraRender::initialize()
             VK_IMAGE_LAYOUT_PRESENT_SRC_KHR});
     }
 
-    
+    setupCommandBuffer();
+    setViewport();
+    setupRenderpass();
 }
 
 void MainCameraRender::setupCommandBuffer()
@@ -56,11 +57,57 @@ void MainCameraRender::setupCommandBuffer()
     }
 }
 
+void MainCameraRender::setViewport()
+{
+    uint32_t width = m_vulkan_context->_swapchain_extent.width;
+    uint32_t height = m_vulkan_context->_swapchain_extent.height;
+
+    m_viewport = VkViewport({0, 0, (float)width, (float)height, 0, 1});
+    m_scissor = VkRect2D({{0, 0}, {width, height}});
+
+    m_render_command_info._p_viewport=&m_viewport;
+    m_render_command_info._p_scissor=&m_scissor;
+}
+
 void MainCameraRender::setupRenderpass()
 {
     RenderPassInitInfo renderpass_init_info;
+    renderpass_init_info.render_command_info=&m_render_command_info;
+    renderpass_init_info.renderTargets = renderTargets;
 
+    renderPass.initialize(&renderpass_init_info);
+}
 
+void MainCameraRender::Tick()
+{
+    draw();
+}
+
+void MainCameraRender::draw()
+{
+    uint32_t next_image_index = m_vulkan_context->getNextSwapchainImageIndex();
+    vkResetCommandBuffer(m_command_buffers[next_image_index], 0);
+
+    // begin command buffer
+    VkCommandBufferBeginInfo command_buffer_begin_info {};
+    command_buffer_begin_info.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    command_buffer_begin_info.flags            = 0;
+    command_buffer_begin_info.pInheritanceInfo = nullptr;
+
+    VkResult res_begin_command_buffer =
+            m_vulkan_context->_vkBeginCommandBuffer(m_command_buffers[next_image_index], &command_buffer_begin_info);
+    assert(VK_SUCCESS == res_begin_command_buffer);
+
+    // record command buffer
+    m_render_command_info._p_current_command_buffer=&m_command_buffers[next_image_index];
+    renderPass.draw(next_image_index);
+
+    // end command buffer
+    VkResult res_end_command_buffer = m_vulkan_context->_vkEndCommandBuffer(m_command_buffers[next_image_index]);
+    assert(VK_SUCCESS == res_end_command_buffer);
+
+    m_vulkan_context->submitDrawSwapchainImageCmdBuffer(&m_command_buffers[next_image_index]);
+    m_vulkan_context->presentSwapchainImage(next_image_index);
 }
 
 

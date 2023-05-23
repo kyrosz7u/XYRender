@@ -11,9 +11,11 @@
 class MainCameraRender:public RenderBases
 {
 public:
-    void initialize();
+    void initialize() override;
+    void setViewport();
 
     void Tick() override;
+    void draw();
 
 private:
     void setupCommandBuffer();

@@ -1,15 +1,12 @@
 #include "render/RenderBase.h"
 
 std::shared_ptr<VulkanContext> RenderBases::m_vulkan_context = nullptr;
-std::unique_ptr<VulkanManager> RenderBases::m_vulkan_manager = nullptr;
 
 // 初始化渲染器全局变量
-void RenderBases::initialize(GLFWwindow* window)
+void RenderBases::setupGlobally(GLFWwindow* window)
 {
     m_vulkan_context = std::make_shared<VulkanContext>();
     m_vulkan_context->initialize(window);
-    m_vulkan_manager = std::make_unique<VulkanManager>();
-    m_vulkan_manager->initialize(m_vulkan_context);
 
     VulkanAPI::RenderPassBase::setVulkanContext(m_vulkan_context);
     VulkanAPI::VulkanSubPassBase::setVulkanContext(m_vulkan_context);

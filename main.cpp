@@ -15,13 +15,14 @@ int main() {
 
     window.initialize(windowCreateInfo);
 
-    Camera mainCamera;
+    RenderBases::setupGlobally(window.getWindowHandler());
 
-    RenderBases::initialize(window.getWindowHandler());
+    Camera mainCamera;
 
     while(!window.shouldClose())
     {
         window.pollEvents();
+        mainCamera.Tick();
     }
 
 
