@@ -34,7 +34,7 @@ public:
 
 private:
     std::shared_ptr<RenderBases> render;
-    std::vector<RenderBases::ImageAttachment> renderTarget;
+//    std::vector<VulkanAPI::RenderBases::ImageAttachment> renderTarget;
 };
 
 #endif //XEXAMPLE_CAMERA_H

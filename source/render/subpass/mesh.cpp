@@ -7,17 +7,23 @@
 using namespace VulkanAPI;
 using namespace subPass;
 
-void Mesh::setupDescriptorSetLayout()
+void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
+{
+    renderpass = subPassInitInfo->renderpass;
+    subpass_index = subPassInitInfo->subpass_index;
+}
+
+void MeshPass::setupDescriptorSetLayout()
 {
 
 }
 
-void Mesh::updateDescriptorSet()
+void MeshPass::updateDescriptorSet()
 {
 
 }
 
-void Mesh::setupPipelines()
+void MeshPass::setupPipelines()
 {
     std::vector<VkDescriptorSetLayout> descriptorset_layouts;
 
@@ -150,7 +156,7 @@ void Mesh::setupPipelines()
     pipelineInfo.pColorBlendState    = &color_blend_state_create_info;
     pipelineInfo.pDepthStencilState  = &depth_stencil_create_info;
     pipelineInfo.layout              = pipeline_layout;
-    pipelineInfo.renderPass          = renderPass;
+    pipelineInfo.renderPass          = renderpass;
     pipelineInfo.subpass             = subpass_index;
     pipelineInfo.basePipelineHandle  = VK_NULL_HANDLE;
     pipelineInfo.pDynamicState       = &dynamic_state_create_info;

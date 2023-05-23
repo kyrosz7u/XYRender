@@ -100,6 +100,8 @@ namespace VulkanAPI {
 
         void createSwapchainImageViews();
 
+        VkFormat findDepthFormat();
+
     private:
         const std::vector<char const *> m_validation_layers = {"VK_LAYER_KHRONOS_validation"};
         uint32_t m_vulkan_api_version = VK_API_VERSION_1_0;
@@ -145,8 +147,6 @@ namespace VulkanAPI {
         bool isDeviceSuitable(VkPhysicalDevice physical_device);
 
         SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice physical_device);
-
-        VkFormat findDepthFormat();
 
         VkFormat findSupportedFormat(const std::vector <VkFormat> &candidates,
                                      VkImageTiling tiling,

@@ -27,16 +27,18 @@ class MainCameraRenderPass : public RenderPassBase
 public:
     MainCameraRenderPass()
     {
-        m_subPass_list.resize(_main_camera_subpass_count);
-        m_framebuffer.attachments.resize(_main_camera_framebuffer_attachment_count);
+        m_subpass_list.resize(_main_camera_subpass_count);
         
     }
     void initialize(RenderPassInitInfo* renderPassInitInfo) override;
-    void setupPipelineAttachments() override;
-    void setupFrameBuffer(std::vector<ImageAttachment> renderTargets) override;
+    void setupRenderPass();
+    void setupRenderpassAttachments();
+    void setupFrameBuffer(std::vector<ImageAttachment> renderTargets);
+    void setupSubpass() override;
     void draw() override;
 private:
-    std::vector<ImageAttachment> m_pipeline_attachments;
+    VkRenderPass m_vk_renderpass;
+    std::vector<ImageAttachment> m_renderpass_attachments;
     std::vector<Framebuffer> m_framebuffer_per_rendertarget;
 };
 

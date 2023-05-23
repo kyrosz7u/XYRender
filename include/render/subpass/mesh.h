@@ -11,10 +11,10 @@ using namespace VulkanAPI;
 
 namespace subPass
 {
-    class Mesh:public VulkanSubPassBase
+    class MeshPass: public VulkanSubPassBase
     {
     public:
-        Mesh()
+        MeshPass()
         {
             name="mesh_subpass";
             m_descriptor_list.resize(1);

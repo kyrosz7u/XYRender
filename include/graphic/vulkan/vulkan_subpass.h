@@ -31,10 +31,11 @@ namespace VulkanAPI
         VkDescriptorSet       descriptor_set;
     };
 
-    class SubPassInitInfo
+    struct SubPassInitInfo
     {
-        VkRenderPass render_pass;
+        VkRenderPass renderpass;
         uint32_t subpass_index;
+
     };
 
     class VulkanSubPassBase
@@ -62,7 +63,7 @@ namespace VulkanAPI
         virtual void setupPipelines() = 0;
         virtual void setupDescriptorSet();
 
-        VkRenderPass renderPass;
+        VkRenderPass renderpass;
         uint32_t subpass_index;
 
         const VkViewport* m_p_viewport;

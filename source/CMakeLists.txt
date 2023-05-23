@@ -9,4 +9,5 @@ target_link_libraries(${RENDER_TARGET_NAME} PUBLIC spdlog)
 target_link_libraries(${RENDER_TARGET_NAME} PUBLIC assimp)
 
 target_include_directories(${RENDER_TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${vulkan_include}>)
+target_include_directories(${RENDER_TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${assimp_include}>)
 target_include_directories(${RENDER_TARGET_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
