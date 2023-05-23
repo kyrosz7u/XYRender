@@ -8,14 +8,6 @@
 
 using namespace VulkanAPI;
 
-struct RenderCommandInfo
-{
-    VkCommandBuffer* _p_current_command_buffer;
-
-    VkViewport*      _viewport;
-    VkRect2D*        _scissor;
-};
-
 class RenderBases
 {
 public:

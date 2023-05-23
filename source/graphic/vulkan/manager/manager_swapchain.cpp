@@ -13,10 +13,6 @@ uint32_t VulkanManager::getCurrentSwapchainImageIndex()
             m_vulkan_context->_device, 1, &m_is_frame_in_flight_fences[m_current_frame_index], VK_TRUE, UINT64_MAX);
     assert(VK_SUCCESS == res_wait_for_fences);
 
-    VkResult res_reset_command_pool =
-            m_vulkan_context->_vkResetCommandPool(m_vulkan_context->_device, m_command_pools[m_current_frame_index], 0);
-    assert(VK_SUCCESS == res_reset_command_pool);
-
     uint32_t current_swapchain_image_index;
     VkResult acquire_image_result =
             vkAcquireNextImageKHR(m_vulkan_context->_device,
@@ -121,7 +117,6 @@ void VulkanManager::recreateSwapChain()
     m_vulkan_context->clearSwapchain();
     m_vulkan_context->createSwapchain();
     m_vulkan_context->createSwapchainImageViews();
-
 }
 
 

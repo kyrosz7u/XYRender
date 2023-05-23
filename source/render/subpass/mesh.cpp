@@ -11,7 +11,7 @@ void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
 {
     subpass_index = subPassInitInfo->subpass_index;
     renderpass = subPassInitInfo->renderpass;
-    m_p_render_command_info = subPassInitInfo->renderCommandInfo;
+    m_p_render_command_info = subPassInitInfo->render_command_info;
 }
 
 void MeshPass::setupDescriptorSetLayout()
@@ -86,9 +86,9 @@ void MeshPass::setupPipelines()
     VkPipelineViewportStateCreateInfo viewport_state_create_info {};
     viewport_state_create_info.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewport_state_create_info.viewportCount = 1;
-    viewport_state_create_info.pViewports    = m_p_viewport;
+    viewport_state_create_info.pViewports    = m_p_render_command_info->_p_viewport;
     viewport_state_create_info.scissorCount  = 1;
-    viewport_state_create_info.pScissors     = m_p_scissor;
+    viewport_state_create_info.pScissors     = m_p_render_command_info->_p_scissor;
 
     VkPipelineRasterizationStateCreateInfo rasterization_state_create_info {};
     rasterization_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -179,12 +179,12 @@ void MeshPass::setupPipelines()
     }
 }
 
-void MeshPass::draw(VkCommandBuffer command_buffer)
+void MeshPass::draw()
 {
-    m_p_vulkan_context->_vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    m_p_vulkan_context->_vkCmdSetViewport(command_buffer, 0, 1, );
-    m_p_vulkan_context->_vkCmdSetScissor(command_buffer, 0, 1, *m_p_scissor);
-    m_p_vulkan_context->_vkCmdBindDescriptorSets(command_buffer,
+    m_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->_p_current_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    m_p_vulkan_context->_vkCmdSetViewport(*m_p_render_command_info->_p_current_command_buffer, 0, 1, m_p_render_command_info->_p_viewport);
+    m_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->_p_current_command_buffer, 0, 1, m_p_render_command_info->_p_scissor);
+    m_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->_p_current_command_buffer,
                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
                                                     pipeline_layout,
                                                     0,
@@ -193,7 +193,7 @@ void MeshPass::draw(VkCommandBuffer command_buffer)
                                                     0,
                                                     NULL);
 
-    vkCmdDraw(command_buffer, 3, 1, 0, 0);
+    vkCmdDraw(*m_p_render_command_info->_p_current_command_buffer, 3, 1, 0, 0);
 }
 
 

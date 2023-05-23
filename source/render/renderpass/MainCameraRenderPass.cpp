@@ -7,12 +7,10 @@
 #include "render/subpass/mesh.h"
 #include "render/renderpass/MainCameraRenderPass.h"
 #include "mesh_vert.h"
-#include "MainCameraRenderPass.h"
-
 
 void MainCameraRenderPass::initialize(RenderPassInitInfo *renderpass_init_info)
 {
-    m_p_render_command_info = renderpass_init_info->renderCommandInfo;
+    m_p_render_command_info = renderpass_init_info->render_command_info;
     setupRenderpassAttachments();
     setupRenderPass();
     setupFrameBuffer(renderpass_init_info->renderTargets);
@@ -157,7 +155,7 @@ void MainCameraRenderPass::setupSubpass()
    m_subpass_list[_main_camera_subpass_mesh]->setShader(VulkanAPI::VERTEX_SHADER, MESH_VERT);
 }
 
-void MainCameraRenderPass::draw(int render_target_index, VkCommandBuffer command_buffer)
+void MainCameraRenderPass::draw(int render_target_index)
 {
     VkCommandBufferBeginInfo command_buffer_begin_info {};
     command_buffer_begin_info.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -177,13 +175,13 @@ void MainCameraRenderPass::draw(int render_target_index, VkCommandBuffer command
     renderpass_begin_info.clearValueCount   = (sizeof(clear_values) / sizeof(clear_values[0]));
     renderpass_begin_info.pClearValues      = clear_values;
 
-    vkBeginCommandBuffer(command_buffer, &command_buffer_begin_info);
+    vkBeginCommandBuffer(*m_p_render_command_info->_p_current_command_buffer, &command_buffer_begin_info);
 
-    vkCmdBeginRenderPass(command_buffer, &renderpass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(*m_p_render_command_info->_p_current_command_buffer, &renderpass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
-    m_subpass_list[_main_camera_subpass_mesh]->draw(command_buffer);
+    m_subpass_list[_main_camera_subpass_mesh]->draw();
 
-    vkCmdEndRenderPass(command_buffer);
+    vkCmdEndRenderPass(*m_p_render_command_info->_p_current_command_buffer);
 
 }
 

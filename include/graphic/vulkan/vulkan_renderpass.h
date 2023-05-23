@@ -7,8 +7,6 @@
 
 #include "vulkan_subpass.h"
 
-class RenderCommandInfo;
-
 namespace VulkanAPI
 {
     struct ImageAttachment
@@ -29,10 +27,9 @@ namespace VulkanAPI
         std::vector<ImageAttachment> attachments;
     };
 
-    class RenderPassInitInfo
+    struct RenderPassInitInfo
     {
-    public:
-        RenderPassInitInfo* renderpass_init_info
+        RenderCommandInfo* render_command_info;
         std::vector<ImageAttachment> renderTargets;
         std::vector<VkClearValue> clearValues;
 //        std::vector<VkSubpassDependency> subpassDependencies;
@@ -54,7 +51,7 @@ namespace VulkanAPI
 
         virtual void initialize(RenderPassInitInfo* renderpass_init_info) = 0;
         virtual void setupSubpass() = 0;
-        virtual void draw(int render_target_index, VkCommandBuffer command_buffer) = 0;
+        virtual void draw(int render_target_index) = 0;
     protected:
         static std::shared_ptr<VulkanContext> m_p_vulkan_context;
         RenderCommandInfo* m_p_render_command_info;

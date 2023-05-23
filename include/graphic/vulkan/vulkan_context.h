@@ -19,7 +19,7 @@
 
 namespace VulkanAPI {
     struct QueueFamilyIndices
-        {
+    {
         std::optional <uint32_t> graphicsFamily;
         std::optional <uint32_t> presentFamily;
 
@@ -29,13 +29,22 @@ namespace VulkanAPI {
         }
     };
 
-    struct SwapChainSupportDetails {
+    struct SwapChainSupportDetails 
+    {
         VkSurfaceCapabilitiesKHR capabilities;
         std::vector <VkSurfaceFormatKHR> formats;
         std::vector <VkPresentModeKHR> presentModes;
     };
 
-    // api中所有与管线执行无关的接口封装在这里
+    struct RenderCommandInfo
+    {
+        VkCommandBuffer* _p_current_command_buffer;
+
+        VkViewport*      _p_viewport;
+        VkRect2D*        _p_scissor;
+    };
+
+    // api中所有与管线执行无关的接口封装
     class VulkanContext {
     public:
         GLFWwindow *_window = nullptr;

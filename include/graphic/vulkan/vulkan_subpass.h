@@ -12,7 +12,6 @@
 #include <vector>
 #include <map>
 
-class RenderCommandInfo;
 namespace VulkanAPI
 {
     enum ShaderType
@@ -54,7 +53,7 @@ namespace VulkanAPI
         }
 
         virtual void initialize(SubPassInitInfo* subPassInitInfo) = 0;
-        virtual void draw(VkCommandBuffer command_buffer) = 0;
+        virtual void draw() = 0;
         void setShader(ShaderType type, std::vector<unsigned char> shader)
         {
             m_shader_list[type] = shader;

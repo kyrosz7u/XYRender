@@ -35,15 +35,9 @@ namespace VulkanAPI
         static bool m_enable_point_light_shadow;
 
     private:
-        // initialize render passes
-        bool initializeRenderPass();
-        // initialize command pool
-        bool initializeCommandPool();
         // description pool for uniform buffer and image sampler
         bool initializeDescriptorPool();
 
-        // allocate command buffer: for drawing commands
-        bool initializeCommandBuffers();
         // swapchain clear or recreate
         void clearSwapChain();
         // recreate swapchain
@@ -69,8 +63,6 @@ namespace VulkanAPI
         VkViewport m_viewport = {0, 0, 1280, 720, 0, 1};
         VkRect2D   m_scissor  = {{0, 0}, {1280, 720}};
 
-        VkCommandPool   m_command_pools[m_max_frames_in_flight];
-        VkCommandBuffer m_command_buffers[m_max_frames_in_flight];
         VkSemaphore     m_image_available_for_render_semaphores[m_max_frames_in_flight];
         VkSemaphore     m_image_finished_for_presentation_semaphores[m_max_frames_in_flight];
         VkFence         m_is_frame_in_flight_fences[m_max_frames_in_flight];
