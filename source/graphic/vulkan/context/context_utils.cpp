@@ -149,6 +149,13 @@ VkFormat VulkanContext::findDepthFormat()
                                VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
+VkFormat VulkanContext::findDepthStencilFormat()
+{
+    return findSupportedFormat({VK_FORMAT_D24_UNORM_S8_UINT},
+                               VK_IMAGE_TILING_OPTIMAL,
+                               VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+}
+
 VkFormat VulkanContext::findSupportedFormat(const std::vector<VkFormat>& candidates,
                                                     VkImageTiling                tiling,
                                                     VkFormatFeatureFlags         features)

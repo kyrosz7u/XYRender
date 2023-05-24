@@ -70,6 +70,8 @@ void VulkanContext::initialize(GLFWwindow *window)
     createSwapchain();
 
     createSwapchainImageViews();
+
+    initSemaphoreObjects();
 }
 
 void VulkanContext::createInstance()

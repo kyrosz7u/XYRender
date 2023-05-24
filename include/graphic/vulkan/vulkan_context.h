@@ -16,6 +16,7 @@
 #include <optional>
 #include <vector>
 #include <algorithm>
+#include <assert.h>
 
 namespace VulkanAPI {
     struct QueueFamilyIndices
@@ -107,6 +108,8 @@ namespace VulkanAPI {
         void clearSwapchain();
         void recreateSwapChain();
         VkFormat findDepthFormat();
+        VkFormat findDepthStencilFormat();
+        void initSemaphoreObjects();
         void createSwapchainImageViews();
         void submitDrawSwapchainImageCmdBuffer(VkCommandBuffer* p_command_buffer);
         void presentSwapchainImage(uint32_t swapchain_image_index);

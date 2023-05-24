@@ -1,6 +1,6 @@
-//
-// Created by kyros on 5/21/23.
-//
+    //
+    // Created by kyros on 5/21/23.
+    //
 
 #include "render/subpass/mesh.h"
 
@@ -9,9 +9,13 @@ using namespace subPass;
 
 void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
 {
-    subpass_index = subPassInitInfo->subpass_index;
-    renderpass = subPassInitInfo->renderpass;
+    subpass_index           = subPassInitInfo->subpass_index;
+    renderpass              = subPassInitInfo->renderpass;
     m_p_render_command_info = subPassInitInfo->render_command_info;
+
+    setupDescriptorSetLayout();
+    setupDescriptorSet();
+    setupPipelines();
 }
 
 void MeshPass::setupDescriptorSetLayout()
@@ -39,9 +43,9 @@ void MeshPass::setupPipelines()
     }
 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
-    pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layout_create_info.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_create_info.setLayoutCount = descriptorset_layouts.size();
-    pipeline_layout_create_info.pSetLayouts = descriptorset_layouts.data();
+    pipeline_layout_create_info.pSetLayouts    = descriptorset_layouts.data();
 
     if (vkCreatePipelineLayout(m_p_vulkan_context->_device,
                                &pipeline_layout_create_info,
@@ -67,25 +71,23 @@ void MeshPass::setupPipelines()
     for(auto& shader_module:shader_modules)
     {
         VkPipelineShaderStageCreateInfo shader_stage_create_info{};
-        shader_stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        shader_stage_create_info.stage = static_cast<VkShaderStageFlagBits>(VK_SHADER_STAGE_VERTEX_BIT<<shader_module.first);
+        shader_stage_create_info.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shader_stage_create_info.stage  = static_cast<VkShaderStageFlagBits>(VK_SHADER_STAGE_VERTEX_BIT<<shader_module.first);
         shader_stage_create_info.module = shader_module.second;
-        shader_stage_create_info.pName = "main";
+        shader_stage_create_info.pName  = "main";
         shader_stage_create_infos.push_back(shader_stage_create_info);
     }
 
-//    auto vertex_binding_descriptions   = MeshVertex::getBindingDescriptions();
-//    auto vertex_attribute_descriptions = MeshVertex::getAttributeDescriptions();
-//    VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info {};
-//    vertex_input_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-//    vertex_input_state_create_info.vertexBindingDescriptionCount   = vertex_binding_descriptions.size();
-//    vertex_input_state_create_info.pVertexBindingDescriptions      = &vertex_binding_descriptions[0];
-//    vertex_input_state_create_info.vertexAttributeDescriptionCount = vertex_attribute_descriptions.size();
-//    vertex_input_state_create_info.pVertexAttributeDescriptions    = &vertex_attribute_descriptions[0];
+       VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info {};
+       vertex_input_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+       vertex_input_state_create_info.vertexBindingDescriptionCount   = 0;
+       vertex_input_state_create_info.pVertexBindingDescriptions      = NULL;
+       vertex_input_state_create_info.vertexAttributeDescriptionCount = 0;
+       vertex_input_state_create_info.pVertexAttributeDescriptions    = NULL;
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly_create_info {};
-    input_assembly_create_info.sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    input_assembly_create_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    input_assembly_create_info.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    input_assembly_create_info.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     input_assembly_create_info.primitiveRestartEnable = VK_FALSE;
 
     VkPipelineViewportStateCreateInfo viewport_state_create_info {};
@@ -96,7 +98,7 @@ void MeshPass::setupPipelines()
     viewport_state_create_info.pScissors     = m_p_render_command_info->_p_scissor;
 
     VkPipelineRasterizationStateCreateInfo rasterization_state_create_info {};
-    rasterization_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterization_state_create_info.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterization_state_create_info.depthClampEnable        = VK_FALSE;
     rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
     rasterization_state_create_info.polygonMode             = VK_POLYGON_MODE_FILL;
@@ -109,12 +111,12 @@ void MeshPass::setupPipelines()
     rasterization_state_create_info.depthBiasSlopeFactor    = 0.0f;
 
     VkPipelineMultisampleStateCreateInfo multisample_state_create_info {};
-    multisample_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisample_state_create_info.sType                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisample_state_create_info.sampleShadingEnable  = VK_FALSE;
     multisample_state_create_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     VkPipelineColorBlendAttachmentState color_blend_attachments[1] = {};
-    color_blend_attachments[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+    color_blend_attachments             [0].colorWriteMask         = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                                                 VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     color_blend_attachments[0].blendEnable         = VK_FALSE;
     color_blend_attachments[0].srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
@@ -124,11 +126,11 @@ void MeshPass::setupPipelines()
     color_blend_attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
     color_blend_attachments[0].alphaBlendOp        = VK_BLEND_OP_ADD;
 
-    VkPipelineColorBlendStateCreateInfo color_blend_state_create_info = {};
-    color_blend_state_create_info.sType         = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    color_blend_state_create_info.logicOpEnable = VK_FALSE;
-    color_blend_state_create_info.logicOp       = VK_LOGIC_OP_COPY;
-    color_blend_state_create_info.attachmentCount =
+    VkPipelineColorBlendStateCreateInfo color_blend_state_create_info                 = {};
+                                        color_blend_state_create_info.sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+                                        color_blend_state_create_info.logicOpEnable   = VK_FALSE;
+                                        color_blend_state_create_info.logicOp         = VK_LOGIC_OP_COPY;
+                                        color_blend_state_create_info.attachmentCount = 
             sizeof(color_blend_attachments) / sizeof(color_blend_attachments[0]);
     color_blend_state_create_info.pAttachments      = &color_blend_attachments[0];
     color_blend_state_create_info.blendConstants[0] = 0.0f;
@@ -137,24 +139,25 @@ void MeshPass::setupPipelines()
     color_blend_state_create_info.blendConstants[3] = 0.0f;
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil_create_info {};
-    depth_stencil_create_info.sType            = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depth_stencil_create_info.depthTestEnable  = VK_TRUE;
-    depth_stencil_create_info.depthWriteEnable = VK_TRUE;
-    depth_stencil_create_info.depthCompareOp   = VK_COMPARE_OP_LESS;
+    depth_stencil_create_info.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depth_stencil_create_info.depthTestEnable       = VK_TRUE;
+    depth_stencil_create_info.depthWriteEnable      = VK_TRUE;
+    depth_stencil_create_info.depthCompareOp        = VK_COMPARE_OP_LESS;
     depth_stencil_create_info.depthBoundsTestEnable = VK_FALSE;
     depth_stencil_create_info.stencilTestEnable     = VK_FALSE;
 
-    VkDynamicState                   dynamic_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+    VkDynamicState dynamic_states[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
     VkPipelineDynamicStateCreateInfo dynamic_state_create_info {};
     dynamic_state_create_info.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamic_state_create_info.dynamicStateCount = 2;
     dynamic_state_create_info.pDynamicStates    = dynamic_states;
 
     VkGraphicsPipelineCreateInfo pipelineInfo {};
-    pipelineInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipelineInfo.stageCount          = shader_stage_create_infos.size();
-    pipelineInfo.pStages             = shader_stage_create_infos.data();
-//    pipelineInfo.pVertexInputState   = &vertex_input_state_create_info;
+    pipelineInfo.sType      = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipelineInfo.stageCount = shader_stage_create_infos.size();
+    pipelineInfo.pStages    = shader_stage_create_infos.data();
+    
+    pipelineInfo.pVertexInputState   = &vertex_input_state_create_info;
     pipelineInfo.pInputAssemblyState = &input_assembly_create_info;
     pipelineInfo.pViewportState      = &viewport_state_create_info;
     pipelineInfo.pRasterizationState = &rasterization_state_create_info;
@@ -189,14 +192,14 @@ void MeshPass::draw()
     m_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->_p_current_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     m_p_vulkan_context->_vkCmdSetViewport(*m_p_render_command_info->_p_current_command_buffer, 0, 1, m_p_render_command_info->_p_viewport);
     m_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->_p_current_command_buffer, 0, 1, m_p_render_command_info->_p_scissor);
-    m_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->_p_current_command_buffer,
-                                                    VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                    pipeline_layout,
-                                                    0,
-                                                    1,
-                                                    NULL,
-                                                    0,
-                                                    NULL);
+    // m_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->_p_current_command_buffer,
+    //                                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
+    //                                                 pipeline_layout,
+    //                                                 0,
+    //                                                 1,
+    //                                                 NULL,
+    //                                                 0,
+    //                                                 NULL);
 
     vkCmdDraw(*m_p_render_command_info->_p_current_command_buffer, 3, 1, 0, 0);
 }

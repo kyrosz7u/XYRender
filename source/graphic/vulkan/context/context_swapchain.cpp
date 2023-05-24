@@ -2,12 +2,35 @@
 
 using namespace VulkanAPI;
 
+void VulkanContext::initSemaphoreObjects()
+{
+    VkSemaphoreCreateInfo semaphore_create_info {};
+    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fence_create_info {};
+    fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT; // the fence is initialized as signaled
+
+    for (uint32_t i = 0; i < m_max_frames_in_flight; i++)
+    {
+        assert(vkCreateSemaphore(_device,
+                              &semaphore_create_info,
+                              nullptr,
+                              &m_image_available_for_render_semaphores[i]) == VK_SUCCESS);
+        assert(vkCreateSemaphore(_device,
+                              &semaphore_create_info,
+                              nullptr,
+                              &m_image_finished_for_presentation_semaphores[i]) == VK_SUCCESS);
+        assert(vkCreateFence(_device, &fence_create_info, nullptr, &m_is_frame_in_flight_fences[i]) == VK_SUCCESS);
+    }
+}
+
 uint32_t VulkanContext::getNextSwapchainImageIndex()
 {
     // sync device
-    VkResult res_wait_for_fences = _vkWaitForFences(
-            _device, 1, &m_is_frame_in_flight_fences[m_current_frame_index], VK_TRUE, UINT64_MAX);
-    assert(VK_SUCCESS == res_wait_for_fences);
+    // VkResult res_wait_for_fences = _vkWaitForFences(
+    //         _device, 1, &m_is_frame_in_flight_fences[m_current_frame_index], VK_TRUE, UINT64_MAX);
+    // assert(VK_SUCCESS == res_wait_for_fences);
 
     uint32_t next_swapchain_image_index;
     VkResult acquire_image_result =
@@ -17,12 +40,12 @@ uint32_t VulkanContext::getNextSwapchainImageIndex()
                                   m_image_available_for_render_semaphores[m_current_frame_index],
                                   VK_NULL_HANDLE,
                                   &next_swapchain_image_index);
-    if (VK_ERROR_OUT_OF_DATE_KHR == acquire_image_result)
+    if (acquire_image_result == VK_ERROR_OUT_OF_DATE_KHR)
     {
         // recreateSwapChain();
         return -1;
     }
-    else if (VK_SUBOPTIMAL_KHR == acquire_image_result)
+    else if (acquire_image_result == VK_SUBOPTIMAL_KHR)
     {
         // recreateSwapChain();
 
@@ -51,7 +74,7 @@ uint32_t VulkanContext::getNextSwapchainImageIndex()
     }
     else
     {
-        assert(VK_SUCCESS == acquire_image_result);
+        assert(acquire_image_result == VK_SUCCESS);
     }
 
     // // begin command buffer

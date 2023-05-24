@@ -30,7 +30,9 @@ namespace VulkanAPI
     struct RenderPassInitInfo
     {
         RenderCommandInfo* render_command_info;
-        std::vector<ImageAttachment> renderTargets;
+        // [target_index][render_image_index]
+        std::vector<std::vector<ImageAttachment>> render_targets;
+
         std::vector<VkClearValue> clearValues;
 //        std::vector<VkSubpassDependency> subpassDependencies;
 //        std::vector<VkSubpassDescription> subpassDescriptions;
@@ -51,10 +53,11 @@ namespace VulkanAPI
 
         virtual void initialize(RenderPassInitInfo* renderpass_init_info) = 0;
         virtual void setupSubpass() = 0;
-        virtual void draw(int render_target_index) = 0;
+        virtual void draw(int render_image_index) = 0;
     protected:
         static std::shared_ptr<VulkanContext> m_p_vulkan_context;
         RenderCommandInfo* m_p_render_command_info;
+        std::vector<std::vector<ImageAttachment>> m_render_targets; // [target_index][render_image_index]
         std::vector<std::shared_ptr<VulkanSubPassBase>> m_subpass_list;
     };
 }

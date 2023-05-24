@@ -15,6 +15,14 @@ enum _main_camera_subpass
     _main_camera_subpass_count
 };
 
+// m_render_targets中的render_target_index定义; 
+// m_render_targets[target_index][render_image_index]
+enum _main_camera_render_target
+{
+    _swapchain_color_target,
+    _main_camera_render_target_count
+};
+
 enum _main_camera_framebuffer_attachment
 {
     _main_camera_framebuffer_attachment_color,
@@ -33,7 +41,7 @@ public:
     void initialize(RenderPassInitInfo* renderpass_init_info) override;
     void setupRenderPass();
     void setupRenderpassAttachments();
-    void setupFrameBuffer(std::vector<ImageAttachment> renderTargets);
+    void setupFrameBuffer();
     void setupSubpass() override;
     void draw(int render_target_index) override;
 
