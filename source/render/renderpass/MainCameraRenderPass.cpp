@@ -30,7 +30,7 @@ void MainCameraRenderPass::setupRenderpassAttachments()
     m_renderpass_attachments[_main_camera_framebuffer_attachment_color].format = m_render_targets[_swapchain_color_target][0].format;
     m_renderpass_attachments[_main_camera_framebuffer_attachment_color].layout = m_render_targets[_swapchain_color_target][0].layout;
 
-    m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].format = m_p_vulkan_context->findDepthStencilFormat();
+    m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].format = m_p_vulkan_context->findDepthFormat();
     m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VulkanUtil::createImage(m_p_vulkan_context->_physical_device,
@@ -178,11 +178,6 @@ void MainCameraRenderPass::setupSubpass()
 
 void MainCameraRenderPass::draw(int render_target_index)
 {
-    VkCommandBufferBeginInfo command_buffer_begin_info {};
-    command_buffer_begin_info.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    command_buffer_begin_info.flags            = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-    command_buffer_begin_info.pInheritanceInfo = nullptr;
-
     VkClearValue clear_values[_main_camera_framebuffer_attachment_count] = {};
     clear_values[_main_camera_framebuffer_attachment_color].color        = {0.0f, 0.0f, 0.0f, 1.0f};
     clear_values[_main_camera_framebuffer_attachment_depth].depthStencil = {1.0f, 0};
@@ -195,8 +190,6 @@ void MainCameraRenderPass::draw(int render_target_index)
     renderpass_begin_info.renderArea.extent = m_p_vulkan_context->_swapchain_extent;
     renderpass_begin_info.clearValueCount   = (sizeof(clear_values) / sizeof(clear_values[0]));
     renderpass_begin_info.pClearValues      = clear_values;
-
-    vkBeginCommandBuffer(*m_p_render_command_info->_p_current_command_buffer, &command_buffer_begin_info);
 
     vkCmdBeginRenderPass(*m_p_render_command_info->_p_current_command_buffer, &renderpass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 

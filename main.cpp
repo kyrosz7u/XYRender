@@ -21,8 +21,8 @@ int main() {
 
     while(!window.shouldClose())
     {
-        window.pollEvents();
         mainCamera.Tick();
+        window.pollEvents();
     }
 
 

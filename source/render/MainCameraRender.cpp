@@ -3,6 +3,7 @@
 //
 
 #include "render/MainCameraRender.h"
+#include "macros.h"
 
 void MainCameraRender::initialize()
 {
@@ -104,7 +105,9 @@ void MainCameraRender::draw()
 
     // record command buffer
     m_render_command_info._p_current_command_buffer = &m_command_buffers[m_vulkan_context->m_current_frame_index];
+
     renderPass.draw(next_image_index);
+//    LOG_INFO("draw frame: ", m_vulkan_context->m_current_frame_index);
 
     // end command buffer
     VkResult res_end_command_buffer = m_vulkan_context->_vkEndCommandBuffer(m_command_buffers[m_vulkan_context->m_current_frame_index]);

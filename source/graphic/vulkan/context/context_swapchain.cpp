@@ -28,9 +28,9 @@ void VulkanContext::initSemaphoreObjects()
 uint32_t VulkanContext::getNextSwapchainImageIndex()
 {
     // sync device
-    // VkResult res_wait_for_fences = _vkWaitForFences(
-    //         _device, 1, &m_is_frame_in_flight_fences[m_current_frame_index], VK_TRUE, UINT64_MAX);
-    // assert(VK_SUCCESS == res_wait_for_fences);
+     VkResult res_wait_for_fences = _vkWaitForFences(
+             _device, 1, &m_is_frame_in_flight_fences[m_current_frame_index], VK_TRUE, UINT64_MAX);
+     assert(VK_SUCCESS == res_wait_for_fences);
 
     uint32_t next_swapchain_image_index;
     VkResult acquire_image_result =

@@ -363,7 +363,7 @@ static const NSRange kEmptyRange = { NSNotFound, 0 };
         [self updateTrackingAreas];
         // NOTE: kUTTypeURL corresponds to NSPasteboardTypeURL but is available
         //       on 10.7 without having been deprecated yet
-        [self registerForDraggedTypes:@[(__bridge NSString*) kUTTypeURL]];
+//        [self registerForDraggedTypes:@[(__bridge NSString*) kUTTypeURL]];
     }
 
     return self;
