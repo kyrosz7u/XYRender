@@ -1,4 +1,5 @@
 #include "graphic/vulkan/vulkan_context.h"
+#include "logger_macros.h"
 
 using namespace VulkanAPI;
 
@@ -25,7 +26,7 @@ void VulkanContext::initSemaphoreObjects()
     }
 }
 
-uint32_t VulkanContext::getNextSwapchainImageIndex()
+uint32_t VulkanContext::getNextSwapchainImageIndex(std::function<void()> swapchainRecreateCallback)
 {
     // sync device
      VkResult res_wait_for_fences = _vkWaitForFences(
@@ -42,12 +43,14 @@ uint32_t VulkanContext::getNextSwapchainImageIndex()
                                   &next_swapchain_image_index);
     if (acquire_image_result == VK_ERROR_OUT_OF_DATE_KHR)
     {
-        // recreateSwapChain();
+        recreateSwapChain();
+        swapchainRecreateCallback();
         return -1;
     }
     else if (acquire_image_result == VK_SUBOPTIMAL_KHR)
     {
-        // recreateSwapChain();
+        recreateSwapChain();
+        swapchainRecreateCallback();
 
         // NULL submit to wait semaphore
         VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT};
@@ -77,20 +80,6 @@ uint32_t VulkanContext::getNextSwapchainImageIndex()
         assert(acquire_image_result == VK_SUCCESS);
     }
 
-    // // begin command buffer
-    // VkCommandBufferBeginInfo command_buffer_begin_info {};
-    // command_buffer_begin_info.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    // command_buffer_begin_info.flags            = 0;
-    // command_buffer_begin_info.pInheritanceInfo = nullptr;
-
-    // VkResult res_begin_command_buffer =
-    //     m_vulkan_context._vkBeginCommandBuffer(m_command_buffers[m_current_frame_index], &command_buffer_begin_info);
-    // assert(VK_SUCCESS == res_begin_command_buffer);
-
-    // // end command buffer
-    // VkResult res_end_command_buffer = m_vulkan_context._vkEndCommandBuffer(m_command_buffers[m_current_frame_index]);
-    // assert(VK_SUCCESS == res_end_command_buffer);
-
     return next_swapchain_image_index;
 }
 
@@ -116,7 +105,7 @@ void VulkanContext::submitDrawSwapchainImageCmdBuffer(VkCommandBuffer* p_command
     assert(VK_SUCCESS == res_queue_submit);
 }
 
-void VulkanContext::presentSwapchainImage(uint32_t swapchain_image_index)
+void VulkanContext::presentSwapchainImage(uint32_t swapchain_image_index, std::function<void()> swapchainRecreateCallback)
 {
     // present swapchain
     VkPresentInfoKHR present_info   = {};
@@ -130,7 +119,8 @@ void VulkanContext::presentSwapchainImage(uint32_t swapchain_image_index)
     VkResult present_result = vkQueuePresentKHR(_present_queue, &present_info);
     if (VK_ERROR_OUT_OF_DATE_KHR == present_result || VK_SUBOPTIMAL_KHR == present_result)
     {
-//        recreateSwapChain();
+       recreateSwapChain();
+       swapchainRecreateCallback();
     }
     else
     {
@@ -157,6 +147,16 @@ void VulkanContext::recreateSwapChain()
     clearSwapchain();
     createSwapchain();
     createSwapchainImageViews();
+
+    LOG_INFO("swapchain has recreated successfully. width: {}, height: {}", width, height);
+}
+
+void VulkanContext::waitForFrameInFlightFence()
+{
+    // 等待所有的提交的commandbuffer执行完毕
+    VkResult res_wait_for_fences = _vkWaitForFences(
+            _device, m_max_frames_in_flight, m_is_frame_in_flight_fences, VK_TRUE, UINT64_MAX);
+    assert(VK_SUCCESS == res_wait_for_fences);
 }
 
 

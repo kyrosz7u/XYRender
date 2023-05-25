@@ -17,6 +17,7 @@ public:
     {
         assert(m_vulkan_context!= nullptr);
     }
+    virtual ~RenderBases() = default;
 
     static void setupGlobally(GLFWwindow* window);
     virtual void initialize() = 0;

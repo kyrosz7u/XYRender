@@ -47,22 +47,25 @@ namespace VulkanAPI
             assert(m_p_vulkan_context!= nullptr);
             m_shader_list.resize(ShaderTypeCount, std::vector<unsigned char>(0));
         }
+
         static void setVulkanContext(std::shared_ptr<VulkanContext> vulkanContext)
         {
             m_p_vulkan_context = vulkanContext;
         }
 
-        virtual void initialize(SubPassInitInfo* subPassInitInfo) = 0;
-        virtual void draw() = 0;
         void setShader(ShaderType type, std::vector<unsigned char> shader)
         {
             m_shader_list[type] = shader;
         }
 
+        virtual void initialize(SubPassInitInfo* subPassInitInfo) = 0;
+        virtual void draw() = 0;
+        virtual void updateAfterSwapchainRecreate() = 0;
+
     protected:
         virtual void setupDescriptorSetLayout() = 0;
-        virtual void setupPipelines() = 0;
         virtual void setupDescriptorSet() = 0;
+        virtual void setupPipelines() = 0;
 
         static std::shared_ptr<VulkanContext> m_p_vulkan_context;
         RenderCommandInfo* m_p_render_command_info;

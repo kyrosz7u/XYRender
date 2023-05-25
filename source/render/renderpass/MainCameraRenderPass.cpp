@@ -8,7 +8,6 @@
 #include "render/renderpass/MainCameraRenderPass.h"
 #include "mesh_vert.h"
 #include "mesh_frag.h"
-#include <assert.h>
 
 void MainCameraRenderPass::initialize(RenderPassInitInfo *renderpass_init_info)
 {
@@ -69,6 +68,7 @@ void MainCameraRenderPass::setupRenderPass()
                              framebuffer_image_attachment_description.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
                              framebuffer_image_attachment_description.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
                              framebuffer_image_attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+                             // renderpass初始化和结束时图像的布局
                              framebuffer_image_attachment_description.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
                              framebuffer_image_attachment_description.finalLayout    = m_renderpass_attachments[_main_camera_framebuffer_attachment_color].layout;
 
@@ -86,7 +86,8 @@ void MainCameraRenderPass::setupRenderPass()
 
     VkAttachmentReference                 mesh_pass_color_attachments_reference[_main_camera_subpass_count] = {};
     mesh_pass_color_attachments_reference[_main_camera_subpass_mesh].attachment                             = &framebuffer_image_attachment_description - attachments;
-    mesh_pass_color_attachments_reference[_main_camera_subpass_mesh].layout                                 = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;                 // 指定attachment在subpass中的图像布局
+    // 指定在subpass执行时，管线访问图像的布局
+    mesh_pass_color_attachments_reference[_main_camera_subpass_mesh].layout                                 = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 
     VkAttachmentReference mesh_pass_depth_attachment_reference {};
@@ -196,8 +197,31 @@ void MainCameraRenderPass::draw(int render_target_index)
     m_subpass_list[_main_camera_subpass_mesh]->draw();
 
     vkCmdEndRenderPass(*m_p_render_command_info->_p_current_command_buffer);
-
 }
 
+void MainCameraRenderPass::updateAfterSwapchainRecreate()
+{
+    for(int i=0;i<_main_camera_framebuffer_attachment_count;++i)
+    {
+        if(m_renderpass_attachments[i].image!=VK_NULL_HANDLE)
+        {
+            m_renderpass_attachments[i].destroy();
+        }
+    }
+    vkDestroyRenderPass(m_p_vulkan_context->_device, m_vk_renderpass, nullptr);
+    for(int i=0;i<m_framebuffer_per_rendertarget.size();++i)
+    {
+        vkDestroyFramebuffer(m_p_vulkan_context->_device, m_framebuffer_per_rendertarget[i].framebuffer, nullptr);
+    }
+
+    setupRenderpassAttachments();
+    setupRenderPass();
+    setupFrameBuffer();
+
+    for(int i=0;i<m_subpass_list.size();++i)
+    {
+        m_subpass_list[i]->updateAfterSwapchainRecreate();
+    }
+}
 
 

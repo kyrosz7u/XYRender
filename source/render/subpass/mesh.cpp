@@ -204,4 +204,9 @@ void MeshPass::draw()
     vkCmdDraw(*m_p_render_command_info->_p_current_command_buffer, 3, 1, 0, 0);
 }
 
+void MeshPass::updateAfterSwapchainRecreate()
+{
+    
+}
+
 

@@ -39,11 +39,13 @@ public:
         
     }
     void initialize(RenderPassInitInfo* renderpass_init_info) override;
+    void draw(int render_target_index) override;
+    void updateAfterSwapchainRecreate() override;
+private:
     void setupRenderPass();
     void setupRenderpassAttachments();
     void setupFrameBuffer();
     void setupSubpass() override;
-    void draw(int render_target_index) override;
 
 private:
     VkRenderPass m_vk_renderpass;

@@ -13,9 +13,10 @@
 
 #include "GLFW/glfw3.h"
 #include <vulkan/vulkan.h>
-#include <optional>
 #include <vector>
+#include <optional>
 #include <algorithm>
+#include <functional>
 #include <assert.h>
 
 namespace VulkanAPI {
@@ -112,9 +113,9 @@ namespace VulkanAPI {
         void initSemaphoreObjects();
         void createSwapchainImageViews();
         void submitDrawSwapchainImageCmdBuffer(VkCommandBuffer* p_command_buffer);
-        void presentSwapchainImage(uint32_t swapchain_image_index);
-        uint32_t getNextSwapchainImageIndex();
-
+        uint32_t getNextSwapchainImageIndex(std::function<void()> swapchainRecreateCallback);
+        void presentSwapchainImage(uint32_t swapchain_image_index, std::function<void()> swapchainRecreateCallback);
+        void waitForFrameInFlightFence();
     private:
         const std::vector<char const *> m_validation_layers = {"VK_LAYER_KHRONOS_validation"};
         uint32_t m_vulkan_api_version = VK_API_VERSION_1_0;

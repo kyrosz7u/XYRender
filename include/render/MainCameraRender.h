@@ -11,7 +11,9 @@
 class MainCameraRender:public RenderBases
 {
 public:
+    ~MainCameraRender() override;
     void initialize() override;
+    void setupRenderTargets();
     void setViewport();
 
     void Tick() override;
@@ -19,13 +21,13 @@ public:
 
 private:
     void setupCommandBuffer();
-
+    void updateAfterSwapchainRecreate();
 
 private:
-    VkCommandPool commandPool;
+    VkCommandPool m_command_pool;
     std::vector<VkCommandBuffer> m_command_buffers;
     MainCameraRenderPass renderPass;
-    std::vector<ImageAttachment> renderTargets;
+    std::vector<ImageAttachment> m_render_targets;
 
     void setupRenderpass();
 };
