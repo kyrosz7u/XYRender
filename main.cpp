@@ -24,11 +24,5 @@ int main() {
         mainCamera.Tick();
         window.pollEvents();
     }
-
-
-    LOG_INFO("12345")
-    LOG_DEBUG("67890")
-    LOG_ERROR("abcde%s","aaa")
-    std::cout << "Hello, World!" << std::endl;
     return 0;
 }

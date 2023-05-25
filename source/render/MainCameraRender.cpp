@@ -95,6 +95,11 @@ void MainCameraRender::Tick()
 void MainCameraRender::draw()
 {
     uint32_t next_image_index = m_vulkan_context->getNextSwapchainImageIndex(std::bind(&MainCameraRender::updateAfterSwapchainRecreate, this));
+    if(next_image_index == -1)
+    {
+        LOG_INFO("next image index is -1");
+        return;
+    }
     vkResetCommandBuffer(m_command_buffers[next_image_index], 0);
 
       // begin command buffer
