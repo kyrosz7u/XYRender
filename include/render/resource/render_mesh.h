@@ -80,4 +80,21 @@ struct MeshVertex
         return attribute_descriptions;
     }
 };
+
+
+class VulkanMesh
+{
+public:
+    uint32_t mesh_vertex_count;
+    uint32_t mesh_index_count;
+    
+    RHIBuffer*    mesh_vertex_position_buffer;
+
+    RHIBuffer*    mesh_vertex_normal_buffer;
+
+    RHIBuffer*    mesh_vertex_texcoord_buffer;
+
+    RHIBuffer*    mesh_index_buffer;
+};
+
 #endif //XEXAMPLE_RENDER_MESH_H
