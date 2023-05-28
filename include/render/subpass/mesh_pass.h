@@ -6,6 +6,7 @@
 #define XEXAMPLE_MESH_PASS_H
 
 #include "subpass_base.h"
+#include "render/resource/render_mesh.h"
 
 using namespace VulkanAPI;
 
@@ -13,6 +14,11 @@ namespace RenderSystem
 {
     namespace SubPass
     {
+        struct MeshPassInitInfo : public SubPassInitInfo
+        {
+            std::vector<RenderMeshPtr> *render_mesh_list = nullptr;
+        };
+
         class MeshPass : public SubPassBase
         {
         public:
@@ -30,13 +36,11 @@ namespace RenderSystem
 
         private:
             void initialize(SubPassInitInfo *subPassInitInfo) override;
-
             void setupDescriptorSetLayout() override;
-
             void setupDescriptorSet() override;
-
             void setupPipelines() override;
 
+            std::vector<RenderMeshPtr> *m_p_visible_meshes;
         };
     }
 }

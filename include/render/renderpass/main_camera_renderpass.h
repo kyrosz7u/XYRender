@@ -14,7 +14,7 @@ namespace RenderSystem
 {
     struct MainCameraRenderPassInitInfo:public RenderPassInitInfo
     {
-        std::vector<RenderMeshPtr>* render_meshes;
+        std::vector<RenderMeshPtr>* render_mesh_list = nullptr;
     };
 
     class MainCameraRenderPass : public RenderPassBase
@@ -24,14 +24,6 @@ namespace RenderSystem
         {
             _main_camera_subpass_mesh,
             _main_camera_subpass_count
-        };
-
-    // m_render_targets中的render_target_index定义;
-    // m_render_targets[target_index][render_image_index]
-        enum _main_camera_render_target
-        {
-            _swapchain_color_target,
-            _main_camera_render_target_count
         };
 
         enum _main_camera_framebuffer_attachment
@@ -57,7 +49,8 @@ namespace RenderSystem
     private:
         VkRenderPass m_vk_renderpass;
         std::vector<ImageAttachment> m_renderpass_attachments;
-        std::vector<Framebuffer> m_framebuffer_per_rendertarget;
+        std::vector<Framebuffer>   m_framebuffer_per_rendertarget;
+        std::vector<RenderMeshPtr>* m_p_visible_meshes;
     };
 }
 

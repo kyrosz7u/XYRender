@@ -19,11 +19,12 @@
 #include <functional>
 #include <assert.h>
 
-namespace VulkanAPI {
+namespace VulkanAPI
+{
     struct QueueFamilyIndices
     {
-        std::optional <uint32_t> graphicsFamily;
-        std::optional <uint32_t> presentFamily;
+        std::optional<uint32_t> graphicsFamily;
+        std::optional<uint32_t> presentFamily;
 
         bool isComplete()
         {
@@ -31,34 +32,35 @@ namespace VulkanAPI {
         }
     };
 
-    struct SwapChainSupportDetails 
+    struct SwapChainSupportDetails
     {
-        VkSurfaceCapabilitiesKHR capabilities;
-        std::vector <VkSurfaceFormatKHR> formats;
-        std::vector <VkPresentModeKHR> presentModes;
+        VkSurfaceCapabilitiesKHR        capabilities;
+        std::vector<VkSurfaceFormatKHR> formats;
+        std::vector<VkPresentModeKHR>   presentModes;
     };
 
     struct RenderCommandInfo
     {
-        VkCommandBuffer* _p_current_command_buffer;
+        VkCommandBuffer *_p_current_command_buffer;
 
-        VkViewport*      _p_viewport;
-        VkRect2D*        _p_scissor;
+        VkViewport *_p_viewport;
+        VkRect2D   *_p_scissor;
     };
 
     // api中所有与管线执行无关的接口封装
-    class VulkanContext {
+    class VulkanContext
+    {
     public:
-        GLFWwindow *_window = nullptr;
-        VkInstance _instance;
-        VkSurfaceKHR _surface;
-        VkPhysicalDevice _physical_device;
+        GLFWwindow         *_window        = nullptr;
+        VkInstance         _instance;
+        VkSurfaceKHR       _surface;
+        VkPhysicalDevice   _physical_device;
         QueueFamilyIndices _queue_indices;
-        VkDevice _device;
-        VkQueue _graphics_queue = VK_NULL_HANDLE;
-        VkQueue _present_queue = VK_NULL_HANDLE;
-        VkCommandPool _command_pool = VK_NULL_HANDLE;
-        VkSwapchainKHR _swapchain = VK_NULL_HANDLE;
+        VkDevice           _device;
+        VkQueue            _graphics_queue = VK_NULL_HANDLE;
+        VkQueue            _present_queue  = VK_NULL_HANDLE;
+        VkCommandPool      _command_pool   = VK_NULL_HANDLE;
+        VkSwapchainKHR     _swapchain      = VK_NULL_HANDLE;
 
         void initialize(GLFWwindow *window);
 
@@ -70,64 +72,81 @@ namespace VulkanAPI {
 
         // debug functions
         PFN_vkCmdBeginDebugUtilsLabelEXT _vkCmdBeginDebugUtilsLabelEXT;
-        PFN_vkCmdEndDebugUtilsLabelEXT _vkCmdEndDebugUtilsLabelEXT;
+        PFN_vkCmdEndDebugUtilsLabelEXT   _vkCmdEndDebugUtilsLabelEXT;
         // API function
-        PFN_vkWaitForFences _vkWaitForFences;
-        PFN_vkResetFences _vkResetFences;
-        PFN_vkResetCommandPool _vkResetCommandPool;
-        PFN_vkBeginCommandBuffer _vkBeginCommandBuffer;
-        PFN_vkEndCommandBuffer _vkEndCommandBuffer;
-        PFN_vkCmdBeginRenderPass _vkCmdBeginRenderPass;
-        PFN_vkCmdNextSubpass _vkCmdNextSubpass;
-        PFN_vkCmdEndRenderPass _vkCmdEndRenderPass;
-        PFN_vkCmdBindPipeline _vkCmdBindPipeline;
-        PFN_vkCmdSetViewport _vkCmdSetViewport;
-        PFN_vkCmdSetScissor _vkCmdSetScissor;
-        PFN_vkCmdBindVertexBuffers _vkCmdBindVertexBuffers;
-        PFN_vkCmdBindIndexBuffer _vkCmdBindIndexBuffer;
-        PFN_vkCmdBindDescriptorSets _vkCmdBindDescriptorSets;
-        PFN_vkCmdDrawIndexed _vkCmdDrawIndexed;
-        PFN_vkCmdClearAttachments _vkCmdClearAttachments;
+        PFN_vkWaitForFences              _vkWaitForFences;
+        PFN_vkResetFences                _vkResetFences;
+        PFN_vkResetCommandPool           _vkResetCommandPool;
+        PFN_vkBeginCommandBuffer         _vkBeginCommandBuffer;
+        PFN_vkEndCommandBuffer           _vkEndCommandBuffer;
+        PFN_vkCmdBeginRenderPass         _vkCmdBeginRenderPass;
+        PFN_vkCmdNextSubpass             _vkCmdNextSubpass;
+        PFN_vkCmdEndRenderPass           _vkCmdEndRenderPass;
+        PFN_vkCmdBindPipeline            _vkCmdBindPipeline;
+        PFN_vkCmdSetViewport             _vkCmdSetViewport;
+        PFN_vkCmdSetScissor              _vkCmdSetScissor;
+        PFN_vkCmdBindVertexBuffers       _vkCmdBindVertexBuffers;
+        PFN_vkCmdBindIndexBuffer         _vkCmdBindIndexBuffer;
+        PFN_vkCmdBindDescriptorSets      _vkCmdBindDescriptorSets;
+        PFN_vkCmdDrawIndexed             _vkCmdDrawIndexed;
+        PFN_vkCmdClearAttachments        _vkCmdClearAttachments;
 
-        VkFormat _swapchain_image_format = VK_FORMAT_UNDEFINED;
-        VkExtent2D _swapchain_extent;
-        std::vector <VkImage> _swapchain_images;
-        std::vector <VkImageView> _swapchain_imageviews;
+        VkFormat                 _swapchain_image_format = VK_FORMAT_UNDEFINED;
+        VkExtent2D               _swapchain_extent;
+        std::vector<VkImage>     _swapchain_images;
+        std::vector<VkImageView> _swapchain_imageviews;
 
-        VkImage _depth_image = VK_NULL_HANDLE;
+        VkImage        _depth_image        = VK_NULL_HANDLE;
         VkDeviceMemory _depth_image_memory = VK_NULL_HANDLE;
-        VkImageView _depth_image_view = VK_NULL_HANDLE;
-        VkFormat _depth_image_format = VK_FORMAT_UNDEFINED;
+        VkImageView    _depth_image_view   = VK_NULL_HANDLE;
+        VkFormat       _depth_image_format = VK_FORMAT_UNDEFINED;
 
         static uint32_t const m_max_frames_in_flight = 3;
         uint32_t              m_current_frame_index  = 0;
-        VkSemaphore     m_image_available_for_render_semaphores[m_max_frames_in_flight];
-        VkSemaphore     m_image_finished_for_presentation_semaphores[m_max_frames_in_flight];
-        VkFence         m_is_frame_in_flight_fences[m_max_frames_in_flight];
+        VkSemaphore           m_image_available_for_render_semaphores[m_max_frames_in_flight];
+        VkSemaphore           m_image_finished_for_presentation_semaphores[m_max_frames_in_flight];
+        VkFence               m_is_frame_in_flight_fences[m_max_frames_in_flight];
 
         void createSwapchain();
+
         void clearSwapchain();
+
         void recreateSwapChain();
+
         VkFormat findDepthFormat();
+
         VkFormat findDepthStencilFormat();
+
         void initSemaphoreObjects();
+
         void createSwapchainImageViews();
-        void submitDrawSwapchainImageCmdBuffer(VkCommandBuffer* p_command_buffer);
+
+        void submitDrawSwapchainImageCmdBuffer(VkCommandBuffer *p_command_buffer);
+
         uint32_t getNextSwapchainImageIndex(std::function<void()> swapchainRecreateCallback);
+
         void presentSwapchainImage(uint32_t swapchain_image_index, std::function<void()> swapchainRecreateCallback);
+
         void waitForFrameInFlightFence();
+
     private:
-        const std::vector<char const *> m_validation_layers = {"VK_LAYER_KHRONOS_validation"};
-        uint32_t m_vulkan_api_version = VK_API_VERSION_1_0;
-        std::vector<char const *> m_device_extensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+        const std::vector<char const *> m_validation_layers  = {"VK_LAYER_KHRONOS_validation"};
+        uint32_t                        m_vulkan_api_version = VK_API_VERSION_1_0;
+        std::vector<char const *>       m_device_extensions  = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
     private:
         void createInstance();
+
         void initializeDebugMessenger();
+
         void createSurface();
+
         void pickPhysicalDevice();
+
         void createLogicalDevice();
+
         void createCommandPool();
+
         void createAssetAllocator();
 
     private:
@@ -156,18 +175,17 @@ namespace VulkanAPI {
 
         SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice physical_device);
 
-        VkFormat findSupportedFormat(const std::vector <VkFormat> &candidates,
+        VkFormat findSupportedFormat(const std::vector<VkFormat> &candidates,
                                      VkImageTiling tiling,
                                      VkFormatFeatureFlags features);
 
         VkSurfaceFormatKHR
-        chooseSwapchainSurfaceFormatFromDetails(const std::vector <VkSurfaceFormatKHR> &available_surface_formats);
+        chooseSwapchainSurfaceFormatFromDetails(const std::vector<VkSurfaceFormatKHR> &available_surface_formats);
 
         VkPresentModeKHR
-        chooseSwapchainPresentModeFromDetails(const std::vector <VkPresentModeKHR> &available_present_modes);
+        chooseSwapchainPresentModeFromDetails(const std::vector<VkPresentModeKHR> &available_present_modes);
 
         VkExtent2D chooseSwapchainExtentFromDetails(const VkSurfaceCapabilitiesKHR &capabilities);
     };
-
+}
 #endif //VULKANRENDER_VULKAN_CONTEXT_H
-};

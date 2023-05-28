@@ -84,8 +84,8 @@ void MainCameraRender::setupRenderpass()
 
     maincamera_renderpass_init_info.render_command_info = &g_render_command_info;
 
-    maincamera_renderpass_init_info.render_targets = &m_render_targets;
-    maincamera_renderpass_init_info.render_meshes = &m_visible_meshes;
+    maincamera_renderpass_init_info.render_targets   = &m_render_targets;
+    maincamera_renderpass_init_info.render_mesh_list = &m_visible_meshes;
 
     renderPass.initialize(&maincamera_renderpass_init_info);
 }

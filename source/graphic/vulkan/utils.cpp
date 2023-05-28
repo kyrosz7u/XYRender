@@ -80,24 +80,24 @@ void VulkanUtil::createBuffer(std::shared_ptr<VulkanContext> p_context,
     vkBindBufferMemory(p_context->_device, buffer, buffer_memory, 0); // offset = 0
 }
 
-void VulkanUtil::copyBuffer(std::shared_ptr<VulkanContext> context,
+void VulkanUtil::copyBuffer(std::shared_ptr<VulkanContext> p_context,
                             VkBuffer srcBuffer,
                             VkBuffer dstBuffer,
                             VkDeviceSize srcOffset,
                             VkDeviceSize dstOffset,
                             VkDeviceSize size)
 {
-    assert(context);
+    assert(p_context);
 
-    VkCommandBuffer command_buffer = context->beginSingleTimeCommands();
+    VkCommandBuffer command_buffer = p_context->beginSingleTimeCommands();
 
     VkBufferCopy copyRegion = {srcOffset, dstOffset, size};
     vkCmdCopyBuffer(command_buffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-    context->endSingleTimeCommands(command_buffer);
+    p_context->endSingleTimeCommands(command_buffer);
 }
 
-void VulkanUtil::createImage(VulkanContext *p_context,
+void VulkanUtil::createImage(std::shared_ptr<VulkanContext> p_context,
                              uint32_t image_width,
                              uint32_t image_height,
                              VkFormat format,
@@ -148,6 +148,35 @@ void VulkanUtil::createImage(VulkanContext *p_context,
     vkBindImageMemory(p_context->_device, image, memory, 0);
 }
 
+VkImageView VulkanUtil::createImageView(VkDevice device,
+                                        VkImage &image,
+                                        VkFormat format,
+                                        VkImageAspectFlags image_aspect_flags,
+                                        VkImageViewType view_type,
+                                        uint32_t layout_count,
+                                        uint32_t miplevels)
+{
+    VkImageViewCreateInfo image_view_create_info{};
+    image_view_create_info.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    image_view_create_info.image                           = image;
+    image_view_create_info.viewType                        = view_type;
+    image_view_create_info.format                          = format;
+    image_view_create_info.subresourceRange.aspectMask     = image_aspect_flags;
+    image_view_create_info.subresourceRange.baseMipLevel   = 0;
+    image_view_create_info.subresourceRange.levelCount     = miplevels;
+    image_view_create_info.subresourceRange.baseArrayLayer = 0;
+    image_view_create_info.subresourceRange.layerCount     = layout_count;
+
+    VkImageView image_view;
+    if (vkCreateImageView(device, &image_view_create_info, nullptr, &image_view) != VK_SUCCESS)
+    {
+        return image_view;
+        // todo
+    }
+
+    return image_view;
+}
+
 VkImageView VulkanUtil::createImageView(std::shared_ptr<VulkanContext> p_context,
                                         VkImage &image,
                                         VkFormat format,
@@ -177,7 +206,7 @@ VkImageView VulkanUtil::createImageView(std::shared_ptr<VulkanContext> p_context
     return image_view;
 }
 
-void VulkanUtil::transitionImageLayout(std::shared_ptr<VulkanContext> context,
+void VulkanUtil::transitionImageLayout(std::shared_ptr<VulkanContext> p_context,
                                        VkImage image,
                                        VkImageLayout old_layout,
                                        VkImageLayout new_layout,
@@ -185,9 +214,9 @@ void VulkanUtil::transitionImageLayout(std::shared_ptr<VulkanContext> context,
                                        uint32_t miplevels,
                                        VkImageAspectFlags aspect_mask_bits)
 {
-    assert(context);
+    assert(p_context);
 
-    VkCommandBuffer commandBuffer = context->beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = p_context->beginSingleTimeCommands();
 
     VkImageMemoryBarrier barrier{};
     barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -254,19 +283,19 @@ void VulkanUtil::transitionImageLayout(std::shared_ptr<VulkanContext> context,
 
     vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
-    context->endSingleTimeCommands(commandBuffer);
+    p_context->endSingleTimeCommands(commandBuffer);
 }
 
-void VulkanUtil::copyBufferToImage(std::shared_ptr<VulkanContext> context,
+void VulkanUtil::copyBufferToImage(std::shared_ptr<VulkanContext> p_context,
                                    VkBuffer buffer,
                                    VkImage image,
                                    uint32_t width,
                                    uint32_t height,
                                    uint32_t layer_count)
 {
-    assert(context);
+    assert(p_context);
 
-    VkCommandBuffer commandBuffer = context->beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = p_context->beginSingleTimeCommands();
 
     VkBufferImageCopy region{};
     region.bufferOffset                    = 0;
@@ -281,7 +310,7 @@ void VulkanUtil::copyBufferToImage(std::shared_ptr<VulkanContext> context,
 
     vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-    context->endSingleTimeCommands(commandBuffer);
+    p_context->endSingleTimeCommands(commandBuffer);
 }
 
 VkSampler VulkanUtil::getOrCreateNearestSampler(VkPhysicalDevice physical_device, VkDevice device)

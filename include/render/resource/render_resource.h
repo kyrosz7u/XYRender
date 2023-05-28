@@ -9,10 +9,11 @@
 
 namespace RenderSystem
 {
-    class RenderResource
+    class RenderGlobalResource
     {
     public:
-        std::vector<RenderMesh> m_meshes;
+        VkBuffer global_model_ubo_buffer;
+        VkDeviceMemory global_model_ubo_buffer_memory;
     };
 
 }

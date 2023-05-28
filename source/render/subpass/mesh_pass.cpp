@@ -10,9 +10,11 @@ using namespace RenderSystem::SubPass;
 
 void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
 {
-    subpass_index           = subPassInitInfo->subpass_index;
-    renderpass              = subPassInitInfo->renderpass;
-    m_p_render_command_info = subPassInitInfo->render_command_info;
+    auto mesh_pass_init_info = static_cast<MeshPassInitInfo*>(subPassInitInfo);
+    subpass_index           = mesh_pass_init_info->subpass_index;
+    renderpass              = mesh_pass_init_info->renderpass;
+    m_p_render_command_info = mesh_pass_init_info->render_command_info;
+    m_p_visible_meshes      = mesh_pass_init_info->render_mesh_list;
 
     setupDescriptorSetLayout();
     setupDescriptorSet();

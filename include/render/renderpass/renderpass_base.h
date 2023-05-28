@@ -14,9 +14,9 @@ namespace RenderSystem
 
     struct RenderPassInitInfo
     {
-        RenderCommandInfo* render_command_info;
+        RenderCommandInfo* render_command_info = nullptr;
         // [target_index][render_image_index]
-        std::vector<ImageAttachment>* render_targets;
+        std::vector<ImageAttachment>* render_targets = nullptr;
 
         std::vector<VkClearValue> clearValues;
 //        std::vector<VkSubpassDependency> subpassDependencies;
@@ -43,7 +43,7 @@ namespace RenderSystem
         friend struct ImageAttachment;
         virtual void setupSubpass() = 0;
         RenderCommandInfo* m_p_render_command_info;
-        std::vector<std::vector<ImageAttachment>> m_render_targets; // [target_index][render_image_index]
+        std::vector<ImageAttachment>* m_p_render_targets; // [target_index][render_image_index]
         std::vector<std::shared_ptr<SubPass::SubPassBase>> m_subpass_list;
     };
 

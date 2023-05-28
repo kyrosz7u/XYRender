@@ -34,21 +34,21 @@ namespace VulkanAPI
 
         static VkShaderModule createShaderModule(VkDevice device, const std::vector<unsigned char> &shader_code);
 
-        static void createBuffer(std::shared_ptr<VulkanContext> context,
+        static void createBuffer(std::shared_ptr<VulkanContext> p_context,
                                  VkDeviceSize size,
                                  VkBufferUsageFlags usage,
                                  VkMemoryPropertyFlags properties,
                                  VkBuffer &buffer,
                                  VkDeviceMemory &buffer_memory);
 
-        static void copyBuffer(std::shared_ptr<VulkanContext> context,
+        static void copyBuffer(std::shared_ptr<VulkanContext> p_context,
                                VkBuffer srcBuffer,
                                VkBuffer dstBuffer,
                                VkDeviceSize srcOffset,
                                VkDeviceSize dstOffset,
                                VkDeviceSize size);
 
-        static void createImage(std::shared_ptr<VulkanContext> context,
+        static void createImage(std::shared_ptr<VulkanContext> p_context,
                                 uint32_t image_width,
                                 uint32_t image_height,
                                 VkFormat format,
@@ -61,7 +61,7 @@ namespace VulkanAPI
                                 uint32_t array_layers,
                                 uint32_t miplevels);
 
-        static VkImageView createImageView(std::shared_ptr<VulkanContext> context,
+        static VkImageView createImageView(std::shared_ptr<VulkanContext> p_context,
                                            VkImage &image,
                                            VkFormat format,
                                            VkImageAspectFlags image_aspect_flags,
@@ -69,7 +69,15 @@ namespace VulkanAPI
                                            uint32_t layout_count,
                                            uint32_t miplevels);
 
-        static void transitionImageLayout(std::shared_ptr<VulkanContext> context,
+        static VkImageView createImageView(VkDevice device,
+                                           VkImage &image,
+                                           VkFormat format,
+                                           VkImageAspectFlags image_aspect_flags,
+                                           VkImageViewType view_type,
+                                           uint32_t layout_count,
+                                           uint32_t miplevels);
+
+        static void transitionImageLayout(std::shared_ptr<VulkanContext> p_context,
                                           VkImage image,
                                           VkImageLayout old_layout,
                                           VkImageLayout new_layout,
@@ -77,14 +85,14 @@ namespace VulkanAPI
                                           uint32_t miplevels,
                                           VkImageAspectFlags aspect_mask_bits);
 
-        static void copyBufferToImage(std::shared_ptr<VulkanContext> context,
+        static void copyBufferToImage(std::shared_ptr<VulkanContext> p_context,
                                       VkBuffer buffer,
                                       VkImage image,
                                       uint32_t width,
                                       uint32_t height,
                                       uint32_t layer_count);
 
-        static void genMipmappedImage(std::shared_ptr<VulkanContext> context,
+        static void genMipmappedImage(std::shared_ptr<VulkanContext> p_context,
                                       VkImage image,
                                       uint32_t width,
                                       uint32_t height,
