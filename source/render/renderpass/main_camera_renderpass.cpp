@@ -4,10 +4,12 @@
 
 
 #include "graphic/vulkan/vulkan_utils.h"
-#include "render/subpass/mesh.h"
-#include "render/renderpass/MainCameraRenderPass.h"
+#include "render/subpass/mesh_pass.h"
+#include "render/renderpass/main_camera_renderpass.h"
 #include "mesh_vert.h"
 #include "mesh_frag.h"
+
+using namespace RenderSystem;
 
 void MainCameraRenderPass::initialize(RenderPassInitInfo *renderpass_init_info)
 {
@@ -29,31 +31,31 @@ void MainCameraRenderPass::setupRenderpassAttachments()
     m_renderpass_attachments[_main_camera_framebuffer_attachment_color].format = m_render_targets[_swapchain_color_target][0].format;
     m_renderpass_attachments[_main_camera_framebuffer_attachment_color].layout = m_render_targets[_swapchain_color_target][0].layout;
 
-    m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].format = m_p_vulkan_context->findDepthFormat();
+    m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].format = g_p_vulkan_context->findDepthFormat();
     m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VulkanUtil::createImage(m_p_vulkan_context->_physical_device,
-                                m_p_vulkan_context->_device,
-                                m_p_vulkan_context->_swapchain_extent.width,
-                                m_p_vulkan_context->_swapchain_extent.height,
-                                m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].format,
-                                VK_IMAGE_TILING_OPTIMAL,
+    VulkanUtil::createImage(g_p_vulkan_context->_physical_device,
+                            g_p_vulkan_context->_device,
+                            g_p_vulkan_context->_swapchain_extent.width,
+                            g_p_vulkan_context->_swapchain_extent.height,
+                            m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].format,
+                            VK_IMAGE_TILING_OPTIMAL,
                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
                                 VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
-                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].image,
-                                m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].mem,
-                                0,
-                                1,
-                                1);
+                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                            m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].image,
+                            m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].mem,
+                            0,
+                            1,
+                            1);
 
-    m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].view = VulkanUtil::createImageView(m_p_vulkan_context->_device,
-                                                                    m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].image,
-                                                                    m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].format,
-                                                                    VK_IMAGE_ASPECT_DEPTH_BIT,
-                                                                    VK_IMAGE_VIEW_TYPE_2D,
-                                                                    1,
-                                                                    1);
+    m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].view = VulkanUtil::createImageView(g_p_vulkan_context->_device,
+                                                                                                           m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].image,
+                                                                                                           m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].format,
+                                                                                                           VK_IMAGE_ASPECT_DEPTH_BIT,
+                                                                                                           VK_IMAGE_VIEW_TYPE_2D,
+                                                                                                           1,
+                                                                                                           1);
 
 }
 
@@ -113,7 +115,7 @@ void MainCameraRenderPass::setupRenderPass()
     renderpass_create_info.pDependencies   = nullptr;
 
     if (vkCreateRenderPass(
-            m_p_vulkan_context->_device, &renderpass_create_info, nullptr, &m_vk_renderpass) != VK_SUCCESS)
+            g_p_vulkan_context->_device, &renderpass_create_info, nullptr, &m_vk_renderpass) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create main camera render pass");
     }
@@ -149,12 +151,12 @@ void MainCameraRenderPass::setupFrameBuffer()
         framebuffer_create_info.renderPass      = m_vk_renderpass;
         framebuffer_create_info.attachmentCount = framebuffer_attachments.size();
         framebuffer_create_info.pAttachments    = framebuffer_attachments.data();
-        framebuffer_create_info.width           = m_p_vulkan_context->_swapchain_extent.width;
-        framebuffer_create_info.height          = m_p_vulkan_context->_swapchain_extent.height;
+        framebuffer_create_info.width           = g_p_vulkan_context->_swapchain_extent.width;
+        framebuffer_create_info.height          = g_p_vulkan_context->_swapchain_extent.height;
         framebuffer_create_info.layers          = 1;
 
         if (vkCreateFramebuffer(
-                m_p_vulkan_context->_device, &framebuffer_create_info, nullptr, &m_framebuffer_per_rendertarget[j].framebuffer) !=
+                g_p_vulkan_context->_device, &framebuffer_create_info, nullptr, &m_framebuffer_per_rendertarget[j].framebuffer) !=
             VK_SUCCESS)
         {
             throw std::runtime_error("create main camera framebuffer");
@@ -164,15 +166,15 @@ void MainCameraRenderPass::setupFrameBuffer()
 
 void MainCameraRenderPass::setupSubpass()
 {
-    SubPassInitInfo mesh_pass_init_info {};
+    SubPass::SubPassInitInfo mesh_pass_init_info {};
     mesh_pass_init_info.render_command_info = m_p_render_command_info;
     mesh_pass_init_info.renderpass          = m_vk_renderpass;
     mesh_pass_init_info.subpass_index       = _main_camera_subpass_mesh;
 
-    m_subpass_list[_main_camera_subpass_mesh] = std::make_shared<subPass::MeshPass>();
+    m_subpass_list[_main_camera_subpass_mesh] = std::make_shared<SubPass::MeshPass>();
 
-    m_subpass_list[_main_camera_subpass_mesh]->setShader(VulkanAPI::VERTEX_SHADER, MESH_VERT);
-    m_subpass_list[_main_camera_subpass_mesh]->setShader(VulkanAPI::FRAGMENT_SHADER, MESH_FRAG);
+    m_subpass_list[_main_camera_subpass_mesh]->setShader(SubPass::VERTEX_SHADER, MESH_VERT);
+    m_subpass_list[_main_camera_subpass_mesh]->setShader(SubPass::FRAGMENT_SHADER, MESH_FRAG);
 
     m_subpass_list[_main_camera_subpass_mesh]->initialize(&mesh_pass_init_info);
 }
@@ -188,7 +190,7 @@ void MainCameraRenderPass::draw(int render_target_index)
     renderpass_begin_info.renderPass        = m_vk_renderpass;
     renderpass_begin_info.framebuffer       = m_framebuffer_per_rendertarget[render_target_index].framebuffer;
     renderpass_begin_info.renderArea.offset = {0, 0};
-    renderpass_begin_info.renderArea.extent = m_p_vulkan_context->_swapchain_extent;
+    renderpass_begin_info.renderArea.extent = g_p_vulkan_context->_swapchain_extent;
     renderpass_begin_info.clearValueCount   = (sizeof(clear_values) / sizeof(clear_values[0]));
     renderpass_begin_info.pClearValues      = clear_values;
 
@@ -208,10 +210,10 @@ void MainCameraRenderPass::updateAfterSwapchainRecreate()
             m_renderpass_attachments[i].destroy();
         }
     }
-    vkDestroyRenderPass(m_p_vulkan_context->_device, m_vk_renderpass, nullptr);
+    vkDestroyRenderPass(g_p_vulkan_context->_device, m_vk_renderpass, nullptr);
     for(int i=0;i<m_framebuffer_per_rendertarget.size();++i)
     {
-        vkDestroyFramebuffer(m_p_vulkan_context->_device, m_framebuffer_per_rendertarget[i].framebuffer, nullptr);
+        vkDestroyFramebuffer(g_p_vulkan_context->_device, m_framebuffer_per_rendertarget[i].framebuffer, nullptr);
     }
 
     setupRenderpassAttachments();

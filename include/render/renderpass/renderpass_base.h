@@ -5,17 +5,18 @@
 #ifndef VULKANRENDER_VULKAN_RENDERPASS_H
 #define VULKANRENDER_VULKAN_RENDERPASS_H
 
-#include "vulkan_subpass.h"
+#include "render/subpass/subpass_base.h"
 
-namespace VulkanAPI
+namespace RenderSystem
 {
     struct ImageAttachment;
     struct Framebuffer;
+
     struct RenderPassInitInfo
     {
         RenderCommandInfo* render_command_info;
         // [target_index][render_image_index]
-        std::vector<std::vector<ImageAttachment>> render_targets;
+        std::vector<ImageAttachment>* render_targets;
 
         std::vector<VkClearValue> clearValues;
 //        std::vector<VkSubpassDependency> subpassDependencies;
@@ -27,12 +28,12 @@ namespace VulkanAPI
     public:
         RenderPassBase()
         {
-            assert(m_p_vulkan_context!= nullptr);
+            assert(g_p_vulkan_context != nullptr);
         }
         
         static void setVulkanContext(std::shared_ptr<VulkanContext> vulkanContext)
         {
-            m_p_vulkan_context = vulkanContext;
+            g_p_vulkan_context = vulkanContext;
         }
 
         virtual void initialize(RenderPassInitInfo* renderpass_init_info) = 0;
@@ -41,10 +42,9 @@ namespace VulkanAPI
     protected:
         friend struct ImageAttachment;
         virtual void setupSubpass() = 0;
-        static std::shared_ptr<VulkanContext> m_p_vulkan_context;
         RenderCommandInfo* m_p_render_command_info;
         std::vector<std::vector<ImageAttachment>> m_render_targets; // [target_index][render_image_index]
-        std::vector<std::shared_ptr<VulkanSubPassBase>> m_subpass_list;
+        std::vector<std::shared_ptr<SubPass::SubPassBase>> m_subpass_list;
     };
 
     struct ImageAttachment
@@ -56,10 +56,10 @@ namespace VulkanAPI
         VkImageLayout  layout; // 使用图像之前，需要将其转换为适当的布局
         void destroy()
         {
-            assert(RenderPassBase::m_p_vulkan_context!= nullptr);
-            vkDestroyImageView(RenderPassBase::m_p_vulkan_context->_device, view, nullptr);
-            vkDestroyImage(RenderPassBase::m_p_vulkan_context->_device, image, nullptr);
-            vkFreeMemory(RenderPassBase::m_p_vulkan_context->_device, mem, nullptr);
+            assert(g_p_vulkan_context != nullptr);
+            vkDestroyImageView(g_p_vulkan_context->_device, view, nullptr);
+            vkDestroyImage(g_p_vulkan_context->_device, image, nullptr);
+            vkFreeMemory(g_p_vulkan_context->_device, mem, nullptr);
         }
     };
 

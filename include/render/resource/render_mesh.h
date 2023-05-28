@@ -3,98 +3,127 @@
 //
 
 #include <vulkan/vulkan.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
+#include "render/render_base.h"
 #include "math/Math.h"
 
 #include <array>
 
+using namespace VulkanAPI;
 using namespace Math;
 
 #ifndef XEXAMPLE_RENDER_MESH_H
 #define XEXAMPLE_RENDER_MESH_H
 
-struct VulkanMeshVertexPostition
+namespace RenderSystem
 {
-    Vector3 position;
-};
+    class RenderMesh;
+    typedef std::shared_ptr<RenderMesh> RenderMeshPtr;
 
-struct VulkanMeshVertexNormal
-{
-    Vector3 normal;
-    Vector3 tangent;
-};
-
-struct VulkanMeshVertexTexcoord
-{
-    Vector2 texcoord;
-};
-
-struct MeshVertex
-{
-
-    static std::array<VkVertexInputBindingDescription, 3> getVertexInputBindingDescription()
+    struct VulkanMeshVertexPostition
     {
-        std::array<VkVertexInputBindingDescription, 3> binding_descriptions {};
+        Vector3 position;
+    };
 
-        // position
-        binding_descriptions[0].binding   = 0;
-        binding_descriptions[0].stride    = sizeof(VulkanMeshVertexPostition);
-        binding_descriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        // varying normal
-        binding_descriptions[1].binding   = 1;
-        binding_descriptions[1].stride    = sizeof(VulkanMeshVertexNormal);
-        binding_descriptions[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        // varying uv
-        binding_descriptions[2].binding   = 2;
-        binding_descriptions[2].stride    = sizeof(VulkanMeshVertexTexcoord);
-        binding_descriptions[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        return binding_descriptions;
-    }
-
-    static std::array<VkVertexInputAttributeDescription, 4> getVertexInputAttributeDescription()
+    struct VulkanMeshVertexNormal
     {
-        std::array<VkVertexInputAttributeDescription, 4> attribute_descriptions {};
+        Vector3 normal;
+        Vector4 tangent;
+    };
 
-        // position
-        attribute_descriptions[0].binding  = 0; // 对应于在VkVertexInputBindingDescription中设置的绑定索引
-        attribute_descriptions[0].location = 0;
-        attribute_descriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
-        attribute_descriptions[0].offset   = offsetof(VulkanMeshVertexPostition, position);
+    struct VulkanMeshVertexTexcoord
+    {
+        Vector2 texCoord;
+    };
 
-        // varying blending
-        attribute_descriptions[1].binding  = 1;
-        attribute_descriptions[1].location = 1;
-        attribute_descriptions[1].format   = VK_FORMAT_R32G32B32_SFLOAT;
-        attribute_descriptions[1].offset   = offsetof(VulkanMeshVertexNormal, normal);
+    struct VulkanMeshVertex
+    {
 
-        attribute_descriptions[2].binding  = 1;
-        attribute_descriptions[2].location = 2;
-        attribute_descriptions[2].format   = VK_FORMAT_R32G32B32A32_SFLOAT;
-        attribute_descriptions[2].offset   = offsetof(VulkanMeshVertexNormal, tangent);
+        static std::array<VkVertexInputBindingDescription, 3> getVertexInputBindingDescription()
+        {
+            std::array<VkVertexInputBindingDescription, 3> binding_descriptions{};
 
-        // varying texcoord
-        attribute_descriptions[3].binding  = 2;
-        attribute_descriptions[3].location = 3;
-        attribute_descriptions[3].format   = VK_FORMAT_R32G32_SFLOAT;
-        attribute_descriptions[3].offset   = offsetof(VulkanMeshVertexTexcoord, texcoord);
+            // position
+            binding_descriptions[0].binding   = 0;
+            binding_descriptions[0].stride    = sizeof(VulkanMeshVertexPostition);
+            binding_descriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            // normal
+            binding_descriptions[1].binding   = 1;
+            binding_descriptions[1].stride    = sizeof(VulkanMeshVertexNormal);
+            binding_descriptions[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            // uv
+            binding_descriptions[2].binding   = 2;
+            binding_descriptions[2].stride    = sizeof(VulkanMeshVertexTexcoord);
+            binding_descriptions[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            return binding_descriptions;
+        }
 
-        return attribute_descriptions;
-    }
-};
+        static std::array<VkVertexInputAttributeDescription, 4> getVertexInputAttributeDescription()
+        {
+            std::array<VkVertexInputAttributeDescription, 4> attribute_descriptions{};
+
+            // position
+            attribute_descriptions[0].binding  = 0; // 对应于在VkVertexInputBindingDescription中设置的绑定索引
+            attribute_descriptions[0].location = 0;
+            attribute_descriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
+            attribute_descriptions[0].offset   = offsetof(VulkanMeshVertexPostition, position);
+
+            // varying blending
+            attribute_descriptions[1].binding  = 1;
+            attribute_descriptions[1].location = 1;
+            attribute_descriptions[1].format   = VK_FORMAT_R32G32B32_SFLOAT;
+            attribute_descriptions[1].offset   = offsetof(VulkanMeshVertexNormal, normal);
+
+            attribute_descriptions[2].binding  = 1;
+            attribute_descriptions[2].location = 2;
+            attribute_descriptions[2].format   = VK_FORMAT_R32G32B32A32_SFLOAT;
+            attribute_descriptions[2].offset   = offsetof(VulkanMeshVertexNormal, tangent);
+
+            // varying texcoord
+            attribute_descriptions[3].binding  = 2;
+            attribute_descriptions[3].location = 3;
+            attribute_descriptions[3].format   = VK_FORMAT_R32G32_SFLOAT;
+            attribute_descriptions[3].offset   = offsetof(VulkanMeshVertexTexcoord, texCoord);
+
+            return attribute_descriptions;
+        }
+    };
 
 
-class VulkanMesh
-{
-public:
-    uint32_t mesh_vertex_count;
-    uint32_t mesh_index_count;
-    
-    RHIBuffer*    mesh_vertex_position_buffer;
+    class RenderMesh
+    {
+    public:
+        std::string             m_name;
+        std::vector<VulkanMeshVertexPostition> m_positions;
+        std::vector<VulkanMeshVertexNormal>   m_normals;
+        std::vector<VulkanMeshVertexTexcoord> m_texcoords;
+        std::vector<uint16_t>   m_indices;
 
-    RHIBuffer*    mesh_vertex_normal_buffer;
+        // TODO: 按层级加载，并赋上不同的材质
+//        std::weak_ptr<RenderMesh> parent_mesh;
+//        std::vector<std::shared_ptr<RenderMesh>> child_meshes;
 
-    RHIBuffer*    mesh_vertex_texcoord_buffer;
+        VkBuffer mesh_vertex_position_buffer = VK_NULL_HANDLE;
+        VkBuffer mesh_vertex_normal_buffer   = VK_NULL_HANDLE;
+        VkBuffer mesh_vertex_texcoord_buffer = VK_NULL_HANDLE;
 
-    RHIBuffer*    mesh_index_buffer;
-};
+        VkDeviceMemory mesh_vertex_position_buffer_memory = VK_NULL_HANDLE;
+        VkDeviceMemory mesh_vertex_normal_buffer_memory   = VK_NULL_HANDLE;
+        VkDeviceMemory mesh_vertex_texcoord_buffer_memory = VK_NULL_HANDLE;
 
+        VkBuffer       mesh_index_buffer        = VK_NULL_HANDLE;
+        VkDeviceMemory mesh_index_buffer_memory = VK_NULL_HANDLE;
+
+        RenderMesh();
+
+        ~RenderMesh();
+
+        void ToDevice();
+
+        void ReleaseFromDevice();
+    };
+}
 #endif //XEXAMPLE_RENDER_MESH_H

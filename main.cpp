@@ -1,12 +1,10 @@
 #include <iostream>
 #include "logger_macros.h"
 #include "window/Window.h"
-#include "scene/Camera.h"
-#include "render/RenderBase.h"
-
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
+#include "scene/camera.h"
+#include "scene/model.h"
+#include "render/render_base.h"
+#include "render/resource/render_mesh.h"
 
 int main() {
     WindowCreateInfo windowCreateInfo;
@@ -15,9 +13,18 @@ int main() {
 
     window.initialize(windowCreateInfo);
 
-    RenderBases::setupGlobally(window.getWindowHandler());
+    RenderBase::setupGlobally(window.getWindowHandler());
 
-    Camera mainCamera;
+    Scene::Camera mainCamera;
+
+    Scene::Model model;
+
+    model.loadModelFile("assets/models/Kong.fbx");
+
+    for (auto &mesh:model.m_meshes)
+    {
+        mesh->ToDevice();
+    }
 
     while(!window.shouldClose())
     {

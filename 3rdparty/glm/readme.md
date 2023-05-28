@@ -464,7 +464,7 @@ glm::mat4 camera(float Translate, glm::vec2 const& Rotate)
 - Left handed perspective and lookAt functions #314
 - Added functions eulerAngleXYZ and extractEulerAngleXYZ #311
 - Added <glm/gtx/hash.hpp> to perform std::hash on GLM types #320 #367
-- Added <glm/gtx/wrap.hpp> for texcoord wrapping
+- Added <glm/gtx/wrap.hpp> for texCoord wrapping
 - Added static components and precision members to all vector and quat types #350
 - Added .gitignore #349
 - Added support of defaulted functions to GLM types, to use them in unions #366
@@ -1176,7 +1176,7 @@ generation distribution
 
 ---
 ### GLM 0.3.2 - 2006-04-21
-- Fixed texcoord components access.
+- Fixed texCoord components access.
 - Fixed mat4 and imat4 division operators.
 
 ---

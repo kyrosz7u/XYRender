@@ -2,14 +2,10 @@
 // Created by kyros on 5/19/23.
 //
 
-#include "graphic/vulkan/vulkan_renderpass.h"
-#include "graphic/vulkan/vulkan_subpass.h"
+#include "render/renderpass/renderpass_base.h"
+#include "render/subpass/subpass_base.h"
 
 using namespace VulkanAPI;
-
-std::shared_ptr<VulkanContext> RenderPassBase::m_p_vulkan_context= nullptr;
-
-std::shared_ptr<VulkanContext> VulkanSubPassBase::m_p_vulkan_context= nullptr;
 
 
 

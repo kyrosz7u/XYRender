@@ -2,11 +2,11 @@
 // Created by kyros on 5/21/23.
 //
 
-#include "render/subpass/mesh.h"
+#include "render/subpass/mesh_pass.h"
 #include "render/resource/render_mesh.h"
 
 using namespace VulkanAPI;
-using namespace subPass;
+using namespace RenderSystem::SubPass;
 
 void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
 {
@@ -48,7 +48,7 @@ void MeshPass::setupPipelines()
     pipeline_layout_create_info.setLayoutCount = descriptorset_layouts.size();
     pipeline_layout_create_info.pSetLayouts    = descriptorset_layouts.data();
 
-    if (vkCreatePipelineLayout(m_p_vulkan_context->_device,
+    if (vkCreatePipelineLayout(g_p_vulkan_context->_device,
                                &pipeline_layout_create_info,
                                nullptr,
                                &pipeline_layout) != VK_SUCCESS)
@@ -64,7 +64,7 @@ void MeshPass::setupPipelines()
         if (shader.size() == 0)
         { continue; }
 
-        shader_modules[i] = VulkanUtil::createShaderModule(m_p_vulkan_context->_device, shader);
+        shader_modules[i] = VulkanUtil::createShaderModule(g_p_vulkan_context->_device, shader);
     }
 
     std::vector<VkPipelineShaderStageCreateInfo> shader_stage_create_infos;
@@ -80,8 +80,8 @@ void MeshPass::setupPipelines()
         shader_stage_create_infos.push_back(shader_stage_create_info);
     }
 
-    auto vertex_input_binding_description   = MeshVertex::getVertexInputBindingDescription();
-    auto vertex_input_attribute_description = MeshVertex::getVertexInputAttributeDescription();
+    auto vertex_input_binding_description   = VulkanMeshVertex::getVertexInputBindingDescription();
+    auto vertex_input_attribute_description = VulkanMeshVertex::getVertexInputAttributeDescription();
 
     VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info{};
     vertex_input_state_create_info.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -175,7 +175,7 @@ void MeshPass::setupPipelines()
     pipelineInfo.basePipelineHandle  = VK_NULL_HANDLE;
     pipelineInfo.pDynamicState       = &dynamic_state_create_info;
 
-    if (vkCreateGraphicsPipelines(m_p_vulkan_context->_device,
+    if (vkCreateGraphicsPipelines(g_p_vulkan_context->_device,
                                   VK_NULL_HANDLE,
                                   1,
                                   &pipelineInfo,
@@ -188,17 +188,17 @@ void MeshPass::setupPipelines()
 
     for (auto &shader_module: shader_modules)
     {
-        vkDestroyShaderModule(m_p_vulkan_context->_device, shader_module.second, nullptr);
+        vkDestroyShaderModule(g_p_vulkan_context->_device, shader_module.second, nullptr);
     }
 }
 
 void MeshPass::draw()
 {
-    m_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->_p_current_command_buffer,
+    g_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->_p_current_command_buffer,
                                            VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    m_p_vulkan_context->_vkCmdSetViewport(*m_p_render_command_info->_p_current_command_buffer, 0, 1,
+    g_p_vulkan_context->_vkCmdSetViewport(*m_p_render_command_info->_p_current_command_buffer, 0, 1,
                                           m_p_render_command_info->_p_viewport);
-    m_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->_p_current_command_buffer, 0, 1,
+    g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->_p_current_command_buffer, 0, 1,
                                          m_p_render_command_info->_p_scissor);
     // m_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->_p_current_command_buffer,
     //                                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
