@@ -8,7 +8,7 @@
 #include "vulkan/vulkan.h"
 #include "graphic/vulkan/vulkan_context.h"
 #include "graphic/vulkan/vulkan_utils.h"
-#include "render/render_base.h"
+#include "render/resource/render_resource.h"
 
 #include <vector>
 #include <map>
@@ -32,7 +32,7 @@ namespace RenderSystem
             ShaderTypeCount
         };
 
-        struct Descriptor
+        struct DescriptorSet
         {
             VkDescriptorSetLayout layout;
             VkDescriptorSet       descriptor_set;
@@ -81,8 +81,9 @@ namespace RenderSystem
             VkRenderPass renderpass;
             uint32_t subpass_index;
             VkPipelineLayout pipeline_layout;
-            VkPipeline       pipeline;
-            std::vector<Descriptor> m_descriptor_list;
+            VkPipeline              pipeline;
+            VkDescriptorSetLayout                   descriptorset_layout;
+            std::vector<DescriptorSet>              m_descriptorset_list;
             std::vector<std::vector<unsigned char>> m_shader_list;
         };
     }

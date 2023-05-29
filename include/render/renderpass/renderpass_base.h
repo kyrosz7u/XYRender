@@ -6,7 +6,6 @@
 #define VULKANRENDER_VULKAN_RENDERPASS_H
 
 #include "render/subpass/subpass_base.h"
-#include "render/render_base.h"
 
 namespace RenderSystem
 {

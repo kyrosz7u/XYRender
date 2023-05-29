@@ -50,20 +50,15 @@ namespace RenderSystem
             }
             buffer_size = MAX_MODEL_COUNT * dynamic_alignment;
 
-            model_ubo_list.resize(MAX_MODEL_COUNT);
-
             VulkanUtil::createBuffer(g_p_vulkan_context,
                                      buffer_size,
                                      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                      model_ubo_dynamic_buffer, model_ubo_dynamic_buffer_memory);
 
-            vkMapMemory(g_p_vulkan_context->_device, model_ubo_dynamic_buffer_memory, 0,
-                        sizeof(VulkanModelDefine) * MAX_MODEL_COUNT, 0, &mapped_buffer_ptr);
-
             buffer_descriptor.buffer = model_ubo_dynamic_buffer;
             buffer_descriptor.offset = 0;
-            buffer_descriptor.range = sizeof(VulkanModelDefine) * MAX_MODEL_COUNT;
+            buffer_descriptor.range = buffer_size;
         }
 
         ~RenderModelUBOList()
@@ -90,12 +85,21 @@ namespace RenderSystem
 
         void ToGPU()
         {
-            memcpy(mapped_buffer_ptr, model_ubo_list.data(), sizeof(VulkanModelDefine) * MAX_MODEL_COUNT);
+            uint32_t mapped_size = model_ubo_list.size() * dynamic_alignment;
+            vkMapMemory(g_p_vulkan_context->_device, model_ubo_dynamic_buffer_memory, 0,
+                        mapped_size, 0, &mapped_buffer_ptr);
+
+            // Aligned offset
+            for (int i = 0; i < model_ubo_list.size(); ++i)
+            {
+                Math::Matrix4x4* model_matrix = (Math::Matrix4x4*)((uint64_t)mapped_buffer_ptr + (i * dynamic_alignment));
+                *model_matrix= model_ubo_list[i].model;
+            }
 
             VkMappedMemoryRange mappedMemoryRange {};
             mappedMemoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
             mappedMemoryRange.memory = model_ubo_dynamic_buffer_memory;
-            mappedMemoryRange.size = sizeof(VulkanModelDefine) * MAX_MODEL_COUNT;
+            mappedMemoryRange.size = mapped_size;
 
             vkFlushMappedMemoryRanges(g_p_vulkan_context->_device, 1, &mappedMemoryRange);
         }
@@ -103,6 +107,7 @@ namespace RenderSystem
 
     class RenderPerFrameUBO
     {
+    public:
         VkDeviceSize buffer_size;
         VulkanPerFrameDefine per_frame_ubo_list;
         VkBuffer  per_frame_buffer;

@@ -2,21 +2,17 @@
 #include "graphic/vulkan/vulkan_context.h"
 #include "render/renderpass/renderpass_base.h"
 #include "render/subpass/subpass_base.h"
-#include "render/resource/render_resource.h
+#include "render/resource/render_resource.h"
 #include "render/resource/render_mesh.h"
 #include "render/resource/render_ubo.h"
 
-
-#ifndef XEXAMPLE_RENDER_BASE_H
-#define XEXAMPLE_RENDER_BASE_H
+#pragma once
 
 using namespace VulkanAPI;
 
 namespace RenderSystem
 {
     extern std::shared_ptr<VulkanContext> g_p_vulkan_context;
-
-
     class RenderBase
     {
     public:
@@ -42,5 +38,4 @@ namespace RenderSystem
         RenderCommandInfo        render_command_info;
     };
 }
-#endif //XEXAMPLE_RENDER_BASE_H
 

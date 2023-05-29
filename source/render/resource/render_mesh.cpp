@@ -3,10 +3,12 @@
 //
 
 #include "render/resource/render_mesh.h"
+#include "graphic/vulkan/vulkan_utils.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+using namespace VulkanAPI;
 using namespace RenderSystem;
 
 RenderMesh::RenderMesh()

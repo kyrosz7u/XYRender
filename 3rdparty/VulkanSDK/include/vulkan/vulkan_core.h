@@ -4229,12 +4229,8 @@ VKAPI_ATTR void VKAPI_CALL vkCmdBindIndexBuffer(
     VkDeviceSize                                offset,
     VkIndexType                                 indexType);
 
-VKAPI_ATTR void VKAPI_CALL vkCmdBindVertexBuffers(
-    VkCommandBuffer                             commandBuffer,
-    uint32_t                                    firstBinding,
-    uint32_t                                    bindingCount,
-    const VkBuffer*                             pBuffers,
-    const VkDeviceSize*                         pOffsets);
+VKAPI_ATTR void VKAPI_CALL vkCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding,
+                                                  uint32_t bindingCount);
 
 VKAPI_ATTR void VKAPI_CALL vkCmdDraw(
     VkCommandBuffer                             commandBuffer,

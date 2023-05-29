@@ -7,6 +7,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include "graphic/vulkan/vulkan_context.h"
 #include "math/Math.h"
 
 #include <vector>
@@ -20,6 +21,7 @@ using namespace Math;
 
 namespace RenderSystem
 {
+    extern std::shared_ptr<VulkanAPI::VulkanContext> g_p_vulkan_context;
     class RenderMesh;
 
     typedef std::shared_ptr<RenderMesh> RenderMeshPtr;
@@ -129,7 +131,6 @@ namespace RenderSystem
 
         RenderMesh &operator=(RenderMesh const &) = delete;
 
-        RenderMesh(RenderMesh &&) = delete;
 
 
         void ToGPU();

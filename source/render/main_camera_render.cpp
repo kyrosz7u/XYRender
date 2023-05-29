@@ -9,10 +9,9 @@ using namespace RenderSystem;
 
 void MainCameraRender::initialize()
 {
-    render_resource_info.p_viewport = &m_viewport;
-    render_resource_info.p_scissor  = &m_scissor;
-
-    render_resource_info
+    render_command_info.p_descriptor_pool= &m_descriptor_pool;
+    render_command_info.p_viewport = &m_viewport;
+    render_command_info.p_scissor  = &m_scissor;
 
     setupRenderTargets();
     setupCommandBuffer();
@@ -108,7 +107,7 @@ void MainCameraRender::setupRenderpass()
 {
     MainCameraRenderPassInitInfo maincamera_renderpass_init_info;
 
-    maincamera_renderpass_init_info.render_command_info = &render_resource_info;
+    maincamera_renderpass_init_info.render_command_info = &render_command_info;
     maincamera_renderpass_init_info.render_resource_info = &render_resource_info;
     maincamera_renderpass_init_info.render_targets = &m_render_targets;
     maincamera_renderpass_init_info.descriptor_pool = &m_descriptor_pool;
@@ -144,7 +143,7 @@ void MainCameraRender::draw()
     assert(VK_SUCCESS == res_begin_command_buffer);
 
     // record command buffer
-    render_resource_info.p_current_command_buffer = &m_command_buffers[next_image_index];
+    render_command_info.p_current_command_buffer = &m_command_buffers[next_image_index];
 
     renderPass.draw(next_image_index);
 

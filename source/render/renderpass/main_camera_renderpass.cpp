@@ -14,9 +14,9 @@ using namespace RenderSystem;
 void MainCameraRenderPass::initialize(RenderPassInitInfo *renderpass_init_info)
 {
     auto main_camera_renderpass_init_info = static_cast<MainCameraRenderPassInitInfo *>(renderpass_init_info);
-    m_p_render_command_info = main_camera_renderpass_init_info->render_command_info;
+    m_p_render_command_info  = main_camera_renderpass_init_info->render_command_info;
     m_p_render_resource_info = main_camera_renderpass_init_info->render_resource_info;
-    m_p_render_targets = main_camera_renderpass_init_info->render_targets;
+    m_p_render_targets       = main_camera_renderpass_init_info->render_targets;
 
     setupRenderpassAttachments();
     setupRenderPass();
@@ -169,9 +169,10 @@ void MainCameraRenderPass::setupFrameBuffer()
 void MainCameraRenderPass::setupSubpass()
 {
     SubPass::SubPassInitInfo mesh_pass_init_info{};
-    mesh_pass_init_info.render_command_info = m_p_render_command_info;
-    mesh_pass_init_info.renderpass          = m_vk_renderpass;
-    mesh_pass_init_info.subpass_index       = _main_camera_subpass_mesh;
+    mesh_pass_init_info.render_command_info  = m_p_render_command_info;
+    mesh_pass_init_info.render_resource_info = m_p_render_resource_info;
+    mesh_pass_init_info.renderpass           = m_vk_renderpass;
+    mesh_pass_init_info.subpass_index        = _main_camera_subpass_mesh;
 
     m_subpass_list[_main_camera_subpass_mesh] = std::make_shared<SubPass::MeshPass>();
 

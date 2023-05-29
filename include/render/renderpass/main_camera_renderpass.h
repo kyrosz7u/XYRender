@@ -35,7 +35,6 @@ namespace RenderSystem
         MainCameraRenderPass()
         {
             m_subpass_list.resize(_main_camera_subpass_count);
-
         }
         void initialize(RenderPassInitInfo* renderpass_init_info) override;
         void draw(int render_target_index) override;

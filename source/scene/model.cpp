@@ -43,9 +43,9 @@ void Model::processMesh(aiMesh *mesh, const aiScene *scene)
 //    vector<unsigned int> indices;
 //    vector<Texture> textures;
 
-    RenderSystem::RenderMesh render_mesh;
+    std::shared_ptr<RenderSystem::RenderMesh> render_mesh_ptr = std::make_shared<RenderSystem::RenderMesh>();
 
-    render_mesh.m_name = mesh->mName.C_Str();
+    render_mesh_ptr->m_name = mesh->mName.C_Str();
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
         RenderSystem::VulkanMeshVertexPostition vertex_position;
@@ -83,23 +83,23 @@ void Model::processMesh(aiMesh *mesh, const aiScene *scene)
         else
             vertex_texcoord.texCoord = Vector2::ZERO;
 
-        render_mesh.m_positions.push_back(vertex_position);
-        render_mesh.m_normals.push_back(vertex_normal);
-        render_mesh.m_texcoords.push_back(vertex_texcoord);
+        render_mesh_ptr->m_positions.push_back(vertex_position);
+        render_mesh_ptr->m_normals.push_back(vertex_normal);
+        render_mesh_ptr->m_texcoords.push_back(vertex_texcoord);
     }
     // 处理索引
     for(unsigned int i = 0; i < mesh->mNumFaces; i++)
     {
         aiFace face = mesh->mFaces[i];
         for(unsigned int j = 0; j < face.mNumIndices; j++)
-            render_mesh.m_indices.push_back(face.mIndices[j]);
+            render_mesh_ptr->m_indices.push_back(face.mIndices[j]);
     }
     // 处理材质
     if(mesh->mMaterialIndex >= 0)
     {
 
     }
-    m_meshes.push_back(std::make_shared<RenderSystem::RenderMesh>(render_mesh));
+    m_meshes.push_back(render_mesh_ptr);
 }
 
 
