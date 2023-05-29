@@ -32,6 +32,8 @@ namespace VulkanAPI
         static uint32_t
         findMemoryType(VkPhysicalDevice physical_device, uint32_t type_filter, VkMemoryPropertyFlags properties_flag);
 
+        static std::string errorString(VkResult errorCode);
+
         static VkShaderModule createShaderModule(VkDevice device, const std::vector<unsigned char> &shader_code);
 
         static void createBuffer(std::shared_ptr<VulkanContext> p_context,

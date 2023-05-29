@@ -29,12 +29,14 @@ namespace RenderSystem
 
     private:
         void setupCommandBuffer();
-
+        void setupCommandPool();
         void updateAfterSwapchainRecreate();
 
     private:
+
         VkCommandPool                m_command_pool;
         std::vector<VkCommandBuffer> m_command_buffers;
+        VkDescriptorPool            m_descriptor_pool;
         MainCameraRenderPass         renderPass;
         std::vector<ImageAttachment> m_render_targets;
         std::vector<RenderMeshPtr> m_visible_meshes;

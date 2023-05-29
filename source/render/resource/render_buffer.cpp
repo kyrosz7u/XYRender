@@ -11,7 +11,8 @@
 *
 * This code is licensed under the MIT license (MIT) (http://opensource.org/licenses/MIT)
 */
-
+#include <string>
+#include <assert.h>
 #include "render/resource/render_buffer.h"
 
 using namespace RenderSystem;

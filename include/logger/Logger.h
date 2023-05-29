@@ -37,7 +37,11 @@ public:
                                                                          sink_list.end(),
                                                                          spdlog::thread_pool(),
                                                                          spdlog::async_overflow_policy::block);
+# ifdef _DEBUG
             m_instance->m_logger->set_level(spdlog::level::trace);
+# else
+            m_instance->m_logger->set_level(spdlog::level::info);
+# endif
             spdlog::register_logger(m_instance->m_logger);
         }
 

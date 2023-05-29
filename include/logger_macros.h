@@ -20,4 +20,18 @@
 
 #define LOG_FATAL(...) LOG_HELPER(Logger::LogLevel::fatal, __VA_ARGS__);
 
+#ifdef _DEBUG
+#define VK_CHECK_RESULT(f)                                                                                \
+{                                                                                                        \
+    VkResult res = (f);                                                                                    \
+    if (res != VK_SUCCESS)                                                                                \
+    {                                                                                                    \
+        LOG_FATAL("VkResult is {}",VulkanUtil::errorString(res));                          \
+        assert(res == VK_SUCCESS);                                                                        \
+    }                                                                                                    \
+}
+#else
+#define VK_CHECK_RESULT(f) {}
+#endif
+
 #endif //XEXAMPLE_MACROS_H

@@ -22,7 +22,7 @@ bool Model::loadModelFile(const std::string &mesh_path)
     return true;
 }
 
-void Model::processModelNode(aiNode *node, const aiScene *scene, )
+void Model::processModelNode(aiNode *node, const aiScene *scene)
 {
     // 处理节点所有的网格（如果有的话）
     for(unsigned int i = 0; i < node->mNumMeshes; i++)
