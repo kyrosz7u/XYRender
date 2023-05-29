@@ -50,7 +50,7 @@ RenderMesh::~RenderMesh()
     }
 }
 
-void RenderMesh::ToDevice()
+void RenderMesh::ToGPU()
 {
     VkDeviceSize vertex_position_buffer_size = sizeof(VulkanMeshVertexPostition) * m_positions.size();
     VkDeviceSize vertex_normal_buffer_size   = sizeof(VulkanMeshVertexNormal) * m_normals.size();

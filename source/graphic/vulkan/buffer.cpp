@@ -13,9 +13,10 @@
 */
 #include <string>
 #include <assert.h>
-#include "render/resource/render_buffer.h"
+#include "graphic/vulkan/vulkan_buffer.h"
+#include "graphic/vulkan/vulkan_utils.h"
 
-using namespace RenderSystem;
+using namespace VulkanAPI;
 
 /**
 	* Map a memory range of this buffer. If successful, mapped points to the specified buffer range.
@@ -25,9 +26,9 @@ using namespace RenderSystem;
 	*
 	* @return VkResult of the buffer mapping call
 	*/
-VkResult RenderBuffer::map(VkDeviceSize size, VkDeviceSize offset)
+VkResult Buffer::map(VkDeviceSize size, VkDeviceSize offset)
 {
-    return vkMapMemory(device, memory, offset, size, 0, &mapped);
+    return vkMapMemory(p_context->_device, memory, offset, size, 0, &mapped);
 }
 
 /**
@@ -35,11 +36,11 @@ VkResult RenderBuffer::map(VkDeviceSize size, VkDeviceSize offset)
 *
 * @note Does not return a result as vkUnmapMemory can't fail
 */
-void RenderBuffer::unmap()
+void Buffer::unmap()
 {
     if (mapped)
     {
-        vkUnmapMemory(device, memory);
+        vkUnmapMemory(p_context->_device, memory);
         mapped = nullptr;
     }
 }
@@ -51,9 +52,9 @@ void RenderBuffer::unmap()
 *
 * @return VkResult of the bindBufferMemory call
 */
-VkResult RenderBuffer::bind(VkDeviceSize offset)
+VkResult Buffer::bind(VkDeviceSize offset)
 {
-    return vkBindBufferMemory(device, buffer, memory, offset);
+    return vkBindBufferMemory(p_context->_device, buffer, memory, offset);
 }
 
 /**
@@ -63,7 +64,7 @@ VkResult RenderBuffer::bind(VkDeviceSize offset)
 * @param offset (Optional) Byte offset from beginning
 *
 */
-void RenderBuffer::setupDescriptor(VkDeviceSize size, VkDeviceSize offset)
+void Buffer::setupDescriptor(VkDeviceSize size, VkDeviceSize offset)
 {
     descriptor.offset = offset;
     descriptor.buffer = buffer;
@@ -77,7 +78,7 @@ void RenderBuffer::setupDescriptor(VkDeviceSize size, VkDeviceSize offset)
 * @param size Size of the data to copy in machine units
 *
 */
-void RenderBuffer::copyTo(void* data, VkDeviceSize size)
+void Buffer::copyTo(void* data, VkDeviceSize size)
 {
     assert(mapped);
     memcpy(mapped, data, size);
@@ -93,14 +94,14 @@ void RenderBuffer::copyTo(void* data, VkDeviceSize size)
 *
 * @return VkResult of the flush call
 */
-VkResult RenderBuffer::flush(VkDeviceSize size, VkDeviceSize offset)
+VkResult Buffer::flush(VkDeviceSize size, VkDeviceSize offset)
 {
     VkMappedMemoryRange mappedRange = {};
     mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
     mappedRange.memory = memory;
     mappedRange.offset = offset;
     mappedRange.size = size;
-    return vkFlushMappedMemoryRanges(device, 1, &mappedRange);
+    return vkFlushMappedMemoryRanges(p_context->_device, 1, &mappedRange);
 }
 
 /**
@@ -113,28 +114,35 @@ VkResult RenderBuffer::flush(VkDeviceSize size, VkDeviceSize offset)
 *
 * @return VkResult of the invalidate call
 */
-VkResult RenderBuffer::invalidate(VkDeviceSize size, VkDeviceSize offset)
+VkResult Buffer::invalidate(VkDeviceSize size, VkDeviceSize offset)
 {
     VkMappedMemoryRange mappedRange = {};
     mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
     mappedRange.memory = memory;
     mappedRange.offset = offset;
     mappedRange.size = size;
-    return vkInvalidateMappedMemoryRanges(device, 1, &mappedRange);
+    return vkInvalidateMappedMemoryRanges(p_context->_device, 1, &mappedRange);
 }
 
 /**
 * Release all Vulkan resources held by this buffer
 */
-void RenderBuffer::destroy()
+void Buffer::destroy()
 {
     if (buffer)
     {
-        vkDestroyBuffer(device, buffer, nullptr);
+        vkDestroyBuffer(p_context->_device, buffer, nullptr);
     }
     if (memory)
     {
-        vkFreeMemory(device, memory, nullptr);
+        vkFreeMemory(p_context->_device, memory, nullptr);
     }
 }
+
+void Buffer::initialize(std::shared_ptr<VulkanContext> context, VkDeviceSize size, VkBufferUsageFlags usage,
+                        VkMemoryPropertyFlags properties)
+{
+    VulkanUtil::createBuffer(context, size, usage, properties, buffer, memory);
+}
+
 

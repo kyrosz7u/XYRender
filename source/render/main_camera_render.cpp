@@ -3,14 +3,20 @@
 //
 
 #include "render/main_camera_render.h"
-#include "logger_macros.h"
+#include "logger/logger_macros.h"
 
 using namespace RenderSystem;
 
 void MainCameraRender::initialize()
 {
+    render_resource_info.p_viewport = &m_viewport;
+    render_resource_info.p_scissor  = &m_scissor;
+
+    render_resource_info
+
     setupRenderTargets();
     setupCommandBuffer();
+    setupDescriptorPool();
     setViewport();
     setupRenderpass();
 }
@@ -68,7 +74,7 @@ void MainCameraRender::setupCommandBuffer()
     }
 }
 
-void MainCameraRender::setupCommandPool()
+void MainCameraRender::setupDescriptorPool()
 {
     std::vector<VkDescriptorPoolSize> descriptorTypes =
             {
@@ -96,19 +102,17 @@ void MainCameraRender::setViewport()
     m_viewport = VkViewport({0, 0, (float) width, (float) height, 0, 1});
     m_scissor = VkRect2D({{0,     0},
                           {width, height}});
-
-    g_render_command_info._p_viewport = &m_viewport;
-    g_render_command_info._p_scissor = &m_scissor;
 }
 
 void MainCameraRender::setupRenderpass()
 {
     MainCameraRenderPassInitInfo maincamera_renderpass_init_info;
 
-    maincamera_renderpass_init_info.render_command_info = &g_render_command_info;
-
+    maincamera_renderpass_init_info.render_command_info = &render_resource_info;
+    maincamera_renderpass_init_info.render_resource_info = &render_resource_info;
     maincamera_renderpass_init_info.render_targets = &m_render_targets;
-    maincamera_renderpass_init_info.render_mesh_list = &m_visible_meshes;
+    maincamera_renderpass_init_info.descriptor_pool = &m_descriptor_pool;
+
 
     renderPass.initialize(&maincamera_renderpass_init_info);
 }
@@ -140,10 +144,9 @@ void MainCameraRender::draw()
     assert(VK_SUCCESS == res_begin_command_buffer);
 
     // record command buffer
-    g_render_command_info._p_current_command_buffer = &m_command_buffers[next_image_index];
+    render_resource_info.p_current_command_buffer = &m_command_buffers[next_image_index];
 
     renderPass.draw(next_image_index);
-    //    LOG_INFO("draw frame: ", m_vulkan_context->m_current_frame_index);
 
     // end command buffer
     VkResult res_end_command_buffer = g_p_vulkan_context->_vkEndCommandBuffer(m_command_buffers[next_image_index]);
@@ -152,6 +155,18 @@ void MainCameraRender::draw()
     g_p_vulkan_context->submitDrawSwapchainImageCmdBuffer(&m_command_buffers[next_image_index]);
     g_p_vulkan_context->presentSwapchainImage(next_image_index,
                                               std::bind(&MainCameraRender::updateAfterSwapchainRecreate, this));
+}
+
+void MainCameraRender::loadSceneMeshes(std::vector<RenderMeshPtr> &visible_meshes)
+{
+    m_visible_meshes = visible_meshes;
+    for(int i=0;i<m_visible_meshes.size();++i)
+    {
+        m_visible_meshes[i]->m_index_in_dynamic_buffer=i;
+        auto model_matrix_in_buffer = static_cast<VulkanModelDefine*>(m_render_model_ubo_list.mapped_buffer_ptr);
+        model_matrix_in_buffer[i].model = m_visible_meshes[i]->model_matrix;
+    }
+    m_render_model_ubo_list.ToGPU();
 }
 
 void MainCameraRender::updateAfterSwapchainRecreate()
@@ -164,8 +179,8 @@ void MainCameraRender::updateAfterSwapchainRecreate()
 MainCameraRender::~MainCameraRender()
 {
     g_p_vulkan_context->waitForFrameInFlightFence();
-
     vkDestroyCommandPool(g_p_vulkan_context->_device, m_command_pool, nullptr);
+    vkDestroyDescriptorPool(g_p_vulkan_context->_device, m_descriptor_pool, nullptr);
 }
 
 

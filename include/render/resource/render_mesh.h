@@ -7,12 +7,12 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include "render/render_base.h"
 #include "math/Math.h"
 
+#include <vector>
 #include <array>
+#include <memory>
 
-using namespace VulkanAPI;
 using namespace Math;
 
 #ifndef XEXAMPLE_RENDER_MESH_H
@@ -21,6 +21,7 @@ using namespace Math;
 namespace RenderSystem
 {
     class RenderMesh;
+
     typedef std::shared_ptr<RenderMesh> RenderMeshPtr;
 
     struct VulkanMeshVertexPostition
@@ -96,11 +97,14 @@ namespace RenderSystem
     class RenderMesh
     {
     public:
-        std::string             m_name;
+        std::string                            m_name;
         std::vector<VulkanMeshVertexPostition> m_positions;
-        std::vector<VulkanMeshVertexNormal>   m_normals;
-        std::vector<VulkanMeshVertexTexcoord> m_texcoords;
-        std::vector<uint16_t>   m_indices;
+        std::vector<VulkanMeshVertexNormal>    m_normals;
+        std::vector<VulkanMeshVertexTexcoord>  m_texcoords;
+        std::vector<uint16_t>                  m_indices;
+
+        Matrix4x4 model_matrix=Matrix4x4::IDENTITY;
+        uint16_t m_index_in_dynamic_buffer = 0;
 
         // TODO: 按层级加载，并赋上不同的材质
 //        std::weak_ptr<RenderMesh> parent_mesh;
@@ -121,7 +125,14 @@ namespace RenderSystem
 
         ~RenderMesh();
 
-        void ToDevice();
+        RenderMesh(RenderMesh const &) = delete;
+
+        RenderMesh &operator=(RenderMesh const &) = delete;
+
+        RenderMesh(RenderMesh &&) = delete;
+
+
+        void ToGPU();
 
         void ReleaseFromDevice();
     };

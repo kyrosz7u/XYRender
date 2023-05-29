@@ -6,15 +6,16 @@
 #include "render/resource/render_mesh.h"
 
 using namespace VulkanAPI;
+using namespace RenderSystem;
 using namespace RenderSystem::SubPass;
 
 void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
 {
     auto mesh_pass_init_info = static_cast<MeshPassInitInfo*>(subPassInitInfo);
+    m_p_render_command_info = mesh_pass_init_info->render_command_info;
+    m_p_render_resource_info = mesh_pass_init_info->render_resource_info;
     subpass_index           = mesh_pass_init_info->subpass_index;
     renderpass              = mesh_pass_init_info->renderpass;
-    m_p_render_command_info = mesh_pass_init_info->render_command_info;
-    m_p_visible_meshes      = mesh_pass_init_info->render_mesh_list;
 
     setupDescriptorSetLayout();
     setupDescriptorSet();
@@ -23,15 +24,41 @@ void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
 
 void MeshPass::setupDescriptorSetLayout()
 {
+    std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
+    setLayoutBindings.resize(2);
 
+    VkDescriptorSetLayoutBinding perframe_buffer_binding = setLayoutBindings[0];
+
+    perframe_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    perframe_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
+    perframe_buffer_binding.binding          = 0;
+    perframe_buffer_binding.descriptorCount = 1;
+
+    VkDescriptorSetLayoutBinding perobject_buffer_binding = setLayoutBindings[1];
+
+    perobject_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    perobject_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
+    perobject_buffer_binding.binding          = 1;
+    perobject_buffer_binding.descriptorCount = 1;
+
+    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
+    descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    descriptorSetLayoutCreateInfo.pNext        = nullptr;
+    descriptorSetLayoutCreateInfo.bindingCount = 2;
+    descriptorSetLayoutCreateInfo.pBindings    = setLayoutBindings.data();
+
+    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
+                                                &descriptorSetLayoutCreateInfo,
+                                                nullptr,
+                                                &descriptorSetLayout));
+
+
+    VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo ;
+
+    VK_CHECK_RESULT(vkCreatePipelineLayout(g_p_vulkan_context->_device, &pPipelineLayoutCreateInfo, nullptr, &pipelineLayout));
 }
 
 void MeshPass::setupDescriptorSet()
-{
-
-}
-
-void MeshPass::updateDescriptorSet()
 {
 
 }
@@ -100,9 +127,9 @@ void MeshPass::setupPipelines()
     VkPipelineViewportStateCreateInfo viewport_state_create_info{};
     viewport_state_create_info.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewport_state_create_info.viewportCount = 1;
-    viewport_state_create_info.pViewports    = m_p_render_command_info->_p_viewport;
+    viewport_state_create_info.pViewports    = m_p_render_command_info->p_viewport;
     viewport_state_create_info.scissorCount  = 1;
-    viewport_state_create_info.pScissors     = m_p_render_command_info->_p_scissor;
+    viewport_state_create_info.pScissors     = m_p_render_command_info->p_scissor;
 
     VkPipelineRasterizationStateCreateInfo rasterization_state_create_info{};
     rasterization_state_create_info.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -196,13 +223,13 @@ void MeshPass::setupPipelines()
 
 void MeshPass::draw()
 {
-    g_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->_p_current_command_buffer,
+    g_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->p_current_command_buffer,
                                            VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    g_p_vulkan_context->_vkCmdSetViewport(*m_p_render_command_info->_p_current_command_buffer, 0, 1,
-                                          m_p_render_command_info->_p_viewport);
-    g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->_p_current_command_buffer, 0, 1,
-                                         m_p_render_command_info->_p_scissor);
-    // m_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->_p_current_command_buffer,
+    g_p_vulkan_context->_vkCmdSetViewport(*m_p_render_command_info->p_current_command_buffer, 0, 1,
+                                          m_p_render_command_info->p_viewport);
+    g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->p_current_command_buffer, 0, 1,
+                                         m_p_render_command_info->p_scissor);
+    // m_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
     //                                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
     //                                                 pipeline_layout,
     //                                                 0,
@@ -211,7 +238,7 @@ void MeshPass::draw()
     //                                                 0,
     //                                                 NULL);
 
-    vkCmdDraw(*m_p_render_command_info->_p_current_command_buffer, 3, 1, 0, 0);
+    vkCmdDraw(*m_p_render_command_info->p_current_command_buffer, 3, 1, 0, 0);
 }
 
 void MeshPass::updateAfterSwapchainRecreate()

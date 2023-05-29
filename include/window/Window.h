@@ -6,7 +6,7 @@
 #define VULKANRENDER_SURFACE_H
 
 #define GLFW_INCLUDE_VULKAN
-#include "logger_macros.h"
+#include "logger/logger_macros.h"
 
 #include <GLFW/glfw3.h>
 

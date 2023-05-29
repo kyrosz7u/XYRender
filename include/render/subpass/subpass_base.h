@@ -8,6 +8,7 @@
 #include "vulkan/vulkan.h"
 #include "graphic/vulkan/vulkan_context.h"
 #include "graphic/vulkan/vulkan_utils.h"
+#include "render/render_base.h"
 
 #include <vector>
 #include <map>
@@ -17,7 +18,7 @@ using namespace VulkanAPI;
 namespace RenderSystem
 {
     extern std::shared_ptr<VulkanContext> g_p_vulkan_context;
-    extern RenderCommandInfo              g_render_command_info;
+
     namespace SubPass
     {
         enum ShaderType
@@ -40,6 +41,7 @@ namespace RenderSystem
         struct SubPassInitInfo
         {
             RenderCommandInfo* render_command_info;
+            RenderGlobalResourceInfo* render_resource_info;
             uint32_t subpass_index;
             VkRenderPass renderpass;
         };
@@ -74,6 +76,7 @@ namespace RenderSystem
             virtual void setupPipelines() = 0;
 
             RenderCommandInfo* m_p_render_command_info;
+            RenderGlobalResourceInfo* m_p_render_resource_info;
 
             VkRenderPass renderpass;
             uint32_t subpass_index;

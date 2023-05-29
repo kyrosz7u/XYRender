@@ -39,8 +39,7 @@ namespace Scene
         float zNear;
         float zFar;
 
-    private:
-        std::shared_ptr<RenderBase> render;
+        std::shared_ptr<MainCameraRender> render;
 //    std::vector<VulkanAPI::RenderBase::ImageAttachment> renderTarget;
     };
 }

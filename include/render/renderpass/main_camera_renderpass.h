@@ -14,7 +14,7 @@ namespace RenderSystem
 {
     struct MainCameraRenderPassInitInfo:public RenderPassInitInfo
     {
-        std::vector<RenderMeshPtr>* render_mesh_list = nullptr;
+
     };
 
     class MainCameraRenderPass : public RenderPassBase
@@ -50,7 +50,6 @@ namespace RenderSystem
         VkRenderPass m_vk_renderpass;
         std::vector<ImageAttachment> m_renderpass_attachments;
         std::vector<Framebuffer>   m_framebuffer_per_rendertarget;
-        std::vector<RenderMeshPtr>* m_p_visible_meshes;
     };
 }
 

@@ -1,5 +1,5 @@
 #include <iostream>
-#include "logger_macros.h"
+#include "logger/logger_macros.h"
 #include "window/Window.h"
 #include "scene/camera.h"
 #include "scene/model.h"
@@ -23,8 +23,10 @@ int main() {
 
     for (auto &mesh:model.m_meshes)
     {
-        mesh->ToDevice();
+        mesh->ToGPU();
     }
+
+    mainCamera.render->loadSceneMeshes(model.m_meshes);
 
     while(!window.shouldClose())
     {

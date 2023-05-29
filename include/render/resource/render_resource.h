@@ -5,15 +5,20 @@
 #ifndef XEXAMPLE_RENDER_RESOURCE_H
 #define XEXAMPLE_RENDER_RESOURCE_H
 
-#include "render/resource/render_mesh.h"
+
+#include "graphic/vulkan/vulkan_buffer.h"
+#include "render/resource/render_ubo.h"
+#include "render_mesh.h"
+
+using namespace VulkanAPI;
 
 namespace RenderSystem
 {
-    class RenderGlobalResource
+    struct RenderGlobalResourceInfo
     {
-    public:
-        VkBuffer global_model_ubo_buffer;
-        VkDeviceMemory global_model_ubo_buffer_memory;
+        std::vector<RenderMeshPtr>*   p_visible_meshes;
+        RenderModelUBOList*           p_render_model_ubo_list;
+        RenderPerFrameUBO*            p_render_per_frame_ubo;
     };
 
 }

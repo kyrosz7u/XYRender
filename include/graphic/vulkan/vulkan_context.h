@@ -21,6 +21,13 @@
 
 namespace VulkanAPI
 {
+    struct RenderCommandInfo
+    {
+        VkCommandBuffer *p_current_command_buffer;
+        VkViewport *p_viewport;
+        VkRect2D   *p_scissor;
+    };
+
     struct QueueFamilyIndices
     {
         std::optional<uint32_t> graphicsFamily;
@@ -39,14 +46,6 @@ namespace VulkanAPI
         std::vector<VkPresentModeKHR>   presentModes;
     };
 
-    struct RenderCommandInfo
-    {
-        VkCommandBuffer *_p_current_command_buffer;
-
-        VkViewport *_p_viewport;
-        VkRect2D   *_p_scissor;
-    };
-
     // api中所有与管线执行无关的接口封装
     class VulkanContext
     {
@@ -55,6 +54,8 @@ namespace VulkanAPI
         VkInstance         _instance;
         VkSurfaceKHR       _surface;
         VkPhysicalDevice   _physical_device;
+        VkPhysicalDeviceProperties _physical_device_properties;
+
         QueueFamilyIndices _queue_indices;
         VkDevice           _device;
         VkQueue            _graphics_queue = VK_NULL_HANDLE;

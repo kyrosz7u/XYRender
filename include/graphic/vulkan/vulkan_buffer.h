@@ -16,13 +16,15 @@
 #define XEXAMPLE_RENDER_BUFFER_H
 
 #include <vulkan/vulkan.h>
+#include "graphic/vulkan/vulkan_context.h"
+#include <memory>
 
-namespace RenderSystem
+namespace VulkanAPI
 {
-    class RenderBuffer
+    class Buffer
     {
     public:
-        VkDevice device;
+        std::shared_ptr<VulkanContext> p_context;
         VkBuffer buffer = VK_NULL_HANDLE;
         VkDeviceMemory memory = VK_NULL_HANDLE;
         VkDescriptorBufferInfo descriptor;
@@ -41,6 +43,7 @@ namespace RenderSystem
         VkResult flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
         VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
         void destroy();
+        void initialize(std::shared_ptr<VulkanContext> context, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
     };
 }
 

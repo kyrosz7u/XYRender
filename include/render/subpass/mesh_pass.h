@@ -39,8 +39,6 @@ namespace RenderSystem
             void setupDescriptorSetLayout() override;
             void setupDescriptorSet() override;
             void setupPipelines() override;
-
-            std::vector<RenderMeshPtr> *m_p_visible_meshes;
         };
     }
 }

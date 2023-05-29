@@ -34,6 +34,8 @@ namespace VulkanAPI
 
         static std::string errorString(VkResult errorCode);
 
+        static std::string physicalDeviceTypeString(VkPhysicalDeviceType type);
+
         static VkShaderModule createShaderModule(VkDevice device, const std::vector<unsigned char> &shader_code);
 
         static void createBuffer(std::shared_ptr<VulkanContext> p_context,

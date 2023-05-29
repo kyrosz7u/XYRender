@@ -6,6 +6,7 @@
 #define VULKANRENDER_VULKAN_RENDERPASS_H
 
 #include "render/subpass/subpass_base.h"
+#include "render/render_base.h"
 
 namespace RenderSystem
 {
@@ -15,8 +16,12 @@ namespace RenderSystem
     struct RenderPassInitInfo
     {
         RenderCommandInfo* render_command_info = nullptr;
-        // [target_index][render_image_index]
+
+        RenderGlobalResourceInfo* render_resource_info;
+
         std::vector<ImageAttachment>* render_targets = nullptr;
+
+        VkDescriptorPool* descriptor_pool = nullptr;
 
         std::vector<VkClearValue> clearValues;
 //        std::vector<VkSubpassDependency> subpassDependencies;
@@ -43,6 +48,7 @@ namespace RenderSystem
         friend struct ImageAttachment;
         virtual void setupSubpass() = 0;
         RenderCommandInfo* m_p_render_command_info;
+        RenderGlobalResourceInfo* m_p_render_resource_info;
         std::vector<ImageAttachment>* m_p_render_targets; // [target_index][render_image_index]
         std::vector<std::shared_ptr<SubPass::SubPassBase>> m_subpass_list;
     };

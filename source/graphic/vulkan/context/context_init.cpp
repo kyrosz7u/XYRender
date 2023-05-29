@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "graphic/vulkan/vulkan_context.h"
 #include "graphic/vulkan/vulkan_utils.h"
+#include "logger/logger_macros.h"
 
 #define MACRO_XSTR(s) MACRO_STR(s)
 #define MACRO_STR(s) #s
@@ -15,6 +16,7 @@
 // https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros
 #include <sdkddkver.h>
 #include <Windows.h>
+
 #elif defined(__GNUC__)
 #include <stdlib.h>
 #endif
@@ -39,18 +41,18 @@ void VulkanContext::initialize(GLFWwindow *window)
 
 #if defined(_MSC_VER)
     // https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros
-    char const* vk_layer_path = MACRO_XSTR(VK_LAYER_PATH);
+    char const *vk_layer_path = MACRO_XSTR(VK_LAYER_PATH);
     SetEnvironmentVariableA("VK_LAYER_PATH", vk_layer_path);
     SetEnvironmentVariableA("DISABLE_LAYER_AMD_SWITCHABLE_GRAPHICS_1", "1");
 #elif defined(__GNUC__)
-    #if defined(__MACH__)
+#if defined(__MACH__)
     // https://stackoverflow.com/questions/32110858/how-to-set-environment-variable-in-mac-os-x-using-c-c
     char const* vk_layer_path    = MACRO_XSTR(VK_LAYER_PATH);
     // set MoltenVK icd in macos
     char const* vk_icd_filenames = MACRO_XSTR(VK_ICD_FILENAMES);
     setenv("VK_LAYER_PATH", vk_layer_path, 1);
     setenv("VK_ICD_FILENAMES", vk_icd_filenames, 1);
-    #endif
+#endif
 #else
 #error Unknown Compiler
 #endif
@@ -83,24 +85,24 @@ void VulkanContext::createInstance()
 
     // fill the application info
     VkApplicationInfo appInfo = {};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "VulkanAPI";
+    appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName   = "VulkanAPI";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "No Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = m_vulkan_api_version;
-    appInfo.pNext = NULL;
+    appInfo.pEngineName        = "No Engine";
+    appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.apiVersion         = m_vulkan_api_version;
+    appInfo.pNext              = NULL;
 
 
     // fill the instance create info and create
     VkInstanceCreateInfo instance_create_info = {};
 
-    instance_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    instance_create_info.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instance_create_info.pApplicationInfo = &appInfo;
-    instance_create_info.flags = 0;
+    instance_create_info.flags            = 0;
 
     // get required extensions
-    uint32_t glfwExtensionCount = 0;
+    uint32_t   glfwExtensionCount = 0;
     const char **glfwExtensions;
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
@@ -114,10 +116,10 @@ void VulkanContext::createInstance()
     required_extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 //    required_extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 
-    instance_create_info.enabledExtensionCount = static_cast<uint32_t>(required_extensions.size());
+    instance_create_info.enabledExtensionCount   = static_cast<uint32_t>(required_extensions.size());
     instance_create_info.ppEnabledExtensionNames = required_extensions.data();
 
-    instance_create_info.enabledLayerCount = static_cast<uint32_t>(m_validation_layers.size());
+    instance_create_info.enabledLayerCount   = static_cast<uint32_t>(m_validation_layers.size());
     instance_create_info.ppEnabledLayerNames = m_validation_layers.data();
 
     VkDebugUtilsMessengerCreateInfoEXT debugger_create_info = {};
@@ -129,13 +131,13 @@ void VulkanContext::createInstance()
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     // 设置Debug的消息类型
-    debugger_create_info.messageType =
+    debugger_create_info.messageType     =
             VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     debugger_create_info.pfnUserCallback = debugCallback;
 
-    instance_create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugger_create_info;
+    instance_create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT *) &debugger_create_info;
 
     if ((vkCreateInstance(&instance_create_info, nullptr, &_instance)) != VK_SUCCESS)
     {
@@ -154,12 +156,12 @@ void VulkanContext::initializeDebugMessenger()
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     // 设置Debug的消息类型
-    messengerCreateInfo.messageType =
+    messengerCreateInfo.messageType     =
             VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     messengerCreateInfo.pfnUserCallback = debugCallback;
-    messengerCreateInfo.pUserData = nullptr;
+    messengerCreateInfo.pUserData       = nullptr;
 
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
             _instance, "vkCreateDebugUtilsMessengerEXT");
@@ -174,10 +176,10 @@ void VulkanContext::initializeDebugMessenger()
     }
 
     _vkCmdBeginDebugUtilsLabelEXT =
-            (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(
+            (PFN_vkCmdBeginDebugUtilsLabelEXT) vkGetInstanceProcAddr(
                     _instance, "vkCmdBeginDebugUtilsLabelEXT");
-    _vkCmdEndDebugUtilsLabelEXT =
-            (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(
+    _vkCmdEndDebugUtilsLabelEXT   =
+            (PFN_vkCmdEndDebugUtilsLabelEXT) vkGetInstanceProcAddr(
                     _instance, "vkCmdEndDebugUtilsLabelEXT");
 }
 
@@ -202,9 +204,9 @@ void VulkanContext::pickPhysicalDevice()
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(_instance, &deviceCount, devices.data());
 
-    std::vector<std::pair<int, VkPhysicalDevice>> ranked_physical_devices;
+    std::vector<std::pair<int, std::pair<VkPhysicalDevice, VkPhysicalDeviceProperties>>> ranked_physical_devices;
     // 4.2 choose a suitable physical device
-    for (const auto &device: devices)
+    for (const auto                                                                      &device: devices)
     {
         VkPhysicalDeviceProperties deviceProperties;
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -219,20 +221,25 @@ void VulkanContext::pickPhysicalDevice()
         {
             score += 100;
         }
-        ranked_physical_devices.push_back({score, device});
+        ranked_physical_devices.push_back(
+                {score, std::pair<VkPhysicalDevice, VkPhysicalDeviceProperties>({device, deviceProperties})});
     }
     std::sort(ranked_physical_devices.begin(),
               ranked_physical_devices.end(),
-              [](const std::pair<int, VkPhysicalDevice> &p1, const std::pair<int, VkPhysicalDevice> &p2)
+              [](const std::pair<int, std::pair<VkPhysicalDevice, VkPhysicalDeviceProperties>> &p1, const std::pair<int, std::pair<VkPhysicalDevice, VkPhysicalDeviceProperties>> &p2)
               {
-                  return p1 > p2;
+                  return p1.first > p2.first;
               });
 
     for (const auto &device: ranked_physical_devices)
     {
-        if (isDeviceSuitable(device.second))
+        if (isDeviceSuitable(device.second.first))
         {
-            _physical_device = device.second;
+            _physical_device = device.second.first;
+            _physical_device_properties = device.second.second;
+            LOG_INFO("Device: {}\nType: {}",
+                     _physical_device_properties.deviceName,
+                     VulkanUtil::physicalDeviceTypeString(_physical_device_properties.deviceType))
             break;
         }
     }
@@ -247,23 +254,24 @@ void VulkanContext::createLogicalDevice()
 {
     _queue_indices = findQueueFamilies(_physical_device);
     std::vector<VkDeviceQueueCreateInfo> queue_create_infos; // all queues that need to be created
-    std::set<uint32_t> queue_families = {_queue_indices.graphicsFamily.value(), _queue_indices.presentFamily.value()};
+    std::set<uint32_t>                   queue_families = {_queue_indices.graphicsFamily.value(),
+                                                           _queue_indices.presentFamily.value()};
 
-    float queue_priority = 1.0f;
+    float         queue_priority = 1.0f;
     for (uint32_t queue_family: queue_families)
     {
         VkDeviceQueueCreateInfo queue_create_info{};
-        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_info.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_create_info.queueFamilyIndex = queue_family;
-        queue_create_info.queueCount = 1;
+        queue_create_info.queueCount       = 1;
         queue_create_info.pQueuePriorities = &queue_priority;
         queue_create_infos.push_back(queue_create_info);
     }
 
     VkPhysicalDeviceFeatures physical_device_features = {};
-    physical_device_features.samplerAnisotropy = VK_TRUE;
+    physical_device_features.samplerAnisotropy        = VK_TRUE;
     physical_device_features.fragmentStoresAndAtomics = VK_TRUE;
-    physical_device_features.independentBlend = VK_TRUE;
+    physical_device_features.independentBlend         = VK_TRUE;
 #if defined(__MACH__)
     // M1 Pro GPU不支持GeometryShader，原因暂时未知
     physical_device_features.geometryShader = VK_FALSE;
@@ -273,13 +281,13 @@ void VulkanContext::createLogicalDevice()
 
 
     VkDeviceCreateInfo device_create_info{};
-    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pQueueCreateInfos = queue_create_infos.data();
-    device_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
-    device_create_info.pEnabledFeatures = &physical_device_features;
-    device_create_info.enabledExtensionCount = static_cast<uint32_t>(m_device_extensions.size());
+    device_create_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_create_info.pQueueCreateInfos       = queue_create_infos.data();
+    device_create_info.queueCreateInfoCount    = static_cast<uint32_t>(queue_create_infos.size());
+    device_create_info.pEnabledFeatures        = &physical_device_features;
+    device_create_info.enabledExtensionCount   = static_cast<uint32_t>(m_device_extensions.size());
     device_create_info.ppEnabledExtensionNames = m_device_extensions.data();
-    device_create_info.enabledLayerCount = 0;
+    device_create_info.enabledLayerCount       = 0;
 
     if (vkCreateDevice(_physical_device, &device_create_info, nullptr, &_device) != VK_SUCCESS)
     {
@@ -289,22 +297,22 @@ void VulkanContext::createLogicalDevice()
     vkGetDeviceQueue(_device, _queue_indices.presentFamily.value(), 0, &_present_queue);
 
     // more efficient pointer
-    _vkWaitForFences = (PFN_vkWaitForFences) vkGetDeviceProcAddr(_device, "vkWaitForFences");
-    _vkResetFences = (PFN_vkResetFences) vkGetDeviceProcAddr(_device, "vkResetFences");
-    _vkResetCommandPool = (PFN_vkResetCommandPool) vkGetDeviceProcAddr(_device, "vkResetCommandPool");
-    _vkBeginCommandBuffer = (PFN_vkBeginCommandBuffer) vkGetDeviceProcAddr(_device, "vkBeginCommandBuffer");
-    _vkEndCommandBuffer = (PFN_vkEndCommandBuffer) vkGetDeviceProcAddr(_device, "vkEndCommandBuffer");
-    _vkCmdBeginRenderPass = (PFN_vkCmdBeginRenderPass) vkGetDeviceProcAddr(_device, "vkCmdBeginRenderPass");
-    _vkCmdNextSubpass = (PFN_vkCmdNextSubpass) vkGetDeviceProcAddr(_device, "vkCmdNextSubpass");
-    _vkCmdEndRenderPass = (PFN_vkCmdEndRenderPass) vkGetDeviceProcAddr(_device, "vkCmdEndRenderPass");
-    _vkCmdBindPipeline = (PFN_vkCmdBindPipeline) vkGetDeviceProcAddr(_device, "vkCmdBindPipeline");
-    _vkCmdSetViewport = (PFN_vkCmdSetViewport) vkGetDeviceProcAddr(_device, "vkCmdSetViewport");
-    _vkCmdSetScissor = (PFN_vkCmdSetScissor) vkGetDeviceProcAddr(_device, "vkCmdSetScissor");
-    _vkCmdBindVertexBuffers = (PFN_vkCmdBindVertexBuffers) vkGetDeviceProcAddr(_device, "vkCmdBindVertexBuffers");
-    _vkCmdBindIndexBuffer = (PFN_vkCmdBindIndexBuffer) vkGetDeviceProcAddr(_device, "vkCmdBindIndexBuffer");
+    _vkWaitForFences         = (PFN_vkWaitForFences) vkGetDeviceProcAddr(_device, "vkWaitForFences");
+    _vkResetFences           = (PFN_vkResetFences) vkGetDeviceProcAddr(_device, "vkResetFences");
+    _vkResetCommandPool      = (PFN_vkResetCommandPool) vkGetDeviceProcAddr(_device, "vkResetCommandPool");
+    _vkBeginCommandBuffer    = (PFN_vkBeginCommandBuffer) vkGetDeviceProcAddr(_device, "vkBeginCommandBuffer");
+    _vkEndCommandBuffer      = (PFN_vkEndCommandBuffer) vkGetDeviceProcAddr(_device, "vkEndCommandBuffer");
+    _vkCmdBeginRenderPass    = (PFN_vkCmdBeginRenderPass) vkGetDeviceProcAddr(_device, "vkCmdBeginRenderPass");
+    _vkCmdNextSubpass        = (PFN_vkCmdNextSubpass) vkGetDeviceProcAddr(_device, "vkCmdNextSubpass");
+    _vkCmdEndRenderPass      = (PFN_vkCmdEndRenderPass) vkGetDeviceProcAddr(_device, "vkCmdEndRenderPass");
+    _vkCmdBindPipeline       = (PFN_vkCmdBindPipeline) vkGetDeviceProcAddr(_device, "vkCmdBindPipeline");
+    _vkCmdSetViewport        = (PFN_vkCmdSetViewport) vkGetDeviceProcAddr(_device, "vkCmdSetViewport");
+    _vkCmdSetScissor         = (PFN_vkCmdSetScissor) vkGetDeviceProcAddr(_device, "vkCmdSetScissor");
+    _vkCmdBindVertexBuffers  = (PFN_vkCmdBindVertexBuffers) vkGetDeviceProcAddr(_device, "vkCmdBindVertexBuffers");
+    _vkCmdBindIndexBuffer    = (PFN_vkCmdBindIndexBuffer) vkGetDeviceProcAddr(_device, "vkCmdBindIndexBuffer");
     _vkCmdBindDescriptorSets = (PFN_vkCmdBindDescriptorSets) vkGetDeviceProcAddr(_device, "vkCmdBindDescriptorSets");
-    _vkCmdDrawIndexed = (PFN_vkCmdDrawIndexed) vkGetDeviceProcAddr(_device, "vkCmdDrawIndexed");
-    _vkCmdClearAttachments = (PFN_vkCmdClearAttachments) vkGetDeviceProcAddr(_device, "vkCmdClearAttachments");
+    _vkCmdDrawIndexed        = (PFN_vkCmdDrawIndexed) vkGetDeviceProcAddr(_device, "vkCmdDrawIndexed");
+    _vkCmdClearAttachments   = (PFN_vkCmdClearAttachments) vkGetDeviceProcAddr(_device, "vkCmdClearAttachments");
 
     _depth_image_format = findDepthFormat();
 }
@@ -312,9 +320,9 @@ void VulkanContext::createLogicalDevice()
 void VulkanContext::createCommandPool()
 {
     VkCommandPoolCreateInfo command_pool_create_info{};
-    command_pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    command_pool_create_info.pNext = NULL;
-    command_pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    command_pool_create_info.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    command_pool_create_info.pNext            = NULL;
+    command_pool_create_info.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     command_pool_create_info.queueFamilyIndex = _queue_indices.graphicsFamily.value();
 
     // context专用cmdpool
@@ -332,11 +340,12 @@ void VulkanContext::createSwapchain()
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_physical_device, _surface, &swapchain_support_details.capabilities);
     // choose the best or fitting format
     VkSurfaceFormatKHR chosen_surface_format =
-            chooseSwapchainSurfaceFormatFromDetails(swapchain_support_details.formats);
+                               chooseSwapchainSurfaceFormatFromDetails(swapchain_support_details.formats);
     // choose the best or fitting present mode
-    VkPresentModeKHR chosen_presentMode = chooseSwapchainPresentModeFromDetails(swapchain_support_details.presentModes);
+    VkPresentModeKHR   chosen_presentMode    = chooseSwapchainPresentModeFromDetails(
+            swapchain_support_details.presentModes);
     // choose the best or fitting extent
-    VkExtent2D chosen_extent = chooseSwapchainExtentFromDetails(swapchain_support_details.capabilities);
+    VkExtent2D         chosen_extent         = chooseSwapchainExtentFromDetails(swapchain_support_details.capabilities);
 
     uint32_t image_count = swapchain_support_details.capabilities.minImageCount + 1;
     if (swapchain_support_details.capabilities.maxImageCount > 0 &&
@@ -346,32 +355,32 @@ void VulkanContext::createSwapchain()
     }
 
     VkSwapchainCreateInfoKHR createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.sType   = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     createInfo.surface = _surface;
 
-    createInfo.minImageCount = image_count;
-    createInfo.imageFormat = chosen_surface_format.format;
-    createInfo.imageColorSpace = chosen_surface_format.colorSpace;
-    createInfo.imageExtent = chosen_extent;
+    createInfo.minImageCount    = image_count;
+    createInfo.imageFormat      = chosen_surface_format.format;
+    createInfo.imageColorSpace  = chosen_surface_format.colorSpace;
+    createInfo.imageExtent      = chosen_extent;
     createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     uint32_t queueFamilyIndices[] = {_queue_indices.graphicsFamily.value(), _queue_indices.presentFamily.value()};
 
     if (_queue_indices.graphicsFamily != _queue_indices.presentFamily)
     {
-        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
         createInfo.queueFamilyIndexCount = 2;
-        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+        createInfo.pQueueFamilyIndices   = queueFamilyIndices;
     } else
     {
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     }
 
-    createInfo.preTransform = swapchain_support_details.capabilities.currentTransform;
+    createInfo.preTransform   = swapchain_support_details.capabilities.currentTransform;
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    createInfo.presentMode = chosen_presentMode;
-    createInfo.clipped = VK_TRUE;
+    createInfo.presentMode    = chosen_presentMode;
+    createInfo.clipped        = VK_TRUE;
 
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
@@ -379,13 +388,13 @@ void VulkanContext::createSwapchain()
     {
         throw std::runtime_error("vk create swapchain khr");
     }
-    
+
     vkGetSwapchainImagesKHR(_device, _swapchain, &image_count, nullptr);
     _swapchain_images.resize(image_count);
     vkGetSwapchainImagesKHR(_device, _swapchain, &image_count, _swapchain_images.data());
 
     _swapchain_image_format = chosen_surface_format.format;
-    _swapchain_extent = chosen_extent;
+    _swapchain_extent       = chosen_extent;
 }
 
 void VulkanContext::createSwapchainImageViews()
