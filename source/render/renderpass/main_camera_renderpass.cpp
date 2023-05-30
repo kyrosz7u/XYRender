@@ -141,10 +141,7 @@ void MainCameraRenderPass::setupFrameBuffer()
 
         framebuffer_attachments[_main_camera_framebuffer_attachment_color] = (*m_p_render_targets)[i].view;
         framebuffer_attachments[_main_camera_framebuffer_attachment_depth] =
-                m_renderpass_attachments[_main_camera_framebuffer_attachment_color].view;
-
-        framebuffer_attachments.push_back(m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].view);
-
+                m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].view;
 
         VkFramebufferCreateInfo framebuffer_create_info{};
         framebuffer_create_info.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -214,11 +211,11 @@ void MainCameraRenderPass::updateAfterSwapchainRecreate()
             m_renderpass_attachments[i].destroy();
         }
     }
-    vkDestroyRenderPass(g_p_vulkan_context->_device, m_vk_renderpass, nullptr);
     for (int i = 0; i < m_framebuffer_per_rendertarget.size(); ++i)
     {
         vkDestroyFramebuffer(g_p_vulkan_context->_device, m_framebuffer_per_rendertarget[i].framebuffer, nullptr);
     }
+    vkDestroyRenderPass(g_p_vulkan_context->_device, m_vk_renderpass, nullptr);
 
     setupRenderpassAttachments();
     setupRenderPass();

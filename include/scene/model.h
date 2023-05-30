@@ -14,8 +14,8 @@ namespace Scene
     class Model
     {
     public:
-        Model();
-        ~Model();
+        Model() {}
+        ~Model() {}
         bool loadModelFile(const std::string &mesh_path);
         void processModelNode(aiNode *node, const aiScene *scene);
         void processMesh(aiMesh *mesh, const aiScene *scene);

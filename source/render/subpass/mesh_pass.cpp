@@ -20,6 +20,7 @@ void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
 
     setupDescriptorSetLayout();
     setupDescriptorSet();
+    updateDescriptorSet();
     setupPipelines();
 }
 
@@ -32,14 +33,14 @@ void MeshPass::setupDescriptorSetLayout()
     std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
     setLayoutBindings.resize(2);
 
-    VkDescriptorSetLayoutBinding perframe_buffer_binding = setLayoutBindings[0];
+    VkDescriptorSetLayoutBinding& perframe_buffer_binding = setLayoutBindings[0];
 
     perframe_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     perframe_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
     perframe_buffer_binding.binding         = 0;
     perframe_buffer_binding.descriptorCount = 1;
 
-    VkDescriptorSetLayoutBinding perobject_buffer_binding = setLayoutBindings[1];
+    VkDescriptorSetLayoutBinding& perobject_buffer_binding = setLayoutBindings[1];
 
     perobject_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     perobject_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
@@ -48,6 +49,7 @@ void MeshPass::setupDescriptorSetLayout()
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
     descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    descriptorSetLayoutCreateInfo.flags        = 0;
     descriptorSetLayoutCreateInfo.pNext        = nullptr;
     descriptorSetLayoutCreateInfo.bindingCount = setLayoutBindings.size();
     descriptorSetLayoutCreateInfo.pBindings    = setLayoutBindings.data();
@@ -87,7 +89,7 @@ void MeshPass::updateDescriptorSet()
     std::vector<VkWriteDescriptorSet> write_descriptor_sets;
     write_descriptor_sets.resize(2);
 
-    VkWriteDescriptorSet perframe_buffer_write = write_descriptor_sets[0];
+    VkWriteDescriptorSet& perframe_buffer_write = write_descriptor_sets[0];
     perframe_buffer_write.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     perframe_buffer_write.dstSet               = descriptor_set;
     perframe_buffer_write.dstBinding           = 0;
@@ -96,7 +98,7 @@ void MeshPass::updateDescriptorSet()
     perframe_buffer_write.descriptorCount      = 1;
     perframe_buffer_write.pBufferInfo          = &m_p_render_resource_info->p_render_per_frame_ubo->buffer_descriptor;
 
-    VkWriteDescriptorSet perobject_buffer_write = write_descriptor_sets[1];
+    VkWriteDescriptorSet& perobject_buffer_write = write_descriptor_sets[1];
     perobject_buffer_write.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     perobject_buffer_write.dstSet               = descriptor_set;
     perobject_buffer_write.dstBinding           = 1;
@@ -293,6 +295,7 @@ void MeshPass::draw()
     for(uint32_t i=0;i<(*m_p_render_resource_info->p_visible_meshes).size();i++)
     {
         auto mesh = (*m_p_render_resource_info->p_visible_meshes)[i];
+        auto index_num = mesh->m_indices.size();
         VkBuffer vertex_buffers[] = {mesh->mesh_vertex_position_buffer, mesh->mesh_vertex_normal_buffer, mesh->mesh_vertex_texcoord_buffer};
         VkDeviceSize offsets[]        = {0, 0, 0};
         g_p_vulkan_context->_vkCmdBindVertexBuffers(*m_p_render_command_info->p_current_command_buffer,
@@ -314,7 +317,7 @@ void MeshPass::draw()
                                 &m_descriptorset_list[0].descriptor_set,
                                 1,
                                 &dynamicOffset);
-        vkCmdDraw(*m_p_render_command_info->p_current_command_buffer, 3, 1, 0, 0);
+        vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer, index_num, 1, 0, 0, 0);
     }
 
 

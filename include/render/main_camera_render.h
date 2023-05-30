@@ -29,6 +29,12 @@ namespace RenderSystem
 
         void loadSceneMeshes(std::vector<RenderMeshPtr> &visible_meshes);
 
+        void setCameraMatrix()
+        {
+            m_render_per_frame_ubo.per_frame_ubo_list.view_proj = Matrix4x4::IDENTITY;
+            m_render_per_frame_ubo.ToGPU();
+        }
+
     private:
         void setupCommandBuffer();
 
@@ -37,7 +43,6 @@ namespace RenderSystem
         void updateAfterSwapchainRecreate();
 
     private:
-
         VkCommandPool                m_command_pool;
         std::vector<VkCommandBuffer> m_command_buffers;
         VkDescriptorPool             m_descriptor_pool;

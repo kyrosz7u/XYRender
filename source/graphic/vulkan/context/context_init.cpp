@@ -206,7 +206,7 @@ void VulkanContext::pickPhysicalDevice()
 
     std::vector<std::pair<int, std::pair<VkPhysicalDevice, VkPhysicalDeviceProperties>>> ranked_physical_devices;
     // 4.2 choose a suitable physical device
-    for (const auto                                                                      &device: devices)
+    for (const auto &device: devices)
     {
         VkPhysicalDeviceProperties deviceProperties;
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -226,7 +226,8 @@ void VulkanContext::pickPhysicalDevice()
     }
     std::sort(ranked_physical_devices.begin(),
               ranked_physical_devices.end(),
-              [](const std::pair<int, std::pair<VkPhysicalDevice, VkPhysicalDeviceProperties>> &p1, const std::pair<int, std::pair<VkPhysicalDevice, VkPhysicalDeviceProperties>> &p2)
+              [](const std::pair<int, std::pair<VkPhysicalDevice, VkPhysicalDeviceProperties>> &p1,
+                 const std::pair<int, std::pair<VkPhysicalDevice, VkPhysicalDeviceProperties>> &p2)
               {
                   return p1.first > p2.first;
               });
@@ -235,9 +236,9 @@ void VulkanContext::pickPhysicalDevice()
     {
         if (isDeviceSuitable(device.second.first))
         {
-            _physical_device = device.second.first;
+            _physical_device            = device.second.first;
             _physical_device_properties = device.second.second;
-            LOG_INFO("Device: {}\nType: {}",
+            LOG_INFO("Device: {}  Type: {}",
                      _physical_device_properties.deviceName,
                      VulkanUtil::physicalDeviceTypeString(_physical_device_properties.deviceType))
             break;

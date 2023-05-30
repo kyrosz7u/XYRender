@@ -13,6 +13,11 @@ void MainCameraRender::initialize()
     render_command_info.p_viewport = &m_viewport;
     render_command_info.p_scissor  = &m_scissor;
 
+    render_resource_info.p_visible_meshes = &m_visible_meshes;
+    render_resource_info.p_render_model_ubo_list = &m_render_model_ubo_list;
+    render_resource_info.p_render_per_frame_ubo = &m_render_per_frame_ubo;
+
+
     setupRenderTargets();
     setupCommandBuffer();
     setupDescriptorPool();
@@ -159,11 +164,11 @@ void MainCameraRender::draw()
 void MainCameraRender::loadSceneMeshes(std::vector<RenderMeshPtr> &visible_meshes)
 {
     m_visible_meshes = visible_meshes;
+    m_render_model_ubo_list.ubo_data_list.resize(m_visible_meshes.size());
     for(int i=0;i<m_visible_meshes.size();++i)
     {
         m_visible_meshes[i]->m_index_in_dynamic_buffer=i;
-        auto model_matrix_in_buffer = static_cast<VulkanModelDefine*>(m_render_model_ubo_list.mapped_buffer_ptr);
-        model_matrix_in_buffer[i].model = m_visible_meshes[i]->model_matrix;
+        m_render_model_ubo_list.ubo_data_list[i].model = m_visible_meshes[i]->model_matrix;
     }
     m_render_model_ubo_list.ToGPU();
 }
@@ -172,7 +177,7 @@ void MainCameraRender::updateAfterSwapchainRecreate()
 {
     setupRenderTargets();
     setViewport();
-    setupRenderpass();
+    renderPass.updateAfterSwapchainRecreate();
 }
 
 MainCameraRender::~MainCameraRender()
