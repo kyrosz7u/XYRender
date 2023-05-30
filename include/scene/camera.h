@@ -26,11 +26,31 @@ namespace Scene
         {
             render = std::make_shared<MainCameraRender>();
             render->initialize();
-            render->setCameraMatrix();
+            render->setCameraMatrix(getViewMatrix(), getPerspectiveMatrix());
         }
 
         void Tick()
-        { render->Tick(); }
+        {
+
+            render->Tick();
+        }
+
+        Matrix4x4 getViewMatrix()
+        {
+            auto r_inverse = Matrix4x4::getRotation(rotation);
+            r_inverse = r_inverse.transpose();
+            auto t_inverse = Matrix4x4::getTrans(-position);
+
+            return r_inverse * t_inverse;
+        }
+
+        Matrix4x4 getPerspectiveMatrix()
+        {
+            if(mode == orthogonal)
+                return Matrix4x4::makeOrthogonalMatrix(width, height, zNear, zFar, zNear, zFar);
+            else
+                return Matrix4x4::makePerspectiveMatrix(fov, aspect, zNear, zFar);
+        }
 
     public:
         Vector3    position;

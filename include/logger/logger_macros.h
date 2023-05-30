@@ -31,7 +31,7 @@
     }                                                                                                    \
 }
 #else
-#define VK_CHECK_RESULT(f) {}
+#define VK_CHECK_RESULT(f) {f;}
 #endif
 
 #endif //XEXAMPLE_MACROS_H

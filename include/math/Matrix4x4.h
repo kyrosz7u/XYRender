@@ -894,6 +894,32 @@ public:
         return Vector3::ZERO;
     }
 
+    static Matrix4x4 makePerspectiveMatrix(float fovy, float aspect, float znear, float zfar)
+    {
+        float tanHalfFovy = tanf(fovy / 2.0f);
+
+        Matrix4x4 ret = Matrix4x4::ZERO;
+        ret[0][0] = 1.0f / (aspect * tanHalfFovy);
+        ret[1][1] = 1.0f / (tanHalfFovy);
+        ret[2][2] = -(zfar + znear) / (zfar - znear);
+        ret[2][3] = -1.0f;
+        ret[3][2] = -(2.0f * zfar * znear) / (zfar - znear);
+        return ret;
+    }
+
+    static Matrix4x4 makeOrthogonalMatrix(float left, float right, float bottom, float top, float znear, float zfar)
+    {
+        Matrix4x4 ret = Matrix4x4::ZERO;
+        ret[0][0] = 2.0f / (right - left);
+        ret[1][1] = 2.0f / (top - bottom);
+        ret[2][2] = -2.0f / (zfar - znear);
+        ret[3][0] = -(right + left) / (right - left);
+        ret[3][1] = -(top + bottom) / (top - bottom);
+        ret[3][2] = -(zfar + znear) / (zfar - znear);
+        ret[3][3] = 1.0f;
+        return ret;
+    }
+
     static const Matrix4x4 ZERO;
     static const Matrix4x4 ZEROAFFINE;
     static const Matrix4x4 IDENTITY;
