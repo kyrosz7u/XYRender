@@ -1729,8 +1729,8 @@ From GLM core library: `<glm/glm.hpp>`
 [***glFrustum:***](http://www.opengl.org/sdk/docs/man2/xhtml/glFrustum.xml)
 
 ```cpp
-glm::mat4 glm::frustum(float left, float right, float bottom, float top, float zNear, float zFar);
-glm::dmat4 glm::frustum(double left, double right, double bottom, double top, double zNear, double zFar);
+glm::mat4 glm::frustum(float left, float right, float bottom, float top, float znear, float zFar);
+glm::dmat4 glm::frustum(double left, double right, double bottom, double top, double znear, double zFar);
 ```
 
 From `GLM_GTC_matrix_transform` extension: `<glm/gtc/matrix_transform.hpp>`
@@ -1738,8 +1738,8 @@ From `GLM_GTC_matrix_transform` extension: `<glm/gtc/matrix_transform.hpp>`
 [***glOrtho:***](https://www.opengl.org/sdk/docs/man2/xhtml/glOrtho.xml)
 
 ```cpp
-glm::mat4 glm::ortho(float left, float right, float bottom, float top, float zNear, float zFar);
-glm::dmat4 glm::ortho(double left, double right, double bottom, double top, double zNear, double zFar);
+glm::mat4 glm::ortho(float left, float right, float bottom, float top, float znear, float zFar);
+glm::dmat4 glm::ortho(double left, double right, double bottom, double top, double znear, double zFar);
 ```
 
 From `GLM_GTC_matrix_transform` extension: `<glm/gtc/matrix_transform.hpp>`
@@ -1767,8 +1767,8 @@ From `GLM_GTC_matrix_transform` extension: `<glm/gtc/matrix_transform.hpp>`
 [***gluPerspective:***](https://www.opengl.org/sdk/docs/man2/xhtml/gluPerspective.xml)
 
 ```cpp
-glm::mat4 perspective(float fovy, float aspect, float zNear, float zFar);
-glm::dmat4 perspective(double fovy, double aspect, double zNear, double zFar);
+glm::mat4 perspective(float fovy, float aspect, float znear, float zFar);
+glm::dmat4 perspective(double fovy, double aspect, double znear, double zFar);
 ```
 
 Note that in GLM, fovy is expressed in radians, not degrees.

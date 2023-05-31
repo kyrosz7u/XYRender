@@ -32,7 +32,6 @@ namespace RenderSystem
         void setCameraMatrix(Matrix4x4 view, Matrix4x4 proj)
         {
             m_render_per_frame_ubo.per_frame_ubo_list.view_proj = proj*view;
-
             m_render_per_frame_ubo.ToGPU();
         }
 

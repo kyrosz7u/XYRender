@@ -666,6 +666,29 @@ public:
         return r;
     }
 
+    static Matrix4x4 getScale(float x, float y, float z)
+    {
+        Matrix4x4 r;
+        r.m_mat[0][0] = x;
+        r.m_mat[0][1] = 0.0;
+        r.m_mat[0][2] = 0.0;
+        r.m_mat[0][3] = 0.0;
+        r.m_mat[1][0] = 0.0;
+        r.m_mat[1][1] = y;
+        r.m_mat[1][2] = 0.0;
+        r.m_mat[1][3] = 0.0;
+        r.m_mat[2][0] = 0.0;
+        r.m_mat[2][1] = 0.0;
+        r.m_mat[2][2] = z;
+        r.m_mat[2][3] = 0.0;
+        r.m_mat[3][0] = 0.0;
+        r.m_mat[3][1] = 0.0;
+        r.m_mat[3][2] = 0.0;
+        r.m_mat[3][3] = 1.0;
+
+        return r;
+    }
+
     /** Gets a scale matrix - variation for not using a vector.
      */
     static Matrix4x4 buildScaleMatrix(float s_x, float s_y, float s_z)
@@ -894,16 +917,18 @@ public:
         return Vector3::ZERO;
     }
 
+    // 左手系透视投影矩阵，fovy为角度制，aspect为宽高比，znear和zfar为近平面和远平面，映射到[0, 1]
+    // reverse y
     static Matrix4x4 makePerspectiveMatrix(float fovy, float aspect, float znear, float zfar)
     {
-        float tanHalfFovy = tanf(fovy / 2.0f);
+        float tan_half_fovy = tanf(fovy / 360.0f * Math_PI);
 
         Matrix4x4 ret = Matrix4x4::ZERO;
-        ret[0][0] = 1.0f / (aspect * tanHalfFovy);
-        ret[1][1] = 1.0f / (tanHalfFovy);
-        ret[2][2] = -(zfar + znear) / (zfar - znear);
-        ret[2][3] = -1.0f;
-        ret[3][2] = -(2.0f * zfar * znear) / (zfar - znear);
+        ret[0][0] = 1.0f / (aspect * tan_half_fovy);
+        ret[1][1] = -1.0f / (tan_half_fovy);
+        ret[2][2] = zfar / (zfar - znear);
+        ret[2][3] = -(zfar * znear) / (zfar - znear);
+        ret[3][2] = 1.0f;
         return ret;
     }
 

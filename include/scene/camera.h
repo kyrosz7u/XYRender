@@ -26,12 +26,11 @@ namespace Scene
         {
             render = std::make_shared<MainCameraRender>();
             render->initialize();
-            render->setCameraMatrix(getViewMatrix(), getPerspectiveMatrix());
         }
 
         void Tick()
         {
-
+            render->setCameraMatrix(getViewMatrix(), getPerspectiveMatrix());
             render->Tick();
         }
 
@@ -47,9 +46,9 @@ namespace Scene
         Matrix4x4 getPerspectiveMatrix()
         {
             if(mode == orthogonal)
-                return Matrix4x4::makeOrthogonalMatrix(width, height, zNear, zFar, zNear, zFar);
+                return Matrix4x4::makeOrthogonalMatrix(width, height, znear, zfar, znear, zfar);
             else
-                return Matrix4x4::makePerspectiveMatrix(fov, aspect, zNear, zFar);
+                return Matrix4x4::makePerspectiveMatrix(fov, aspect, znear, zfar);
         }
 
     public:
@@ -59,9 +58,9 @@ namespace Scene
         float      width;
         float      height;
         float      aspect;
-        float      fov;
-        float      zNear;
-        float      zFar;
+        float fov ;
+        float znear;
+        float zfar;
 
         std::shared_ptr<MainCameraRender> render;
 //    std::vector<VulkanAPI::RenderBase::ImageAttachment> renderTarget;

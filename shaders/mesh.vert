@@ -2,14 +2,14 @@
 
 #extension GL_GOOGLE_include_directive : enable
 
-layout(set=0,binding = 0) uniform _per_frame_ubo_data
+layout(set=0,binding = 0,row_major) uniform _per_frame_ubo_data
 {
     mat4 viewProj;
     vec3 cameraPos;
     vec3 dirLightDir;
 };
 
-layout(set=0,binding=1) uniform _per_object_ubo_data
+layout(set=0,binding=1,row_major) uniform _per_object_ubo_data
 {
     mat4 model;
 };
@@ -31,5 +31,5 @@ void main()
     tangent = in_tangent;
     texcoord = in_texCoord;
 
-    gl_Position = viewProj * model * vec4(in_position,1.0);
+    gl_Position =  viewProj*model * vec4(in_position,1.0);
 }

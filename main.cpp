@@ -17,12 +17,12 @@ int main() {
 
     Scene::Camera mainCamera;
 
-    mainCamera.aspect= windowCreateInfo.width / windowCreateInfo.height;
-    mainCamera.fov = 90;
-    mainCamera.zNear = 0.1f;
-    mainCamera.zFar = 1000.0f;
+    mainCamera.aspect= (float)windowCreateInfo.width / windowCreateInfo.height;
+    mainCamera.fov   = 90;
+    mainCamera.znear = 0.1f;
+    mainCamera.zfar  = 100.0f;
     mainCamera.mode = Scene::perspective;
-    mainCamera.position = Math::Vector3(0, 0, -10);
+    mainCamera.position = Math::Vector3(0, 10, -20);
     mainCamera.rotation = Math::EulerAngle(0, 0, 0);
 
     Scene::Model model;
