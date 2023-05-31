@@ -26,11 +26,11 @@ void Window::initialize(WindowCreateInfo create_info)
 
     // Setup input callbacks
 //    glfwSetWindowUserPointer(m_window, this);
-//    glfwSetKeyCallback(m_window, keyCallback);
+    glfwSetKeyCallback(m_window, keyCallback);
 //    glfwSetCharCallback(m_window, charCallback);
 //    glfwSetCharModsCallback(m_window, charModsCallback);
-//    glfwSetMouseButtonCallback(m_window, mouseButtonCallback);
-//    glfwSetCursorPosCallback(m_window, cursorPosCallback);
+    glfwSetMouseButtonCallback(m_window, mouseButtonCallback);
+    glfwSetCursorPosCallback(m_window, cursorPosCallback);
 //    glfwSetCursorEnterCallback(m_window, cursorEnterCallback);
 //    glfwSetScrollCallback(m_window, scrollCallback);
 //    glfwSetDropCallback(m_window, dropCallback);

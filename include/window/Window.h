@@ -31,6 +31,10 @@ public:
     bool shouldClose();
     GLFWwindow* getWindowHandler(){return m_window;}
 
+    typedef std::function<void(int, int, int, int)> onKeyFunc;
+    typedef std::function<void(double, double)>     onCursorPosFunc;
+    typedef std::function<void(int)>                onCursorEnterFunc;
+
 private:
     GLFWwindow* m_window {nullptr};
     int         m_width {0};
