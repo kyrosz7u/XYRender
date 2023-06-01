@@ -1,11 +1,3 @@
-if(NOT TARGET glm)
-    option(BUILD_STATIC_LIBS "" ON)
-    option(BUILD_TESTING "" OFF)
-    option(GLM_TEST_ENABLE "" OFF)
-    add_subdirectory(glm)
-    set_target_properties(glm_static PROPERTIES FOLDER /glm)
-endif()
-
 if(NOT TARGET glfw)
     option(GLFW_BUILD_EXAMPLES "" OFF)
     option(GLFW_BUILD_TESTS "" OFF)
@@ -21,6 +13,11 @@ if(NOT TARGET spdlog)
     option(SPDLOG_INSTALL "" OFF)
     add_subdirectory(spdlog)
     set_target_properties(spdlog PROPERTIES FOLDER /spdlog)
+endif()
+
+if(NOT TARGET imgui)
+    add_subdirectory(imgui)
+    set_target_properties(imgui PROPERTIES FOLDER /imgui)
 endif()
 
 #if(NOT TARGET assimp)
