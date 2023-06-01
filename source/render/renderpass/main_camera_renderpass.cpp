@@ -26,7 +26,6 @@ void MainCameraRenderPass::initialize(RenderPassInitInfo *renderpass_init_info)
 
 void MainCameraRenderPass::setupRenderpassAttachments()
 {
-    m_renderpass_attachments.resize(_main_camera_framebuffer_attachment_count);
     assert(m_p_render_targets != nullptr);
     assert(m_p_render_targets->size() > 0);
 
@@ -119,7 +118,7 @@ void MainCameraRenderPass::setupRenderPass()
 
     if (vkCreateRenderPass(
             g_p_vulkan_context->_device, &renderpass_create_info,
-            nullptr, &m_vk_renderpass) != VK_SUCCESS)
+            nullptr, &m_renderpass) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create main camera render pass");
     }
@@ -146,7 +145,7 @@ void MainCameraRenderPass::setupFrameBuffer()
         VkFramebufferCreateInfo framebuffer_create_info{};
         framebuffer_create_info.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebuffer_create_info.flags           = 0U;
-        framebuffer_create_info.renderPass      = m_vk_renderpass;
+        framebuffer_create_info.renderPass      = m_renderpass;
         framebuffer_create_info.attachmentCount = framebuffer_attachments.size();
         framebuffer_create_info.pAttachments    = framebuffer_attachments.data();
         framebuffer_create_info.width           = g_p_vulkan_context->_swapchain_extent.width;
@@ -168,7 +167,7 @@ void MainCameraRenderPass::setupSubpass()
     SubPass::SubPassInitInfo mesh_pass_init_info{};
     mesh_pass_init_info.render_command_info  = m_p_render_command_info;
     mesh_pass_init_info.render_resource_info = m_p_render_resource_info;
-    mesh_pass_init_info.renderpass           = m_vk_renderpass;
+    mesh_pass_init_info.renderpass           = m_renderpass;
     mesh_pass_init_info.subpass_index        = _main_camera_subpass_mesh;
 
     m_subpass_list[_main_camera_subpass_mesh] = std::make_shared<SubPass::MeshPass>();
@@ -187,7 +186,7 @@ void MainCameraRenderPass::draw(int render_target_index)
 
     VkRenderPassBeginInfo renderpass_begin_info{};
     renderpass_begin_info.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderpass_begin_info.renderPass        = m_vk_renderpass;
+    renderpass_begin_info.renderPass        = m_renderpass;
     renderpass_begin_info.framebuffer       = m_framebuffer_per_rendertarget[render_target_index].framebuffer;
     renderpass_begin_info.renderArea.offset = {0, 0};
     renderpass_begin_info.renderArea.extent = g_p_vulkan_context->_swapchain_extent;
@@ -215,7 +214,7 @@ void MainCameraRenderPass::updateAfterSwapchainRecreate()
     {
         vkDestroyFramebuffer(g_p_vulkan_context->_device, m_framebuffer_per_rendertarget[i].framebuffer, nullptr);
     }
-    vkDestroyRenderPass(g_p_vulkan_context->_device, m_vk_renderpass, nullptr);
+    vkDestroyRenderPass(g_p_vulkan_context->_device, m_renderpass, nullptr);
 
     setupRenderpassAttachments();
     setupRenderPass();

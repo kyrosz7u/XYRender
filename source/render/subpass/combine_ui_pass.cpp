@@ -1,30 +1,27 @@
-//
-// Created by kyros on 5/21/23.
-//
+  //
+  // Created by kyrosz7u on 2023/6/1.
+  //
 
-#include "render/subpass/mesh_pass.h"
-#include "render/resource/render_mesh.h"
-#include "logger/logger_macros.h"
+#include "render/subpass/combine_ui_pass.h"
 
-using namespace VulkanAPI;
-using namespace RenderSystem;
 using namespace RenderSystem::SubPass;
 
-void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
+void CombineUIPass::initialize(SubPassInitInfo *subpass_init_info)
 {
-    auto mesh_pass_init_info = static_cast<MeshPassInitInfo *>(subPassInitInfo);
-    m_p_render_command_info  = mesh_pass_init_info->render_command_info;
-    m_p_render_resource_info = mesh_pass_init_info->render_resource_info;
-    subpass_index            = mesh_pass_init_info->subpass_index;
-    renderpass               = mesh_pass_init_info->renderpass;
+    auto combine_ui_pass_init_info   = static_cast<CombineUIPassInitInfo *>(subpass_init_info);
+         m_p_render_command_info     = combine_ui_pass_init_info->render_command_info;
+         m_p_render_resource_info    = combine_ui_pass_init_info->render_resource_info;
+         subpass_index               = combine_ui_pass_init_info->subpass_index;
+         renderpass                  = combine_ui_pass_init_info->renderpass;
+         m_p_input_color_attachment  = combine_ui_pass_init_info->p_input_color_attachment;
+         m_p_uipass_color_attachment = combine_ui_pass_init_info->p_uipass_color_attachment;
 
     setupDescriptorSetLayout();
     setupDescriptorSet();
-    updateDescriptorSet();
     setupPipelines();
 }
 
-void MeshPass::setupDescriptorSetLayout()
+void CombineUIPass::setupDescriptorSetLayout()
 {
     m_descriptorset_list.resize(1);
 
@@ -33,19 +30,19 @@ void MeshPass::setupDescriptorSetLayout()
     std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
     setLayoutBindings.resize(2);
 
-    VkDescriptorSetLayoutBinding& perframe_buffer_binding = setLayoutBindings[0];
+    VkDescriptorSetLayoutBinding& input_color_binding = setLayoutBindings[0];
 
-    perframe_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    perframe_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
-    perframe_buffer_binding.binding         = 0;
-    perframe_buffer_binding.descriptorCount = 1;
+    input_color_binding.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    input_color_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+    input_color_binding.binding         = 0;
+    input_color_binding.descriptorCount = 1;
 
-    VkDescriptorSetLayoutBinding& perobject_buffer_binding = setLayoutBindings[1];
+    VkDescriptorSetLayoutBinding& uipass_output_color_binding = setLayoutBindings[1];
 
-    perobject_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    perobject_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
-    perobject_buffer_binding.binding         = 1;
-    perobject_buffer_binding.descriptorCount = 1;
+    uipass_output_color_binding.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    uipass_output_color_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+    uipass_output_color_binding.binding         = 1;
+    uipass_output_color_binding.descriptorCount = 1;
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
     descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -60,18 +57,18 @@ void MeshPass::setupDescriptorSetLayout()
                                                 &descriptor_set.layout));
 }
 
-void MeshPass::setupDescriptorSet()
+void CombineUIPass::setupDescriptorSet()
 {
     for (int i = 0; i < m_descriptorset_list.size(); ++i)
     {
         VkDescriptorSetAllocateInfo allocInfo{};
 
-        allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool     = *m_p_render_command_info->p_descriptor_pool;
-        // determines the number of descriptor sets to be allocated from the pool.
+        allocInfo.sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = *m_p_render_command_info->p_descriptor_pool;
+          // determines the number of descriptor sets to be allocated from the pool.
         allocInfo.descriptorSetCount = 1;
-        // 每个set的布局
-        allocInfo.pSetLayouts        = &m_descriptorset_list[i].layout;
+          // 每个set的布局
+        allocInfo.pSetLayouts = &m_descriptorset_list[i].layout;
 
         if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
                                      &allocInfo,
@@ -82,30 +79,41 @@ void MeshPass::setupDescriptorSet()
     }
 }
 
-void MeshPass::updateDescriptorSet()
+void CombineUIPass::updateDescriptorSet()
 {
     VkDescriptorSet descriptor_set = m_descriptorset_list[0].descriptor_set;
 
     std::vector<VkWriteDescriptorSet> write_descriptor_sets;
     write_descriptor_sets.resize(2);
 
-    VkWriteDescriptorSet& perframe_buffer_write = write_descriptor_sets[0];
-    perframe_buffer_write.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    perframe_buffer_write.dstSet               = descriptor_set;
-    perframe_buffer_write.dstBinding           = 0;
-    perframe_buffer_write.dstArrayElement      = 0;
-    perframe_buffer_write.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    perframe_buffer_write.descriptorCount      = 1;
-    perframe_buffer_write.pBufferInfo          = &m_p_render_resource_info->p_render_per_frame_ubo->buffer_descriptor;
+    VkDescriptorImageInfo input_image_attachment_info{};
+    input_image_attachment_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    input_image_attachment_info.imageView   = m_p_input_color_attachment->image_view;
+    input_image_attachment_info.sampler     = VulkanUtil::getOrCreateNearestSampler(g_p_vulkan_context->_physical_device,
+                                                                                     g_p_vulkan_context->_device);
+    VkDescriptorImageInfo uipass_image_attachment_info{};
+    uipass_image_attachment_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    uipass_image_attachment_info.imageView   = m_p_uipass_color_attachment->image_view;
+    uipass_image_attachment_info.sampler     = VulkanUtil::getOrCreateNearestSampler(g_p_vulkan_context->_physical_device,
+                                                                                      g_p_vulkan_context->_device);
 
-    VkWriteDescriptorSet& perobject_buffer_write = write_descriptor_sets[1];
-    perobject_buffer_write.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    perobject_buffer_write.dstSet               = descriptor_set;
-    perobject_buffer_write.dstBinding           = 1;
-    perobject_buffer_write.dstArrayElement      = 0;
-    perobject_buffer_write.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    perobject_buffer_write.descriptorCount      = 1;
-    perobject_buffer_write.pBufferInfo          = &m_p_render_resource_info->p_render_model_ubo_list->buffer_descriptor;
+    VkWriteDescriptorSet& input_image_write = write_descriptor_sets[0];
+    input_image_write.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    input_image_write.dstSet               = descriptor_set;
+    input_image_write.dstBinding           = 0;
+    input_image_write.dstArrayElement      = 0;
+    input_image_write.descriptorType       = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    input_image_write.descriptorCount      = 1;
+    input_image_write.pImageInfo           = &input_image_attachment_info;
+
+    VkWriteDescriptorSet& uipass_image_write = write_descriptor_sets[1];
+    uipass_image_write.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    uipass_image_write.dstSet               = descriptor_set;
+    uipass_image_write.dstBinding           = 1;
+    uipass_image_write.dstArrayElement      = 0;
+    uipass_image_write.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    uipass_image_write.descriptorCount      = 1;
+    uipass_image_write.pBufferInfo          = &uipass_image_attachment_info;
 
     vkUpdateDescriptorSets(g_p_vulkan_context->_device,
                            write_descriptor_sets.size(),
@@ -115,7 +123,7 @@ void MeshPass::updateDescriptorSet()
 
 }
 
-void MeshPass::setupPipelines()
+void CombineUIPass::setupPipelines()
 {
     std::vector<VkDescriptorSetLayout> descriptorset_layouts;
 
@@ -163,15 +171,12 @@ void MeshPass::setupPipelines()
         shader_stage_create_infos.push_back(shader_stage_create_info);
     }
 
-    auto vertex_input_binding_description   = VulkanMeshVertex::getVertexInputBindingDescription();
-    auto vertex_input_attribute_description = VulkanMeshVertex::getVertexInputAttributeDescription();
-
     VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info{};
     vertex_input_state_create_info.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_state_create_info.vertexBindingDescriptionCount   = vertex_input_binding_description.size();
-    vertex_input_state_create_info.pVertexBindingDescriptions      = vertex_input_binding_description.data();
-    vertex_input_state_create_info.vertexAttributeDescriptionCount = vertex_input_attribute_description.size();
-    vertex_input_state_create_info.pVertexAttributeDescriptions    = vertex_input_attribute_description.data();
+    vertex_input_state_create_info.vertexBindingDescriptionCount   = 0;
+    vertex_input_state_create_info.pVertexBindingDescriptions      = nullptr;
+    vertex_input_state_create_info.vertexAttributeDescriptionCount = 0;
+    vertex_input_state_create_info.pVertexAttributeDescriptions    = nullptr;
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly_create_info{};
     input_assembly_create_info.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -275,7 +280,7 @@ void MeshPass::setupPipelines()
     }
 }
 
-void MeshPass::draw()
+void CombineUIPass::draw()
 {
     g_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->p_current_command_buffer,
                                            VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
@@ -283,47 +288,22 @@ void MeshPass::draw()
                                           m_p_render_command_info->p_viewport);
     g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->p_current_command_buffer, 0, 1,
                                          m_p_render_command_info->p_scissor);
-    // m_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
-    //                                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
-    //                                                 pipeline_layout,
-    //                                                 0,
-    //                                                 1,
-    //                                                 NULL,
-    //                                                 0,
-    //                                                 NULL);
 
-    for(uint32_t i=0;i<(*m_p_render_resource_info->p_visible_meshes).size();i++)
-    {
-        auto mesh = (*m_p_render_resource_info->p_visible_meshes)[i];
-        auto index_num = mesh->m_indices.size();
-        VkBuffer vertex_buffers[] = {mesh->mesh_vertex_position_buffer, mesh->mesh_vertex_normal_buffer, mesh->mesh_vertex_texcoord_buffer};
-        VkDeviceSize offsets[]        = {0, 0, 0};
-        g_p_vulkan_context->_vkCmdBindVertexBuffers(*m_p_render_command_info->p_current_command_buffer,
-                               0,
-                               sizeof(vertex_buffers) / sizeof(vertex_buffers[0]),
-                               vertex_buffers,
-                               offsets);
-        g_p_vulkan_context->_vkCmdBindIndexBuffer(*m_p_render_command_info->p_current_command_buffer,
-                                                  mesh->mesh_index_buffer,
-                                                  0,
-                                                  VK_INDEX_TYPE_UINT16);
 
-        uint32_t dynamicOffset = mesh->m_index_in_dynamic_buffer * (*m_p_render_resource_info->p_render_model_ubo_list).dynamic_alignment;
-        vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
-                                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipeline_layout,
-                                0,
-                                1,
-                                &m_descriptorset_list[0].descriptor_set,
-                                1,
-                                &dynamicOffset);
-        vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer, index_num, 1, 0, 0, 0);
-    }
+    vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            pipeline_layout,
+                            0,
+                            1,
+                            &m_descriptorset_list[0].descriptor_set,
+                            1,
+                            nullptr);
+    vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer, 3, 1, 0, 0, 0);
+
 }
 
-void MeshPass::updateAfterSwapchainRecreate()
+void CombineUIPass::updateAfterSwapchainRecreate()
 {
-
+    updateDescriptorSets();
 }
-
 

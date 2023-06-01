@@ -35,7 +35,16 @@ namespace RenderSystem
         MainCameraRenderPass()
         {
             m_subpass_list.resize(_main_camera_subpass_count);
+            m_renderpass_attachments.resize(_main_camera_framebuffer_attachment_count);
         }
+        ~MainCameraRenderPass()
+        {
+            for(int i=0; i<m_renderpass_attachments.size(); i++)
+                m_renderpass_attachments[i].destroy();
+            for(int i=0; i<m_framebuffer_per_rendertarget.size(); i++)
+                vkDestroyFramebuffer(g_p_vulkan_context->_device, m_framebuffer_per_rendertarget[i], nullptr);
+        }
+        
         void initialize(RenderPassInitInfo* renderpass_init_info) override;
         void draw(int render_target_index) override;
         void updateAfterSwapchainRecreate() override;
@@ -46,7 +55,6 @@ namespace RenderSystem
         void setupSubpass() override;
 
     private:
-        VkRenderPass m_vk_renderpass;
         std::vector<ImageAttachment> m_renderpass_attachments;
         std::vector<Framebuffer>   m_framebuffer_per_rendertarget;
     };

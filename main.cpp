@@ -1,9 +1,7 @@
-#include <iostream>
 #include "logger/logger_macros.h"
 #include "window/glfw_window.h"
 #include "scene/camera.h"
 #include "scene/model.h"
-#include "render/render_base.h"
 #include "render/resource/render_mesh.h"
 
 int main() {

@@ -5,7 +5,7 @@
 #ifndef VULKANRENDER_VULKAN_SUBPASS_H
 #define VULKANRENDER_VULKAN_SUBPASS_H
 
-#include "vulkan/vulkan.h"
+#include <vulkan/vulkan.h>
 #include "graphic/vulkan/vulkan_context.h"
 #include "graphic/vulkan/vulkan_utils.h"
 #include "render/resource/render_resource.h"
@@ -68,12 +68,12 @@ namespace RenderSystem
 
             virtual void initialize(SubPassInitInfo* subPassInitInfo) = 0;
             virtual void draw() = 0;
-            virtual void updateAfterSwapchainRecreate() = 0;
+            virtual void updateAfterSwapchainRecreate() {}
 
         protected:
-            virtual void setupDescriptorSetLayout() = 0;
-            virtual void setupDescriptorSet() = 0;
-            virtual void setupPipelines() = 0;
+            virtual void setupDescriptorSetLayout() {}
+            virtual void setupDescriptorSet() {}
+            virtual void setupPipelines() {}
 
             RenderCommandInfo* m_p_render_command_info;
             RenderGlobalResourceInfo* m_p_render_resource_info;

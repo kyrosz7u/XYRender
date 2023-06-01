@@ -434,3 +434,4 @@ FodyWeavers.xsd
 /3rdparty/assimp/code/
 /3rdparty/assimp/contrib/
 /3rdparty/assimp/fuzz/
+/shaders/generated/
