@@ -32,7 +32,8 @@ namespace RenderSystem
 
         private: 
             void initialize(SubPassInitInfo *subpass_init_info) override;
-            void UIPass::initializeUIRenderBackend();
+            void initializeUIRenderBackend();
+            void uploadFonts();
         };
     }
 }

@@ -40,8 +40,8 @@ namespace RenderSystem
 
         struct SubPassInitInfo
         {
-            RenderCommandInfo* render_command_info;
-            RenderGlobalResourceInfo* render_resource_info;
+            RenderCommandInfo* p_render_command_info;
+            RenderGlobalResourceInfo* p_render_resource_info;
             uint32_t subpass_index;
             VkRenderPass renderpass;
         };
@@ -78,8 +78,8 @@ namespace RenderSystem
             RenderCommandInfo* m_p_render_command_info;
             RenderGlobalResourceInfo* m_p_render_resource_info;
 
-            VkRenderPass renderpass;
-            uint32_t subpass_index;
+            VkRenderPass m_renderpass;
+            uint32_t     m_subpass_index;
             VkPipelineLayout pipeline_layout;
             VkPipeline              pipeline;
             VkDescriptorSetLayout                   descriptorset_layout;

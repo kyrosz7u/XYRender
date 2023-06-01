@@ -2,66 +2,104 @@
 // Created by kyrosz7u on 2023/6/1.
 //
 
+#include <imgui_impl_vulkan.h>
+#include <imgui_impl_glfw.h>
 #include "render/subpass/ui_pass.h"
+#include "logger/logger_macros.h"
 
+using namespace RenderSystem;
 using namespace RenderSystem::SubPass;
 
 void UIPass::initialize(SubPassInitInfo *subpass_init_info)
 {
-    auto ui_pass_init_info        = static_cast<UIPassInitInfo *>(subpass_init_info);
-         m_p_render_command_info  = ui_pass_init_info->render_command_info;
-         m_p_render_resource_info = ui_pass_init_info->render_resource_info;
-         subpass_index            = ui_pass_init_info->subpass_index;
-         renderpass               = ui_pass_init_info->renderpass;
+    auto ui_pass_init_info = static_cast<UIPassInitInfo *>(subpass_init_info);
+    m_p_render_command_info  = ui_pass_init_info->p_render_command_info;
+    m_p_render_resource_info = ui_pass_init_info->p_render_resource_info;
+    m_subpass_index          = ui_pass_init_info->subpass_index;
+    m_renderpass             = ui_pass_init_info->renderpass;
 
+    initializeUIRenderBackend();
 }
 
 void UIPass::initializeUIRenderBackend()
 {
-    ImGui_ImplGlfw_InitForVulkan(std::static_pointer_cast<VulkanRHI>(m_rhi)->m_window, true);
+    ImGui_ImplGlfw_InitForVulkan(g_p_vulkan_context->_window, true);
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance                  = std::static_pointer_cast<VulkanRHI>(m_rhi)->m_instance;
-    init_info.PhysicalDevice            = std::static_pointer_cast<VulkanRHI>(m_rhi)->m_physical_device;
-    init_info.Device                    = std::static_pointer_cast<VulkanRHI>(m_rhi)->m_device;
-    init_info.QueueFamily               = m_rhi->getQueueFamilyIndices().graphics_family.value();
-    init_info.Queue                     = ((VulkanQueue*)m_rhi->getGraphicsQueue())->getResource();
-    init_info.DescriptorPool            = std::static_pointer_cast<VulkanRHI>(m_rhi)->m_vk_descriptor_pool;
-    init_info.Subpass                   = _main_camera_subpass_ui;
-    
+    init_info.Instance       = g_p_vulkan_context->_instance;
+    init_info.PhysicalDevice = g_p_vulkan_context->_physical_device;
+    init_info.Device         = g_p_vulkan_context->_device;
+    init_info.QueueFamily    = g_p_vulkan_context->_queue_indices.graphicsFamily.value();
+    init_info.Queue          = g_p_vulkan_context->_graphics_queue;
+    init_info.DescriptorPool = *m_p_render_command_info->p_descriptor_pool;
+    init_info.Subpass        = m_subpass_index;
+
     // may be different from the real swapchain image count
     // see ImGui_ImplVulkanH_GetMinImageCountFromPresentMode
     init_info.MinImageCount = 3;
     init_info.ImageCount    = 3;
-    ImGui_ImplVulkan_Init(&init_info, ((VulkanRenderPass*)m_framebuffer.render_pass)->getResource());
+    ImGui_ImplVulkan_Init(&init_info, m_renderpass);
 
     uploadFonts();
 }
 
-void UIPass::draw()
+void UIPass::uploadFonts()
 {
-    g_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->p_current_command_buffer,
-                                           VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    g_p_vulkan_context->_vkCmdSetViewport(*m_p_render_command_info->p_current_command_buffer, 0, 1,
-                                          m_p_render_command_info->p_viewport);
-    g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->p_current_command_buffer, 0, 1,
-                                         m_p_render_command_info->p_scissor);
+    VkCommandBuffer commandBuffer;
 
+    VkCommandBufferAllocateInfo allocInfo = {};
+    allocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool        = g_p_vulkan_context->_command_pool; // 为了提高性能，不使用渲染的command pool
+    allocInfo.commandBufferCount = 1;
 
-    vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
-                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipeline_layout,
-                            0,
-                            1,
-                            &m_descriptorset_list[0].descriptor_set,
-                            1,
-                            nullptr);
-    vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer, 3, 1, 0, 0, 0);
+    VK_CHECK_RESULT(vkAllocateCommandBuffers(g_p_vulkan_context->_device, &allocInfo, &commandBuffer));
 
+    VkCommandBufferBeginInfo command_buffer_begin_info{};
+    command_buffer_begin_info.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    command_buffer_begin_info.flags            = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    command_buffer_begin_info.pInheritanceInfo = nullptr;
+
+    VK_CHECK_RESULT(vkBeginCommandBuffer(commandBuffer, &command_buffer_begin_info))
+    ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+    VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer))
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers    = &commandBuffer;
+
+    VK_CHECK_RESULT(vkQueueSubmit(g_p_vulkan_context->_graphics_queue,
+                                  1,
+                                  &submit_info,
+                                  VK_NULL_HANDLE))
+    VK_CHECK_RESULT(vkQueueWaitIdle(g_p_vulkan_context->_graphics_queue))
+
+    vkFreeCommandBuffers(g_p_vulkan_context->_device,
+                         g_p_vulkan_context->_command_pool,
+                         1,
+                         &commandBuffer);
+
+    ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
-void CombineUIPass::updateAfterSwapchainRecreate()
+void UIPass::draw()
 {
-    updateDescriptorSets();
+    auto current_ui = m_p_render_resource_info->p_ui_overlay.lock();
+    if(current_ui!= nullptr)
+    {
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+        current_ui->drawImGui();
+        ImGui::Render();
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(),
+                                        *m_p_render_command_info->p_current_command_buffer);
+    }
+}
+
+void UIPass::updateAfterSwapchainRecreate()
+{
+
 }
 
 

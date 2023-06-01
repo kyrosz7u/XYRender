@@ -13,10 +13,10 @@ using namespace RenderSystem::SubPass;
 void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
 {
     auto mesh_pass_init_info = static_cast<MeshPassInitInfo *>(subPassInitInfo);
-    m_p_render_command_info  = mesh_pass_init_info->render_command_info;
-    m_p_render_resource_info = mesh_pass_init_info->render_resource_info;
-    subpass_index            = mesh_pass_init_info->subpass_index;
-    renderpass               = mesh_pass_init_info->renderpass;
+    m_p_render_command_info  = mesh_pass_init_info->p_render_command_info;
+    m_p_render_resource_info = mesh_pass_init_info->p_render_resource_info;
+    m_subpass_index = mesh_pass_init_info->subpass_index;
+    m_renderpass    = mesh_pass_init_info->renderpass;
 
     setupDescriptorSetLayout();
     setupDescriptorSet();
@@ -253,8 +253,8 @@ void MeshPass::setupPipelines()
     pipelineInfo.pColorBlendState    = &color_blend_state_create_info;
     pipelineInfo.pDepthStencilState  = &depth_stencil_create_info;
     pipelineInfo.layout              = pipeline_layout;
-    pipelineInfo.renderPass          = renderpass;
-    pipelineInfo.subpass             = subpass_index;
+    pipelineInfo.renderPass          = m_renderpass;
+    pipelineInfo.subpass             = m_subpass_index;
     pipelineInfo.basePipelineHandle  = VK_NULL_HANDLE;
     pipelineInfo.pDynamicState       = &dynamic_state_create_info;
 

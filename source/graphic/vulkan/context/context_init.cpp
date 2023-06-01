@@ -280,7 +280,6 @@ void VulkanContext::createLogicalDevice()
     physical_device_features.geometryShader = VK_TRUE;
 #endif
 
-
     VkDeviceCreateInfo device_create_info{};
     device_create_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     device_create_info.pQueueCreateInfos       = queue_create_infos.data();

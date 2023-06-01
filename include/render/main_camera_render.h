@@ -12,6 +12,13 @@
 
 namespace RenderSystem
 {
+    enum
+    {
+        _main_camera_renderpass = 0,
+        _ui_overlay_renderpass,
+        _renderpass_count
+    };
+
     class MainCameraRender : public RenderBase
     {
     public:
@@ -20,6 +27,8 @@ namespace RenderSystem
         void initialize() override;
 
         void setupRenderTargets();
+
+        void setupBackupBuffer();
 
         void setViewport();
 
@@ -31,8 +40,13 @@ namespace RenderSystem
 
         void setCameraMatrix(Matrix4x4 view, Matrix4x4 proj)
         {
-            m_render_per_frame_ubo.per_frame_ubo_list.view_proj = proj*view;
+            m_render_per_frame_ubo.per_frame_ubo_list.view_proj = proj * view;
             m_render_per_frame_ubo.ToGPU();
+        }
+
+        void setUIOverlay(UIOverlayPtr ui_overlay)
+        {
+            m_render_resource_info.p_ui_overlay = ui_overlay;
         }
 
     private:
@@ -46,8 +60,10 @@ namespace RenderSystem
         VkCommandPool                m_command_pool;
         std::vector<VkCommandBuffer> m_command_buffers;
         VkDescriptorPool             m_descriptor_pool;
-        MainCameraRenderPass         renderPass;
+//        MainCameraRenderPass         renderPass;
+        std::vector<RenderPassPtr>   m_render_passes;
         std::vector<ImageAttachment> m_render_targets;
+        std::vector<ImageAttachment> m_backup_targets;
         std::vector<RenderMeshPtr>   m_visible_meshes;
 
         RenderModelUBOList m_render_model_ubo_list;

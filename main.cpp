@@ -3,6 +3,7 @@
 #include "scene/camera.h"
 #include "scene/model.h"
 #include "render/resource/render_mesh.h"
+#include "ui/ui_overlay.h"
 
 int main() {
     GLFWWindowCreateInfo windowCreateInfo;
@@ -26,6 +27,7 @@ int main() {
     window.registerOnWindowSizeFunc(mainCamera.windowSizeChangedDelegate);
 
     Scene::Model model;
+    UIOverlay uiOverlay;
 
     model.loadModelFile("assets/models/Kong.fbx");
 
@@ -35,6 +37,7 @@ int main() {
     }
 
     mainCamera.render->loadSceneMeshes(model.m_meshes);
+    mainCamera.render->setUIOverlay(std::make_shared<UIOverlay>(uiOverlay));
 
     while(!window.shouldClose())
     {

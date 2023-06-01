@@ -4,6 +4,8 @@
 
 #include "graphic/vulkan/vulkan_utils.h"
 #include "render/renderpass/ui_overlay_renderpass.h"
+#include "render/subpass/ui_pass.h"
+#include "render/subpass/combine_ui_pass.h"
 
 using namespace RenderSystem;
 
@@ -205,7 +207,7 @@ void UIOverlayRenderPass::setupFrameBuffer()
 
         if (vkCreateFramebuffer(
                 g_p_vulkan_context->_device, &framebuffer_create_info, nullptr,
-                &m_framebuffer_per_rendertarget[i].framebuffer) !=
+                &m_framebuffer_per_rendertarget[i]) !=
             VK_SUCCESS)
         {
             throw std::runtime_error("create main camera framebuffer");
@@ -215,12 +217,51 @@ void UIOverlayRenderPass::setupFrameBuffer()
 
 void UIOverlayRenderPass::setupSubpass()
 {
-    
+    m_subpass_list[_ui_overlay_subpass_ui] = std::make_shared<SubPass::UIPass>();
+    m_subpass_list[_ui_overlay_subpass_combine] = std::make_shared<SubPass::CombineUIPass>();
+
+    SubPass::UIPassInitInfo ui_pass_init_info;
+    SubPass::CombineUIPassInitInfo combine_ui_pass_init_info;
+
+    ui_pass_init_info.p_render_command_info = m_p_render_command_info;
+    ui_pass_init_info.p_render_resource_info = m_p_render_resource_info;
+    ui_pass_init_info.renderpass = m_renderpass;
+    ui_pass_init_info.subpass_index = _ui_overlay_subpass_ui;
+
+    combine_ui_pass_init_info.p_render_command_info = m_p_render_command_info;
+    combine_ui_pass_init_info.p_render_resource_info = m_p_render_resource_info;
+    combine_ui_pass_init_info.renderpass = m_renderpass;
+    combine_ui_pass_init_info.subpass_index = _ui_overlay_subpass_combine;
+
+//    m_subpass_list[_ui_overlay_subpass_combine]->setShader()
+    m_subpass_list[_ui_overlay_subpass_ui]->initialize(&ui_pass_init_info);
+    m_subpass_list[_ui_overlay_subpass_combine]->initialize(&combine_ui_pass_init_info);
 }
+
 
 void UIOverlayRenderPass::draw(int render_target_index)
 {
+    VkClearValue clear_values[_ui_overlay_subpass_count] = {};
+    clear_values[_ui_overlay_subpass_ui].color        = {0.0f, 0.0f, 0.0f, 1.0f};
+    clear_values[_ui_overlay_subpass_combine].color = {0.0f, 0.0f, 0.0f, 1.0f};
 
+    VkRenderPassBeginInfo renderpass_begin_info{};
+    renderpass_begin_info.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderpass_begin_info.renderPass        = m_renderpass;
+    renderpass_begin_info.framebuffer       = m_framebuffer_per_rendertarget[render_target_index];
+    renderpass_begin_info.renderArea.offset = {0, 0};
+    renderpass_begin_info.renderArea.extent = g_p_vulkan_context->_swapchain_extent;
+    renderpass_begin_info.clearValueCount   = (sizeof(clear_values) / sizeof(clear_values[0]));
+    renderpass_begin_info.pClearValues      = clear_values;
+
+    vkCmdBeginRenderPass(*m_p_render_command_info->p_current_command_buffer,
+                         &renderpass_begin_info,
+                         VK_SUBPASS_CONTENTS_INLINE);
+
+    m_subpass_list[_ui_overlay_subpass_ui]->draw();
+    m_subpass_list[_ui_overlay_subpass_combine]->draw();
+
+    vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
 }
 
 void UIOverlayRenderPass::updateAfterSwapchainRecreate()

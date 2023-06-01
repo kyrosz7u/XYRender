@@ -1,5 +1,6 @@
 #include <memory>
 #include "graphic/vulkan/vulkan_context.h"
+#include "render/common_define.h"
 #include "render/renderpass/renderpass_base.h"
 #include "render/subpass/subpass_base.h"
 #include "render/resource/render_resource.h"
@@ -8,11 +9,11 @@
 
 #pragma once
 
-using namespace VulkanAPI;
-
 namespace RenderSystem
 {
+    using namespace VulkanAPI;
     extern std::shared_ptr<VulkanContext> g_p_vulkan_context;
+
     class RenderBase
     {
     public:
@@ -34,8 +35,8 @@ namespace RenderSystem
         virtual void Tick() = 0;
 
     protected:
-        RenderGlobalResourceInfo render_resource_info;
-        RenderCommandInfo        render_command_info;
+        RenderGlobalResourceInfo     m_render_resource_info;
+        VulkanAPI::RenderCommandInfo m_render_command_info;
     };
 }
 

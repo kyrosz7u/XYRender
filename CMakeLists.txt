@@ -10,6 +10,7 @@ set(CMAKE_BUILD_TYPE "Debug")
 set(THIRD_PARTY_DIR ${PROJECT_SOURCE_DIR}/3rdparty)
 set(SHADER_COMPILE_TARGET ShaderCompile)
 set(vulkan_include ${THIRD_PARTY_DIR}/VulkanSDK/include)
+set(glfw_include ${THIRD_PARTY_DIR}/glfw/include)
 set(assimp_include ${THIRD_PARTY_DIR}/assimp/include)
 set(imgui_include ${THIRD_PARTY_DIR}/imgui/include)
 

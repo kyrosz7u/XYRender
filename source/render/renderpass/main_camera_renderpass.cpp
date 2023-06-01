@@ -154,7 +154,7 @@ void MainCameraRenderPass::setupFrameBuffer()
 
         if (vkCreateFramebuffer(
                 g_p_vulkan_context->_device, &framebuffer_create_info, nullptr,
-                &m_framebuffer_per_rendertarget[i].framebuffer) !=
+                &m_framebuffer_per_rendertarget[i]) !=
             VK_SUCCESS)
         {
             throw std::runtime_error("create main camera framebuffer");
@@ -165,9 +165,9 @@ void MainCameraRenderPass::setupFrameBuffer()
 void MainCameraRenderPass::setupSubpass()
 {
     SubPass::SubPassInitInfo mesh_pass_init_info{};
-    mesh_pass_init_info.render_command_info  = m_p_render_command_info;
-    mesh_pass_init_info.render_resource_info = m_p_render_resource_info;
-    mesh_pass_init_info.renderpass           = m_renderpass;
+    mesh_pass_init_info.p_render_command_info  = m_p_render_command_info;
+    mesh_pass_init_info.p_render_resource_info = m_p_render_resource_info;
+    mesh_pass_init_info.renderpass             = m_renderpass;
     mesh_pass_init_info.subpass_index        = _main_camera_subpass_mesh;
 
     m_subpass_list[_main_camera_subpass_mesh] = std::make_shared<SubPass::MeshPass>();
@@ -187,7 +187,7 @@ void MainCameraRenderPass::draw(int render_target_index)
     VkRenderPassBeginInfo renderpass_begin_info{};
     renderpass_begin_info.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderpass_begin_info.renderPass        = m_renderpass;
-    renderpass_begin_info.framebuffer       = m_framebuffer_per_rendertarget[render_target_index].framebuffer;
+    renderpass_begin_info.framebuffer       = m_framebuffer_per_rendertarget[render_target_index];
     renderpass_begin_info.renderArea.offset = {0, 0};
     renderpass_begin_info.renderArea.extent = g_p_vulkan_context->_swapchain_extent;
     renderpass_begin_info.clearValueCount   = (sizeof(clear_values) / sizeof(clear_values[0]));
@@ -212,7 +212,7 @@ void MainCameraRenderPass::updateAfterSwapchainRecreate()
     }
     for (int i = 0; i < m_framebuffer_per_rendertarget.size(); ++i)
     {
-        vkDestroyFramebuffer(g_p_vulkan_context->_device, m_framebuffer_per_rendertarget[i].framebuffer, nullptr);
+        vkDestroyFramebuffer(g_p_vulkan_context->_device, m_framebuffer_per_rendertarget[i], nullptr);
     }
     vkDestroyRenderPass(g_p_vulkan_context->_device, m_renderpass, nullptr);
 

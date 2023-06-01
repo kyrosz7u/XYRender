@@ -13,26 +13,7 @@ namespace RenderSystem
 {
     extern std::shared_ptr<VulkanAPI::VulkanContext> g_p_vulkan_context;
 
-    struct VkClearValue;
-    struct RenderCommandInfo;
     struct RenderGlobalResourceInfo;
-    struct ImageAttachment;
-    struct Framebuffer;
-
-    struct RenderPassInitInfo
-    {
-        RenderCommandInfo* render_command_info = nullptr;
-
-        RenderGlobalResourceInfo* render_resource_info;
-
-        std::vector<ImageAttachment>* render_targets = nullptr;
-
-        VkDescriptorPool* descriptor_pool = nullptr;
-
-        std::vector<VkClearValue> clearValues;
-//        std::vector<VkSubpassDependency> subpassDependencies;
-//        std::vector<VkSubpassDescription> subpassDescriptions;
-    };
 
     struct ImageAttachment
     {
@@ -49,5 +30,22 @@ namespace RenderSystem
             vkFreeMemory(g_p_vulkan_context->_device, mem, nullptr);
         }
     };
+
+    struct RenderPassInitInfo
+    {
+        VulkanAPI::RenderCommandInfo* render_command_info = nullptr;
+
+        RenderGlobalResourceInfo* render_resource_info;
+
+        std::vector<ImageAttachment>* render_targets = nullptr;
+
+        VkDescriptorPool* descriptor_pool = nullptr;
+
+        std::vector<VkClearValue> clearValues;
+//        std::vector<VkSubpassDependency> subpassDependencies;
+//        std::vector<VkSubpassDescription> subpassDescriptions;
+    };
+
+
 }
 #endif //XEXAMPLE_COMMON_DEFINE_H

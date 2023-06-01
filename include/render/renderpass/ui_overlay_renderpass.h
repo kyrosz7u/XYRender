@@ -31,6 +31,7 @@ namespace RenderSystem
             _ui_overlay_framebuffer_attachment_out_color,
             _ui_overlay_framebuffer_attachment_count
         };
+
         UIOverlayRenderPass()
         {
             m_subpass_list.resize(_ui_overlay_subpass_count);
@@ -47,7 +48,7 @@ namespace RenderSystem
 
     private:
         std::vector<ImageAttachment> m_renderpass_attachments;
-        std::vector<Framebuffer>   m_framebuffer_per_rendertarget;
+        std::vector<VkFramebuffer>   m_framebuffer_per_rendertarget;
         ImageAttachment* m_p_in_color_attachment = nullptr;
     };
 }

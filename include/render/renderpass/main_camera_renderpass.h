@@ -42,7 +42,7 @@ namespace RenderSystem
             for(int i=0; i<m_renderpass_attachments.size(); i++)
                 m_renderpass_attachments[i].destroy();
             for(int i=0; i<m_framebuffer_per_rendertarget.size(); i++)
-                vkDestroyFramebuffer(g_p_vulkan_context->_device, m_framebuffer_per_rendertarget[i], nullptr);
+                vkDestroyFramebuffer(g_p_vulkan_context->_device,m_framebuffer_per_rendertarget[i], nullptr);
         }
         
         void initialize(RenderPassInitInfo* renderpass_init_info) override;
@@ -56,7 +56,7 @@ namespace RenderSystem
 
     private:
         std::vector<ImageAttachment> m_renderpass_attachments;
-        std::vector<Framebuffer>   m_framebuffer_per_rendertarget;
+        std::vector<VkFramebuffer>   m_framebuffer_per_rendertarget;
     };
 }
 

@@ -10,6 +10,9 @@
 
 namespace RenderSystem
 {
+    using namespace VulkanAPI;
+    class RenderPassBase;
+    typedef std::shared_ptr<RenderPassBase> RenderPassPtr;
     class RenderPassBase
     {
     public:

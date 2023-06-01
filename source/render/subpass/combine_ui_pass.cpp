@@ -1,20 +1,21 @@
-  //
-  // Created by kyrosz7u on 2023/6/1.
-  //
+//
+// Created by kyrosz7u on 2023/6/1.
+//
 
 #include "render/subpass/combine_ui_pass.h"
+#include "logger/logger_macros.h"
 
 using namespace RenderSystem::SubPass;
 
 void CombineUIPass::initialize(SubPassInitInfo *subpass_init_info)
 {
-    auto combine_ui_pass_init_info   = static_cast<CombineUIPassInitInfo *>(subpass_init_info);
-         m_p_render_command_info     = combine_ui_pass_init_info->render_command_info;
-         m_p_render_resource_info    = combine_ui_pass_init_info->render_resource_info;
-         subpass_index               = combine_ui_pass_init_info->subpass_index;
-         renderpass                  = combine_ui_pass_init_info->renderpass;
-         m_p_input_color_attachment  = combine_ui_pass_init_info->p_input_color_attachment;
-         m_p_uipass_color_attachment = combine_ui_pass_init_info->p_uipass_color_attachment;
+    auto combine_ui_pass_init_info = static_cast<CombineUIPassInitInfo *>(subpass_init_info);
+    m_p_render_command_info     = combine_ui_pass_init_info->p_render_command_info;
+    m_p_render_resource_info    = combine_ui_pass_init_info->p_render_resource_info;
+    m_subpass_index             = combine_ui_pass_init_info->subpass_index;
+    m_renderpass                = combine_ui_pass_init_info->renderpass;
+    m_p_input_color_attachment  = combine_ui_pass_init_info->p_input_color_attachment;
+    m_p_uipass_color_attachment = combine_ui_pass_init_info->p_uipass_color_attachment;
 
     setupDescriptorSetLayout();
     setupDescriptorSet();
@@ -30,14 +31,14 @@ void CombineUIPass::setupDescriptorSetLayout()
     std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
     setLayoutBindings.resize(2);
 
-    VkDescriptorSetLayoutBinding& input_color_binding = setLayoutBindings[0];
+    VkDescriptorSetLayoutBinding &input_color_binding = setLayoutBindings[0];
 
     input_color_binding.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
     input_color_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
     input_color_binding.binding         = 0;
     input_color_binding.descriptorCount = 1;
 
-    VkDescriptorSetLayoutBinding& uipass_output_color_binding = setLayoutBindings[1];
+    VkDescriptorSetLayoutBinding &uipass_output_color_binding = setLayoutBindings[1];
 
     uipass_output_color_binding.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
     uipass_output_color_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -63,12 +64,12 @@ void CombineUIPass::setupDescriptorSet()
     {
         VkDescriptorSetAllocateInfo allocInfo{};
 
-        allocInfo.sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = *m_p_render_command_info->p_descriptor_pool;
-          // determines the number of descriptor sets to be allocated from the pool.
+        allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool     = *m_p_render_command_info->p_descriptor_pool;
+        // determines the number of descriptor sets to be allocated from the pool.
         allocInfo.descriptorSetCount = 1;
-          // 每个set的布局
-        allocInfo.pSetLayouts = &m_descriptorset_list[i].layout;
+        // 每个set的布局
+        allocInfo.pSetLayouts        = &m_descriptorset_list[i].layout;
 
         if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
                                      &allocInfo,
@@ -79,7 +80,7 @@ void CombineUIPass::setupDescriptorSet()
     }
 }
 
-void CombineUIPass::updateDescriptorSet()
+void CombineUIPass::updateDescriptorSets()
 {
     VkDescriptorSet descriptor_set = m_descriptorset_list[0].descriptor_set;
 
@@ -88,32 +89,35 @@ void CombineUIPass::updateDescriptorSet()
 
     VkDescriptorImageInfo input_image_attachment_info{};
     input_image_attachment_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    input_image_attachment_info.imageView   = m_p_input_color_attachment->image_view;
-    input_image_attachment_info.sampler     = VulkanUtil::getOrCreateNearestSampler(g_p_vulkan_context->_physical_device,
-                                                                                     g_p_vulkan_context->_device);
+    input_image_attachment_info.imageView   = m_p_input_color_attachment->view;
+    input_image_attachment_info.sampler     = VulkanUtil::getOrCreateNearestSampler(
+            g_p_vulkan_context->_physical_device,
+            g_p_vulkan_context->_device);
+
     VkDescriptorImageInfo uipass_image_attachment_info{};
     uipass_image_attachment_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    uipass_image_attachment_info.imageView   = m_p_uipass_color_attachment->image_view;
-    uipass_image_attachment_info.sampler     = VulkanUtil::getOrCreateNearestSampler(g_p_vulkan_context->_physical_device,
-                                                                                      g_p_vulkan_context->_device);
+    uipass_image_attachment_info.imageView   = m_p_uipass_color_attachment->view;
+    uipass_image_attachment_info.sampler     = VulkanUtil::getOrCreateNearestSampler(
+            g_p_vulkan_context->_physical_device,
+            g_p_vulkan_context->_device);
 
-    VkWriteDescriptorSet& input_image_write = write_descriptor_sets[0];
-    input_image_write.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    input_image_write.dstSet               = descriptor_set;
-    input_image_write.dstBinding           = 0;
-    input_image_write.dstArrayElement      = 0;
-    input_image_write.descriptorType       = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    input_image_write.descriptorCount      = 1;
-    input_image_write.pImageInfo           = &input_image_attachment_info;
+    VkWriteDescriptorSet &input_image_write = write_descriptor_sets[0];
+    input_image_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    input_image_write.dstSet          = descriptor_set;
+    input_image_write.dstBinding      = 0;
+    input_image_write.dstArrayElement = 0;
+    input_image_write.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    input_image_write.descriptorCount = 1;
+    input_image_write.pImageInfo      = &input_image_attachment_info;
 
-    VkWriteDescriptorSet& uipass_image_write = write_descriptor_sets[1];
-    uipass_image_write.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    uipass_image_write.dstSet               = descriptor_set;
-    uipass_image_write.dstBinding           = 1;
-    uipass_image_write.dstArrayElement      = 0;
-    uipass_image_write.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    uipass_image_write.descriptorCount      = 1;
-    uipass_image_write.pBufferInfo          = &uipass_image_attachment_info;
+    VkWriteDescriptorSet &uipass_image_write = write_descriptor_sets[1];
+    uipass_image_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    uipass_image_write.dstSet          = descriptor_set;
+    uipass_image_write.dstBinding      = 1;
+    uipass_image_write.dstArrayElement = 0;
+    uipass_image_write.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    uipass_image_write.descriptorCount = 1;
+    uipass_image_write.pImageInfo     = &uipass_image_attachment_info;
 
     vkUpdateDescriptorSets(g_p_vulkan_context->_device,
                            write_descriptor_sets.size(),
@@ -258,8 +262,8 @@ void CombineUIPass::setupPipelines()
     pipelineInfo.pColorBlendState    = &color_blend_state_create_info;
     pipelineInfo.pDepthStencilState  = &depth_stencil_create_info;
     pipelineInfo.layout              = pipeline_layout;
-    pipelineInfo.renderPass          = renderpass;
-    pipelineInfo.subpass             = subpass_index;
+    pipelineInfo.renderPass          = m_renderpass;
+    pipelineInfo.subpass             = m_subpass_index;
     pipelineInfo.basePipelineHandle  = VK_NULL_HANDLE;
     pipelineInfo.pDynamicState       = &dynamic_state_create_info;
 

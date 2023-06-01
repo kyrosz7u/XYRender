@@ -3,21 +3,24 @@
 //
 
 #include "render/main_camera_render.h"
+#include "render/renderpass/main_camera_renderpass.h"
+#include "render/renderpass/ui_overlay_renderpass.h"
 #include "logger/logger_macros.h"
 
 using namespace RenderSystem;
 
 void MainCameraRender::initialize()
 {
-    render_command_info.p_descriptor_pool= &m_descriptor_pool;
-    render_command_info.p_viewport = &m_viewport;
-    render_command_info.p_scissor  = &m_scissor;
+    m_render_command_info.p_descriptor_pool = &m_descriptor_pool;
+    m_render_command_info.p_viewport = &m_viewport;
+    m_render_command_info.p_scissor  = &m_scissor;
 
-    render_resource_info.p_visible_meshes = &m_visible_meshes;
-    render_resource_info.p_render_model_ubo_list = &m_render_model_ubo_list;
-    render_resource_info.p_render_per_frame_ubo = &m_render_per_frame_ubo;
+    m_render_resource_info.p_visible_meshes        = &m_visible_meshes;
+    m_render_resource_info.p_render_model_ubo_list = &m_render_model_ubo_list;
+    m_render_resource_info.p_render_per_frame_ubo  = &m_render_per_frame_ubo;
 
-
+    m_backup_targets.resize(1);
+    setupBackupBuffer();
     setupRenderTargets();
     setupCommandBuffer();
     setupDescriptorPool();
@@ -62,13 +65,12 @@ void MainCameraRender::setupCommandBuffer()
     command_buffer_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     command_buffer_allocate_info.commandBufferCount = 1U;
+    command_buffer_allocate_info.commandPool = m_command_pool;
 
     int renderTarget_nums = g_p_vulkan_context->_swapchain_images.size();
     m_command_buffers.resize(renderTarget_nums);
     for (uint32_t i = 0; i < renderTarget_nums; ++i)
     {
-        command_buffer_allocate_info.commandPool = m_command_pool;
-
         if (vkAllocateCommandBuffers(g_p_vulkan_context->_device, &command_buffer_allocate_info,
                                      &m_command_buffers[i]) !=
             VK_SUCCESS)
@@ -98,6 +100,37 @@ void MainCameraRender::setupDescriptorPool()
                                            &m_descriptor_pool))
 }
 
+void MainCameraRender::setupBackupBuffer()
+{
+    m_backup_targets[0] = ImageAttachment{
+            VK_NULL_HANDLE,
+            VK_NULL_HANDLE,
+            VK_NULL_HANDLE,
+            VK_FORMAT_R8G8B8A8_UNORM,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+
+    VulkanUtil::createImage(g_p_vulkan_context,
+                            g_p_vulkan_context->_swapchain_extent.width,
+                            g_p_vulkan_context->_swapchain_extent.height,
+                            m_backup_targets[0].format,
+                            VK_IMAGE_TILING_OPTIMAL,
+                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                            m_backup_targets[0].image,
+                            m_backup_targets[0].mem,
+                            0,
+                            1,
+                            1);
+
+    VulkanUtil::createImageView(g_p_vulkan_context,
+                                m_backup_targets[0].image,
+                                m_backup_targets[0].format,
+                                VK_IMAGE_ASPECT_COLOR_BIT,
+                                VK_IMAGE_VIEW_TYPE_2D,
+                                1,
+                                1);
+}
+
 void MainCameraRender::setViewport()
 {
     uint32_t width = g_p_vulkan_context->_swapchain_extent.width;
@@ -110,15 +143,26 @@ void MainCameraRender::setViewport()
 
 void MainCameraRender::setupRenderpass()
 {
-    MainCameraRenderPassInitInfo maincamera_renderpass_init_info;
+    m_render_passes.resize(_renderpass_count);
 
-    maincamera_renderpass_init_info.render_command_info = &render_command_info;
-    maincamera_renderpass_init_info.render_resource_info = &render_resource_info;
-    maincamera_renderpass_init_info.render_targets = &m_render_targets;
+    m_render_passes[_main_camera_renderpass] = std::make_shared<MainCameraRenderPass>();
+    m_render_passes[_ui_overlay_renderpass] = std::make_shared<UIOverlayRenderPass>();
+
+    MainCameraRenderPassInitInfo maincamera_renderpass_init_info;
+    maincamera_renderpass_init_info.render_command_info = &m_render_command_info;
+    maincamera_renderpass_init_info.render_resource_info = &m_render_resource_info;
+    maincamera_renderpass_init_info.render_targets = &m_backup_targets;
     maincamera_renderpass_init_info.descriptor_pool = &m_descriptor_pool;
 
+    UIOverlayRenderPassInitInfo ui_overlay_renderpass_init_info;
+    ui_overlay_renderpass_init_info.render_command_info = &m_render_command_info;
+    ui_overlay_renderpass_init_info.render_resource_info = &m_render_resource_info;
+    ui_overlay_renderpass_init_info.render_targets = &m_render_targets;
+    ui_overlay_renderpass_init_info.descriptor_pool = &m_descriptor_pool;
+    ui_overlay_renderpass_init_info.in_color_attachment = &m_backup_targets[0];
 
-    renderPass.initialize(&maincamera_renderpass_init_info);
+    m_render_passes[_main_camera_renderpass]->initialize(&maincamera_renderpass_init_info);
+    m_render_passes[_ui_overlay_renderpass]->initialize(&ui_overlay_renderpass_init_info);
 }
 
 void MainCameraRender::Tick()
@@ -148,9 +192,10 @@ void MainCameraRender::draw()
     assert(VK_SUCCESS == res_begin_command_buffer);
 
     // record command buffer
-    render_command_info.p_current_command_buffer = &m_command_buffers[next_image_index];
+    m_render_command_info.p_current_command_buffer = &m_command_buffers[next_image_index];
 
-    renderPass.draw(next_image_index);
+    m_render_passes[_main_camera_renderpass]->draw(0);
+    m_render_passes[_ui_overlay_renderpass]->draw(next_image_index);
 
     // end command buffer
     VkResult res_end_command_buffer = g_p_vulkan_context->_vkEndCommandBuffer(m_command_buffers[next_image_index]);
@@ -175,9 +220,18 @@ void MainCameraRender::loadSceneMeshes(std::vector<RenderMeshPtr> &visible_meshe
 
 void MainCameraRender::updateAfterSwapchainRecreate()
 {
+    vkDestroyImage(g_p_vulkan_context->_device, m_render_targets[0].image, nullptr);
+    vkDestroyImageView(g_p_vulkan_context->_device, m_render_targets[0].view, nullptr);
+    vkFreeMemory(g_p_vulkan_context->_device, m_render_targets[0].mem, nullptr);
+
+    setupBackupBuffer();
     setupRenderTargets();
     setViewport();
-    renderPass.updateAfterSwapchainRecreate();
+//    renderPass.updateAfterSwapchainRecreate();
+    for (int i = 0; i < m_render_passes.size(); ++i)
+    {
+        m_render_passes[i]->updateAfterSwapchainRecreate();
+    }
 }
 
 MainCameraRender::~MainCameraRender()

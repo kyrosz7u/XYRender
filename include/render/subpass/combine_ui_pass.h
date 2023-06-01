@@ -29,7 +29,7 @@ namespace RenderSystem
             }
 
             void draw() override;
-            void updateDescriptorSet();
+            void updateDescriptorSets();
             void updateAfterSwapchainRecreate() override;
 
         private: 
