@@ -45,10 +45,17 @@ namespace Scene
 
         Matrix4x4 getPerspectiveMatrix()
         {
-            if(mode == orthogonal)
+            if (mode == orthogonal)
                 return Matrix4x4::makeOrthogonalMatrix(width, height, znear, zfar, znear, zfar);
             else
                 return Matrix4x4::makePerspectiveMatrix(fov, aspect, znear, zfar);
+        }
+
+        void windowSizeChangedHandler(int width, int height)
+        {
+            this->width  = width;
+            this->height = height;
+            aspect = (float) width / height;
         }
 
     public:
@@ -58,11 +65,15 @@ namespace Scene
         float      width;
         float      height;
         float      aspect;
-        float fov ;
-        float znear;
-        float zfar;
+        float      fov;
+        float      znear;
+        float      zfar;
 
         std::shared_ptr<MainCameraRender> render;
+        std::function<void(int, int)>     windowSizeChangedDelegate = std::bind(
+                &Camera::windowSizeChangedHandler, this,
+                std::placeholders::_1,
+                std::placeholders::_2);
 //    std::vector<VulkanAPI::RenderBase::ImageAttachment> renderTarget;
     };
 }

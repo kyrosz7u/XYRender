@@ -1,15 +1,15 @@
 #include <iostream>
 #include "logger/logger_macros.h"
-#include "window/Window.h"
+#include "window/glfw_window.h"
 #include "scene/camera.h"
 #include "scene/model.h"
 #include "render/render_base.h"
 #include "render/resource/render_mesh.h"
 
 int main() {
-    WindowCreateInfo windowCreateInfo;
+    GLFWWindowCreateInfo windowCreateInfo;
 
-    Window window;
+    GLFWWindow window;
 
     window.initialize(windowCreateInfo);
 
@@ -24,6 +24,8 @@ int main() {
     mainCamera.mode = Scene::perspective;
     mainCamera.position = Math::Vector3(0, 10, -20);
     mainCamera.rotation = Math::EulerAngle(0, 0, 0);
+
+    window.registerOnWindowSizeFunc(mainCamera.windowSizeChangedDelegate);
 
     Scene::Model model;
 
