@@ -28,6 +28,8 @@ if(APPLE)
 elseif(WIN32)
     set(vulkan_lib ${THIRD_PARTY_DIR}/VulkanSDK/lib/Win32/vulkan-1.lib)
     set(assimp_lib ${THIRD_PARTY_DIR}/assimp/lib/Win32/assimp-vc142-mt.lib)
+    set(assimp_dll ${THIRD_PARTY_DIR}/assimp/dll/assimp-vc142-mt.dll)
+    set(assimp_runtime_dll ${CMAKE_CURRENT_BINARY_DIR}/assimp-vc142-mt.dll)
     set(glslangValidator_executable ${THIRD_PARTY_DIR}/VulkanSDK/bin/Win32/glslangValidator.exe)
     set(GLFW_PLATFORM "WIN32")
     add_compile_definitions("VK_LAYER_PATH=${THIRD_PARTY_DIR}/VulkanSDK/bin/Win32")
@@ -63,11 +65,18 @@ endforeach()
 #message(${RENDER_INCLUDES})
 
 include_directories(include)
-add_executable(XExample main.cpp)
+add_executable(${TARGET_NAME} main.cpp)
 add_dependencies(${RENDER_TARGET_NAME} ${SHADER_COMPILE_TARGET})
-
-#target_include_directories(${TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${RENDER_INCLUDES}>)
-
 target_link_libraries(${TARGET_NAME} PUBLIC ${RENDER_TARGET_NAME})
 
+# 拷贝assimp dll到输出目录
+if(WIN32)
+    add_custom_command(
+            TARGET ${TARGET_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${assimp_dll} ${assimp_runtime_dll}
+            COMMENT "Copying assimp-vc142-mt.dll to output directory"
+    )
+    add_custom_target(copy_assimp_dll ALL DEPENDS ${DLL_TARGET})
+endif()
 

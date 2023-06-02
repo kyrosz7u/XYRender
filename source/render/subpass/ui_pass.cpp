@@ -85,7 +85,8 @@ void UIPass::uploadFonts()
 void UIPass::draw()
 {
     auto current_ui = m_p_render_resource_info->p_ui_overlay.lock();
-    if(current_ui!= nullptr)
+
+    if(current_ui!= nullptr && current_ui->isInitialized())
     {
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();

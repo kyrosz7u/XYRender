@@ -6,6 +6,8 @@
 #include "render/renderpass/ui_overlay_renderpass.h"
 #include "render/subpass/ui_pass.h"
 #include "render/subpass/combine_ui_pass.h"
+#include "full_screen_vert.h"
+#include "combine_ui_frag.h"
 
 using namespace RenderSystem;
 
@@ -36,6 +38,7 @@ void UIOverlayRenderPass::setupRenderpassAttachments()
     m_renderpass_attachments[_ui_overlay_framebuffer_attachment_out_color].layout = (*m_p_render_targets)[0].layout;
 
     m_renderpass_attachments[_ui_overlay_framebuffer_attachment_backup_color].format = VK_FORMAT_R8G8B8A8_UNORM;
+    m_renderpass_attachments[_ui_overlay_framebuffer_attachment_backup_color].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VulkanUtil::createImage(g_p_vulkan_context,
                             g_p_vulkan_context->_swapchain_extent.width,
@@ -73,7 +76,7 @@ void UIOverlayRenderPass::setupRenderPass()
     input_image_attachment_description.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     input_image_attachment_description.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     input_image_attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    input_image_attachment_description.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+    input_image_attachment_description.initialLayout  = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     input_image_attachment_description.finalLayout    = m_renderpass_attachments[_ui_overlay_framebuffer_attachment_in_color].layout;
 
     VkAttachmentDescription &backup_image_attachment_description = attachments[_ui_overlay_framebuffer_attachment_backup_color];
@@ -157,7 +160,6 @@ void UIOverlayRenderPass::setupRenderPass()
     combine_pass_depend_on_ui_pass.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     combine_pass_depend_on_ui_pass.dependencyFlags = 0; // NOT BY REGION
 
-    
     VkRenderPassCreateInfo renderpass_create_info{};
     renderpass_create_info.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderpass_create_info.attachmentCount = (sizeof(attachments) / sizeof(attachments[0]));
@@ -193,7 +195,7 @@ void UIOverlayRenderPass::setupFrameBuffer()
         framebuffer_attachments[_ui_overlay_framebuffer_attachment_in_color] = (*m_p_in_color_attachment).view;
         framebuffer_attachments[_ui_overlay_framebuffer_attachment_backup_color] = 
             m_renderpass_attachments[_ui_overlay_framebuffer_attachment_backup_color].view;
-        framebuffer_attachments[_ui_overlay_framebuffer_attachment_out_color] = (*m_p_render_targets)[0].view;
+        framebuffer_attachments[_ui_overlay_framebuffer_attachment_out_color] = (*m_p_render_targets)[i].view;
 
         VkFramebufferCreateInfo framebuffer_create_info{};
         framebuffer_create_info.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -232,8 +234,11 @@ void UIOverlayRenderPass::setupSubpass()
     combine_ui_pass_init_info.p_render_resource_info = m_p_render_resource_info;
     combine_ui_pass_init_info.renderpass = m_renderpass;
     combine_ui_pass_init_info.subpass_index = _ui_overlay_subpass_combine;
+    combine_ui_pass_init_info.p_input_color_attachment = m_p_in_color_attachment;
+    combine_ui_pass_init_info.p_uipass_color_attachment = &m_renderpass_attachments[_ui_overlay_framebuffer_attachment_backup_color];
 
-//    m_subpass_list[_ui_overlay_subpass_combine]->setShader()
+    m_subpass_list[_ui_overlay_subpass_combine]->setShader(SubPass::VERTEX_SHADER, FULL_SCREEN_VERT);
+    m_subpass_list[_ui_overlay_subpass_combine]->setShader(SubPass::FRAGMENT_SHADER, COMBINE_UI_FRAG);
     m_subpass_list[_ui_overlay_subpass_ui]->initialize(&ui_pass_init_info);
     m_subpass_list[_ui_overlay_subpass_combine]->initialize(&combine_ui_pass_init_info);
 }
@@ -241,9 +246,10 @@ void UIOverlayRenderPass::setupSubpass()
 
 void UIOverlayRenderPass::draw(int render_target_index)
 {
-    VkClearValue clear_values[_ui_overlay_subpass_count] = {};
-    clear_values[_ui_overlay_subpass_ui].color        = {0.0f, 0.0f, 0.0f, 1.0f};
-    clear_values[_ui_overlay_subpass_combine].color = {0.0f, 0.0f, 0.0f, 1.0f};
+    VkClearValue clear_values[_ui_overlay_framebuffer_attachment_count] = {};
+    clear_values[_ui_overlay_framebuffer_attachment_in_color].color        = {0.0f, 0.0f, 0.0f, 1.0f};
+    clear_values[_ui_overlay_framebuffer_attachment_backup_color].color = {0.0f, 0.0f, 0.0f, 0.0f};
+    clear_values[_ui_overlay_framebuffer_attachment_out_color].color = {0.0f, 0.0f, 0.0f, 1.0f};
 
     VkRenderPassBeginInfo renderpass_begin_info{};
     renderpass_begin_info.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -259,6 +265,7 @@ void UIOverlayRenderPass::draw(int render_target_index)
                          VK_SUBPASS_CONTENTS_INLINE);
 
     m_subpass_list[_ui_overlay_subpass_ui]->draw();
+    g_p_vulkan_context->_vkCmdNextSubpass(*m_p_render_command_info->p_current_command_buffer, VK_SUBPASS_CONTENTS_INLINE);
     m_subpass_list[_ui_overlay_subpass_combine]->draw();
 
     vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
@@ -266,7 +273,24 @@ void UIOverlayRenderPass::draw(int render_target_index)
 
 void UIOverlayRenderPass::updateAfterSwapchainRecreate()
 {
+    vkDestroyImage(g_p_vulkan_context->_device, m_renderpass_attachments[_ui_overlay_framebuffer_attachment_backup_color].image, nullptr);
+    vkDestroyImageView(g_p_vulkan_context->_device, m_renderpass_attachments[_ui_overlay_framebuffer_attachment_backup_color].view, nullptr);
+    vkFreeMemory(g_p_vulkan_context->_device, m_renderpass_attachments[_ui_overlay_framebuffer_attachment_backup_color].mem, nullptr);
+    vkDestroyRenderPass(g_p_vulkan_context->_device, m_renderpass, nullptr);
 
+    for (auto& framebuffer : m_framebuffer_per_rendertarget)
+    {
+        vkDestroyFramebuffer(g_p_vulkan_context->_device, framebuffer, nullptr);
+    }
+
+    setupRenderpassAttachments();
+    setupRenderPass();
+    setupFrameBuffer();
+
+    for(int i=0;i<m_subpass_list.size();++i)
+    {
+        m_subpass_list[i]->updateAfterSwapchainRecreate();
+    }
 }
 
 

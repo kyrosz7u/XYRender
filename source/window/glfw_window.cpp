@@ -34,6 +34,7 @@ void GLFWWindow::initialize(GLFWWindowCreateInfo create_info)
     glfwSetCursorEnterCallback(m_window, cursorEnterCallback);
 //    glfwSetScrollCallback(m_window, scrollCallback);
 //    glfwSetDropCallback(m_window, dropCallback);
+    glfwSetWindowContentScaleCallback(m_window, windowContentScaleCallback);
     glfwSetWindowSizeCallback(m_window, windowSizeCallback);
     glfwSetWindowCloseCallback(m_window, windowCloseCallback);
 
@@ -95,6 +96,13 @@ void GLFWWindow::mouseButtonCallback(::GLFWwindow* window, int button, int actio
     auto* glfw_window = reinterpret_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
     if(glfw_window)
         glfw_window->onMouseButton(button, action, mods);
+}
+
+void GLFWWindow::windowContentScaleCallback(::GLFWwindow* window, float xscale, float yscale)
+{
+    auto* glfw_window = reinterpret_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+    if(glfw_window)
+        glfw_window->onWindowContentScale(xscale, yscale);
 }
 
 void GLFWWindow::windowSizeCallback(::GLFWwindow* window, int width, int height)

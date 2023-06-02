@@ -20,6 +20,7 @@ void CombineUIPass::initialize(SubPassInitInfo *subpass_init_info)
     setupDescriptorSetLayout();
     setupDescriptorSet();
     setupPipelines();
+    updateDescriptorSets();
 }
 
 void CombineUIPass::setupDescriptorSetLayout()
@@ -300,9 +301,14 @@ void CombineUIPass::draw()
                             0,
                             1,
                             &m_descriptorset_list[0].descriptor_set,
-                            1,
+                            0,
                             nullptr);
-    vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer, 3, 1, 0, 0, 0);
+    vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,
+                     3,
+                     1,
+                     0,
+                     0,
+                     0);
 
 }
 

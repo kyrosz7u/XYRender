@@ -40,16 +40,17 @@ namespace RenderSystem
 
         struct SubPassInitInfo
         {
-            RenderCommandInfo* p_render_command_info;
-            RenderGlobalResourceInfo* p_render_resource_info;
-            uint32_t subpass_index;
-            VkRenderPass renderpass;
+            RenderCommandInfo        *p_render_command_info;
+            RenderGlobalResourceInfo *p_render_resource_info;
+            uint32_t                 subpass_index;
+            VkRenderPass             renderpass;
         };
 
         class SubPassBase
         {
         public:
-            std::string name="dummy_subpass";
+            std::string name = "dummy_subpass";
+
             SubPassBase()
             {
                 assert(g_p_vulkan_context != nullptr);
@@ -64,25 +65,39 @@ namespace RenderSystem
             void setShader(ShaderType type, std::vector<unsigned char> shader)
             {
                 m_shader_list[type] = shader;
+                if (pipeline != VK_NULL_HANDLE)
+                {
+                    vkDestroyPipeline(g_p_vulkan_context->_device, pipeline, nullptr);
+                    pipeline = VK_NULL_HANDLE;
+                    setupPipelines();
+                }
             }
 
-            virtual void initialize(SubPassInitInfo* subPassInitInfo) = 0;
+            virtual void initialize(SubPassInitInfo *subPassInitInfo) = 0;
+
             virtual void draw() = 0;
-            virtual void updateAfterSwapchainRecreate() {}
+
+            virtual void updateAfterSwapchainRecreate()
+            {}
 
         protected:
-            virtual void setupDescriptorSetLayout() {}
-            virtual void setupDescriptorSet() {}
-            virtual void setupPipelines() {}
+            virtual void setupDescriptorSetLayout()
+            {}
 
-            RenderCommandInfo* m_p_render_command_info;
-            RenderGlobalResourceInfo* m_p_render_resource_info;
+            virtual void setupDescriptorSet()
+            {}
 
-            VkRenderPass m_renderpass;
-            uint32_t     m_subpass_index;
-            VkPipelineLayout pipeline_layout;
-            VkPipeline              pipeline;
-            VkDescriptorSetLayout                   descriptorset_layout;
+            virtual void setupPipelines()
+            {}
+
+            RenderCommandInfo *m_p_render_command_info         = nullptr;
+            RenderGlobalResourceInfo *m_p_render_resource_info = nullptr;
+
+            VkRenderPass                            m_renderpass         = VK_NULL_HANDLE;
+            uint32_t                                m_subpass_index      = VK_SUBPASS_EXTERNAL;
+            VkPipelineLayout                        pipeline_layout      = VK_NULL_HANDLE;
+            VkPipeline                              pipeline             = VK_NULL_HANDLE;
+            VkDescriptorSetLayout                   descriptorset_layout = VK_NULL_HANDLE;
             std::vector<DescriptorSet>              m_descriptorset_list;
             std::vector<std::vector<unsigned char>> m_shader_list;
         };

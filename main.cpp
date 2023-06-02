@@ -7,10 +7,11 @@
 
 int main() {
     GLFWWindowCreateInfo windowCreateInfo;
-
-    GLFWWindow window;
+    GLFWWindow   window;
+    UIOverlayPtr p_ui_overlay = std::make_shared<UIOverlay>();
 
     window.initialize(windowCreateInfo);
+    p_ui_overlay->initialize(std::make_shared<GLFWWindow>(window));
 
     RenderBase::setupGlobally(window.getWindowHandler());
 
@@ -27,7 +28,6 @@ int main() {
     window.registerOnWindowSizeFunc(mainCamera.windowSizeChangedDelegate);
 
     Scene::Model model;
-    UIOverlay uiOverlay;
 
     model.loadModelFile("assets/models/Kong.fbx");
 
@@ -37,7 +37,7 @@ int main() {
     }
 
     mainCamera.render->loadSceneMeshes(model.m_meshes);
-    mainCamera.render->setUIOverlay(std::make_shared<UIOverlay>(uiOverlay));
+    mainCamera.render->setUIOverlay(p_ui_overlay);
 
     while(!window.shouldClose())
     {

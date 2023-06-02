@@ -12,8 +12,8 @@ using namespace RenderSystem;
 void MainCameraRender::initialize()
 {
     m_render_command_info.p_descriptor_pool = &m_descriptor_pool;
-    m_render_command_info.p_viewport = &m_viewport;
-    m_render_command_info.p_scissor  = &m_scissor;
+    m_render_command_info.p_viewport        = &m_viewport;
+    m_render_command_info.p_scissor         = &m_scissor;
 
     m_render_resource_info.p_visible_meshes        = &m_visible_meshes;
     m_render_resource_info.p_render_model_ubo_list = &m_render_model_ubo_list;
@@ -30,7 +30,7 @@ void MainCameraRender::initialize()
 
 void MainCameraRender::setupRenderTargets()
 {
-    int renderTarget_nums = g_p_vulkan_context->_swapchain_images.size();
+    int                          renderTarget_nums = g_p_vulkan_context->_swapchain_images.size();
     std::vector<ImageAttachment> targets_tmp;
     targets_tmp.resize(renderTarget_nums);
 
@@ -62,10 +62,10 @@ void MainCameraRender::setupCommandBuffer()
     }
 
     VkCommandBufferAllocateInfo command_buffer_allocate_info{};
-    command_buffer_allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    command_buffer_allocate_info.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    command_buffer_allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     command_buffer_allocate_info.commandBufferCount = 1U;
-    command_buffer_allocate_info.commandPool = m_command_pool;
+    command_buffer_allocate_info.commandPool        = m_command_pool;
 
     int renderTarget_nums = g_p_vulkan_context->_swapchain_images.size();
     m_command_buffers.resize(renderTarget_nums);
@@ -83,16 +83,18 @@ void MainCameraRender::setupCommandBuffer()
 void MainCameraRender::setupDescriptorPool()
 {
     std::vector<VkDescriptorPoolSize> descriptorTypes =
-            {
-                    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1},
-                    {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1}
-            };
+                                              {
+                                                      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1},
+                                                      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1},
+                                                      {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,2},
+                                                      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1}
+                                              };
 
     VkDescriptorPoolCreateInfo descriptorPoolInfo{};
-    descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptorPoolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(descriptorTypes.size());
-    descriptorPoolInfo.pPoolSizes = descriptorTypes.data();
-    descriptorPoolInfo.maxSets = 2;
+    descriptorPoolInfo.pPoolSizes    = descriptorTypes.data();
+    descriptorPoolInfo.maxSets       = 3;
 
     VK_CHECK_RESULT(vkCreateDescriptorPool(g_p_vulkan_context->_device,
                                            &descriptorPoolInfo,
@@ -105,6 +107,7 @@ void MainCameraRender::setupBackupBuffer()
     m_backup_targets[0] = ImageAttachment{
             VK_NULL_HANDLE,
             VK_NULL_HANDLE,
+
             VK_NULL_HANDLE,
             VK_FORMAT_R8G8B8A8_UNORM,
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
@@ -122,23 +125,23 @@ void MainCameraRender::setupBackupBuffer()
                             1,
                             1);
 
-    VulkanUtil::createImageView(g_p_vulkan_context,
-                                m_backup_targets[0].image,
-                                m_backup_targets[0].format,
-                                VK_IMAGE_ASPECT_COLOR_BIT,
-                                VK_IMAGE_VIEW_TYPE_2D,
-                                1,
-                                1);
+    m_backup_targets[0].view = VulkanUtil::createImageView(g_p_vulkan_context,
+                                                           m_backup_targets[0].image,
+                                                           m_backup_targets[0].format,
+                                                           VK_IMAGE_ASPECT_COLOR_BIT,
+                                                           VK_IMAGE_VIEW_TYPE_2D,
+                                                           1,
+                                                           1);
 }
 
 void MainCameraRender::setViewport()
 {
-    uint32_t width = g_p_vulkan_context->_swapchain_extent.width;
+    uint32_t width  = g_p_vulkan_context->_swapchain_extent.width;
     uint32_t height = g_p_vulkan_context->_swapchain_extent.height;
 
     m_viewport = VkViewport({0, 0, (float) width, (float) height, 0, 1});
-    m_scissor = VkRect2D({{0,     0},
-                          {width, height}});
+    m_scissor  = VkRect2D({{0,     0},
+                           {width, height}});
 }
 
 void MainCameraRender::setupRenderpass()
@@ -146,20 +149,20 @@ void MainCameraRender::setupRenderpass()
     m_render_passes.resize(_renderpass_count);
 
     m_render_passes[_main_camera_renderpass] = std::make_shared<MainCameraRenderPass>();
-    m_render_passes[_ui_overlay_renderpass] = std::make_shared<UIOverlayRenderPass>();
+    m_render_passes[_ui_overlay_renderpass]  = std::make_shared<UIOverlayRenderPass>();
 
     MainCameraRenderPassInitInfo maincamera_renderpass_init_info;
-    maincamera_renderpass_init_info.render_command_info = &m_render_command_info;
+    maincamera_renderpass_init_info.render_command_info  = &m_render_command_info;
     maincamera_renderpass_init_info.render_resource_info = &m_render_resource_info;
-    maincamera_renderpass_init_info.render_targets = &m_backup_targets;
-    maincamera_renderpass_init_info.descriptor_pool = &m_descriptor_pool;
+    maincamera_renderpass_init_info.render_targets       = &m_backup_targets;
+    maincamera_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
 
     UIOverlayRenderPassInitInfo ui_overlay_renderpass_init_info;
-    ui_overlay_renderpass_init_info.render_command_info = &m_render_command_info;
+    ui_overlay_renderpass_init_info.render_command_info  = &m_render_command_info;
     ui_overlay_renderpass_init_info.render_resource_info = &m_render_resource_info;
-    ui_overlay_renderpass_init_info.render_targets = &m_render_targets;
-    ui_overlay_renderpass_init_info.descriptor_pool = &m_descriptor_pool;
-    ui_overlay_renderpass_init_info.in_color_attachment = &m_backup_targets[0];
+    ui_overlay_renderpass_init_info.render_targets       = &m_render_targets;
+    ui_overlay_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
+    ui_overlay_renderpass_init_info.in_color_attachment  = &m_backup_targets[0];
 
     m_render_passes[_main_camera_renderpass]->initialize(&maincamera_renderpass_init_info);
     m_render_passes[_ui_overlay_renderpass]->initialize(&ui_overlay_renderpass_init_info);
@@ -183,12 +186,13 @@ void MainCameraRender::draw()
 
     // begin command buffer
     VkCommandBufferBeginInfo command_buffer_begin_info{};
-    command_buffer_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    command_buffer_begin_info.flags = 0;
+    command_buffer_begin_info.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    command_buffer_begin_info.flags            = 0;
     command_buffer_begin_info.pInheritanceInfo = nullptr;
 
     VkResult res_begin_command_buffer =
-            g_p_vulkan_context->_vkBeginCommandBuffer(m_command_buffers[next_image_index], &command_buffer_begin_info);
+                     g_p_vulkan_context->_vkBeginCommandBuffer(m_command_buffers[next_image_index],
+                                                               &command_buffer_begin_info);
     assert(VK_SUCCESS == res_begin_command_buffer);
 
     // record command buffer
@@ -210,9 +214,9 @@ void MainCameraRender::loadSceneMeshes(std::vector<RenderMeshPtr> &visible_meshe
 {
     m_visible_meshes = visible_meshes;
     m_render_model_ubo_list.ubo_data_list.resize(m_visible_meshes.size());
-    for(int i=0;i<m_visible_meshes.size();++i)
+    for (int i = 0; i < m_visible_meshes.size(); ++i)
     {
-        m_visible_meshes[i]->m_index_in_dynamic_buffer=i;
+        m_visible_meshes[i]->m_index_in_dynamic_buffer = i;
         m_render_model_ubo_list.ubo_data_list[i].model = m_visible_meshes[i]->model_matrix;
     }
     m_render_model_ubo_list.ToGPU();
