@@ -88,6 +88,10 @@ void UIPass::draw()
 
     if(current_ui!= nullptr && current_ui->isInitialized())
     {
+        VkDebugUtilsLabelEXT label_info = {
+                VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "IMGUI", {1.0f, 1.0f, 1.0f, 1.0f}};
+        g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
+
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -95,6 +99,7 @@ void UIPass::draw()
         ImGui::Render();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(),
                                         *m_p_render_command_info->p_current_command_buffer);
+        g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
     }
 }
 

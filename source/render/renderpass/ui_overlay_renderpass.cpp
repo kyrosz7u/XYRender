@@ -45,8 +45,7 @@ void UIOverlayRenderPass::setupRenderpassAttachments()
                             g_p_vulkan_context->_swapchain_extent.height,
                             m_renderpass_attachments[_ui_overlay_framebuffer_attachment_backup_color].format,
                             VK_IMAGE_TILING_OPTIMAL,
-                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
-                            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
+                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                             m_renderpass_attachments[_ui_overlay_framebuffer_attachment_backup_color].image,
                             m_renderpass_attachments[_ui_overlay_framebuffer_attachment_backup_color].mem,
@@ -260,7 +259,7 @@ void UIOverlayRenderPass::draw(int render_target_index)
     renderpass_begin_info.clearValueCount   = (sizeof(clear_values) / sizeof(clear_values[0]));
     renderpass_begin_info.pClearValues      = clear_values;
 
-    vkCmdBeginRenderPass(*m_p_render_command_info->p_current_command_buffer,
+    g_p_vulkan_context->_vkCmdBeginRenderPass(*m_p_render_command_info->p_current_command_buffer,
                          &renderpass_begin_info,
                          VK_SUBPASS_CONTENTS_INLINE);
 
@@ -268,7 +267,7 @@ void UIOverlayRenderPass::draw(int render_target_index)
     g_p_vulkan_context->_vkCmdNextSubpass(*m_p_render_command_info->p_current_command_buffer, VK_SUBPASS_CONTENTS_INLINE);
     m_subpass_list[_ui_overlay_subpass_combine]->draw();
 
-    vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
+    g_p_vulkan_context->_vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
 }
 
 void UIOverlayRenderPass::updateAfterSwapchainRecreate()

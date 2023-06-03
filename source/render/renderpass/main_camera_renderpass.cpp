@@ -193,12 +193,12 @@ void MainCameraRenderPass::draw(int render_target_index)
     renderpass_begin_info.clearValueCount   = (sizeof(clear_values) / sizeof(clear_values[0]));
     renderpass_begin_info.pClearValues      = clear_values;
 
-    vkCmdBeginRenderPass(*m_p_render_command_info->p_current_command_buffer, &renderpass_begin_info,
-                         VK_SUBPASS_CONTENTS_INLINE);
+    g_p_vulkan_context->_vkCmdBeginRenderPass(*m_p_render_command_info->p_current_command_buffer, &renderpass_begin_info,
+                                              VK_SUBPASS_CONTENTS_INLINE);
 
     m_subpass_list[_main_camera_subpass_mesh]->draw();
 
-    vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
+    g_p_vulkan_context->_vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
 }
 
 void MainCameraRenderPass::updateAfterSwapchainRecreate()

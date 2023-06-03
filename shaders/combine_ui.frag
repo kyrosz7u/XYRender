@@ -12,19 +12,5 @@ void main()
 
     highp float blend_weight = ui_color.a;
 
-//    color = mix(scene_color, ui_color, blend_weight);
-
-//    color =  scene_color;
-
-//    color = ui_color;
-    if (ui_color.r < 1e-6 && ui_color.g < 1e-6 && ui_color.b < 1e-6)
-    {
-        color = scene_color;
-    }
-    else
-    {
-        color = ui_color;
-    }
-
-    color = vec4(1.0f, 1.0f,0.0f,1.0f);
+    color = mix(scene_color, ui_color, blend_weight);
 }

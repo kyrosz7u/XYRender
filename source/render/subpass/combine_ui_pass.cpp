@@ -287,6 +287,10 @@ void CombineUIPass::setupPipelines()
 
 void CombineUIPass::draw()
 {
+    VkDebugUtilsLabelEXT label_info = {
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Combine UI", {1.0f, 1.0f, 1.0f, 1.0f}};
+    g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
+
     g_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->p_current_command_buffer,
                                            VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     g_p_vulkan_context->_vkCmdSetViewport(*m_p_render_command_info->p_current_command_buffer, 0, 1,
@@ -309,7 +313,7 @@ void CombineUIPass::draw()
                      0,
                      0,
                      0);
-
+    g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
 }
 
 void CombineUIPass::updateAfterSwapchainRecreate()
