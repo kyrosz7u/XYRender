@@ -72,7 +72,7 @@ void UIPass::uploadFonts()
                                   1,
                                   &submit_info,
                                   VK_NULL_HANDLE))
-    VK_CHECK_RESULT(vkQueueWaitIdle(g_p_vulkan_context->_graphics_queue))
+    VK_CHECK_RESULT(vkDeviceWaitIdle(g_p_vulkan_context->_device))
 
     vkFreeCommandBuffers(g_p_vulkan_context->_device,
                          g_p_vulkan_context->_command_pool,

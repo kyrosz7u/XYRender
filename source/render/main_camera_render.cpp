@@ -170,7 +170,10 @@ void MainCameraRender::setupRenderpass()
 
 void MainCameraRender::Tick()
 {
+    static uint32_t frame_cnt  = 0;
     draw();
+//    LOG_INFO("frame cnt: {}", frame_cnt)
+    ++frame_cnt;
 }
 
 void MainCameraRender::draw()
