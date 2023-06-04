@@ -1,5 +1,5 @@
-#include "logger/logger_macros.h"
-#include "window/glfw_window.h"
+#include "core/logger/logger_macros.h"
+#include "core/window/glfw_window.h"
 #include "scene/camera.h"
 #include "scene/model.h"
 #include "render/resource/render_mesh.h"

@@ -5,7 +5,7 @@
 #ifndef XEXAMPLE_CAMERA_H
 #define XEXAMPLE_CAMERA_H
 
-#include "math/Math.h"
+#include "core/math/math.h"
 #include "render/main_camera_render.h"
 
 using namespace Math;

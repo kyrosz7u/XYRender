@@ -6,8 +6,8 @@
 #define XEXAMPLE_RENDER_UBO_H
 
 #include <vulkan/vulkan.h>
-#include "graphic/vulkan/vulkan_utils.h"
-#include "math/Math.h"
+#include "core/graphic/vulkan/vulkan_utils.h"
+#include "core/math/math.h"
 
 #define MAX_MODEL_COUNT 128*1024
 

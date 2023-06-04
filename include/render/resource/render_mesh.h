@@ -7,8 +7,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include "graphic/vulkan/vulkan_context.h"
-#include "math/Math.h"
+#include "core/graphic/vulkan/vulkan_context.h"
+#include "core/math/math.h"
 
 #include <vector>
 #include <array>

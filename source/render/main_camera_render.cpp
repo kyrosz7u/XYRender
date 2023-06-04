@@ -5,7 +5,7 @@
 #include "render/main_camera_render.h"
 #include "render/renderpass/main_camera_renderpass.h"
 #include "render/renderpass/ui_overlay_renderpass.h"
-#include "logger/logger_macros.h"
+#include "core/logger/logger_macros.h"
 
 using namespace RenderSystem;
 

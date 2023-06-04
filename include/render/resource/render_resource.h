@@ -6,7 +6,7 @@
 #define XEXAMPLE_RENDER_RESOURCE_H
 
 
-#include "graphic/vulkan/vulkan_buffer.h"
+#include "core/graphic/vulkan/vulkan_buffer.h"
 #include "render/resource/render_ubo.h"
 #include "render_mesh.h"
 #include "ui/ui_overlay.h"

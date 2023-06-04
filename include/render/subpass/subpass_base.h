@@ -6,8 +6,8 @@
 #define VULKANRENDER_VULKAN_SUBPASS_H
 
 #include <vulkan/vulkan.h>
-#include "graphic/vulkan/vulkan_context.h"
-#include "graphic/vulkan/vulkan_utils.h"
+#include "core/graphic/vulkan/vulkan_context.h"
+#include "core/graphic/vulkan/vulkan_utils.h"
 #include "render/resource/render_resource.h"
 
 #include <vector>

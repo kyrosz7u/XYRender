@@ -6,7 +6,7 @@
 #define XEXAMPLE_COMMON_DEFINE_H
 
 #include <vulkan/vulkan.h>
-#include "graphic/vulkan/vulkan_context.h"
+#include "core/graphic/vulkan/vulkan_context.h"
 #include <memory>
 #include <vector>
 
