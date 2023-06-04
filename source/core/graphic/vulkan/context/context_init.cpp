@@ -240,7 +240,12 @@ void VulkanContext::pickPhysicalDevice()
             _physical_device_properties = device.second.second;
             LOG_INFO("Device: {}  Type: {}",
                      _physical_device_properties.deviceName,
-                     VulkanUtil::physicalDeviceTypeString(_physical_device_properties.deviceType))
+                 VulkanUtil::physicalDeviceTypeString(_physical_device_properties.deviceType))
+
+            LOG_INFO("Vulkan API {}.{}.{}",
+                     VK_API_VERSION_MAJOR(_physical_device_properties.apiVersion),
+                     VK_API_VERSION_MINOR(_physical_device_properties.apiVersion),
+                     VK_API_VERSION_PATCH(_physical_device_properties.apiVersion))
             break;
         }
     }

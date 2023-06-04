@@ -6,20 +6,20 @@
 #define XEXAMPLE_SINGLETON_DECORATOR_H
 
 // 更好的单例模式实现：需要单例化的类用这个装饰器包装下即可
-
-
 template<class T>
-class SingletonDecorator
-{
+class SingletonDecorator {
 public:
-    static T& Instance()
-    {
+    static T &Instance() {
         static T instance;
         return instance;
     }
-    SingletonDecorator(const SingletonDecorator&) = delete;
-    SingletonDecorator& operator=(const SingletonDecorator&) = delete;
-    SingletonDecorator(SingletonDecorator&&) = delete;
+
+    SingletonDecorator(const SingletonDecorator &) = delete;
+
+    SingletonDecorator &operator=(const SingletonDecorator &) = delete;
+
+    SingletonDecorator(SingletonDecorator &&) = delete;
+
 protected:
     SingletonDecorator() {}
 };

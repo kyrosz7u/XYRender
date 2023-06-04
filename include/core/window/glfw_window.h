@@ -34,6 +34,8 @@ public:
 
     bool shouldClose();
 
+    void setCursorFocus(bool focused);
+
     ::GLFWwindow *getWindowHandler()
     { return m_window; }
 
@@ -58,6 +60,9 @@ public:
     void registerOnCursorPosFunc(onCursorPosFunc func)
     { m_cursor_pos_events.push_back(func); }
 
+    void resgisterOnMouseButtonFunc(onMouseButtonFunc func)
+    { m_mouse_button_events.push_back(func); }
+
     void registerOnCursorEnterFunc(onCursorEnterFunc func)
     { m_cursor_enter_events.push_back(func); }
 
@@ -66,6 +71,22 @@ public:
 
     void registerOnWindowCloseFunc(onWindowCloseFunc func)
     { m_window_close_events.push_back(func); }
+
+private:
+    ::GLFWwindow *m_window{nullptr};
+    int m_width{0};
+    int m_height{0};
+
+    bool m_is_focus_mode{false};
+
+    std::vector<onKeyPressFunc>           m_keypress_events;
+    std::vector<onKeyCharFunc>            m_keychar_events;
+    std::vector<onCursorPosFunc>          m_cursor_pos_events;
+    std::vector<onCursorEnterFunc>        m_cursor_enter_events;
+    std::vector<onMouseButtonFunc>        m_mouse_button_events;
+    std::vector<onWindowContentScaleFunc> m_window_content_scale_events;
+    std::vector<onWindowSizeFunc>         m_window_size_events;
+    std::vector<onWindowCloseFunc>        m_window_close_events;
 
     // TODO: 需要对订阅者对象的生命周期进行管理
     void onKeyPress(int key, int scancode, int action, int mods)
@@ -115,22 +136,6 @@ public:
         for (auto &func: m_window_close_events)
             func();
     }
-
-private:
-    ::GLFWwindow *m_window{nullptr};
-    int m_width{0};
-    int m_height{0};
-
-    bool m_is_focus_mode{false};
-
-    std::vector<onKeyPressFunc>           m_keypress_events;
-    std::vector<onKeyCharFunc>            m_keychar_events;
-    std::vector<onCursorPosFunc>          m_cursor_pos_events;
-    std::vector<onCursorEnterFunc>        m_cursor_enter_events;
-    std::vector<onMouseButtonFunc>        m_mouse_button_events;
-    std::vector<onWindowContentScaleFunc> m_window_content_scale_events;
-    std::vector<onWindowSizeFunc>         m_window_size_events;
-    std::vector<onWindowCloseFunc>        m_window_close_events;
 
     static void keyCallback(::GLFWwindow *window, int key, int scancode, int action, int mods);
 

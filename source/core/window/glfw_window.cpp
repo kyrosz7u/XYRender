@@ -50,6 +50,10 @@ bool GLFWWindow::isMouseButtonDown(int button) const
     return glfwGetMouseButton(m_window, button) == GLFW_PRESS;
 }
 
+void GLFWWindow::setCursorFocus(bool focused)
+{
+    glfwSetInputMode(m_window, GLFW_CURSOR, focused ? GLFW_CURSOR_DISABLED:GLFW_CURSOR_NORMAL);
+}
 
 void GLFWWindow::pollEvents()
 {
@@ -61,61 +65,61 @@ bool GLFWWindow::shouldClose()
     return glfwWindowShouldClose(m_window);
 }
 
-void GLFWWindow::keyCallback(::GLFWwindow* window, int key, int scancode, int action, int mods)
+void GLFWWindow::keyCallback(::GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-    GLFWWindow* app = reinterpret_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+    GLFWWindow *app = reinterpret_cast<GLFWWindow *>(glfwGetWindowUserPointer(window));
     if (app)
     {
         app->onKeyPress(key, scancode, action, mods);
     }
 }
 
-void GLFWWindow::charCallback(::GLFWwindow* window, unsigned int codepoint)
+void GLFWWindow::charCallback(::GLFWwindow *window, unsigned int codepoint)
 {
-    auto* glfw_window = reinterpret_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    if(glfw_window)
+    auto *glfw_window = reinterpret_cast<GLFWWindow *>(glfwGetWindowUserPointer(window));
+    if (glfw_window)
         glfw_window->onKeyChar(codepoint);
 }
 
-void GLFWWindow::cursorPosCallback(::GLFWwindow* window, double xpos, double ypos)
+void GLFWWindow::cursorPosCallback(::GLFWwindow *window, double xpos, double ypos)
 {
-    auto* glfw_window = reinterpret_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    if(glfw_window)
+    auto *glfw_window = reinterpret_cast<GLFWWindow *>(glfwGetWindowUserPointer(window));
+    if (glfw_window)
         glfw_window->onCursorPos(xpos, ypos);
 }
 
-void GLFWWindow::cursorEnterCallback(::GLFWwindow* window, int entered)
+void GLFWWindow::cursorEnterCallback(::GLFWwindow *window, int entered)
 {
-    auto* glfw_window = reinterpret_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    if(glfw_window)
+    auto *glfw_window = reinterpret_cast<GLFWWindow *>(glfwGetWindowUserPointer(window));
+    if (glfw_window)
         glfw_window->onCursorEnter(entered);
 }
 
-void GLFWWindow::mouseButtonCallback(::GLFWwindow* window, int button, int action, int mods)
+void GLFWWindow::mouseButtonCallback(::GLFWwindow *window, int button, int action, int mods)
 {
-    auto* glfw_window = reinterpret_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    if(glfw_window)
+    auto *glfw_window = reinterpret_cast<GLFWWindow *>(glfwGetWindowUserPointer(window));
+    if (glfw_window)
         glfw_window->onMouseButton(button, action, mods);
 }
 
-void GLFWWindow::windowContentScaleCallback(::GLFWwindow* window, float xscale, float yscale)
+void GLFWWindow::windowContentScaleCallback(::GLFWwindow *window, float xscale, float yscale)
 {
-    auto* glfw_window = reinterpret_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    if(glfw_window)
+    auto *glfw_window = reinterpret_cast<GLFWWindow *>(glfwGetWindowUserPointer(window));
+    if (glfw_window)
         glfw_window->onWindowContentScale(xscale, yscale);
 }
 
-void GLFWWindow::windowSizeCallback(::GLFWwindow* window, int width, int height)
+void GLFWWindow::windowSizeCallback(::GLFWwindow *window, int width, int height)
 {
-    auto* glfw_window = reinterpret_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    if(glfw_window)
+    auto *glfw_window = reinterpret_cast<GLFWWindow *>(glfwGetWindowUserPointer(window));
+    if (glfw_window)
         glfw_window->onWindowSize(width, height);
 }
 
-void GLFWWindow::windowCloseCallback(::GLFWwindow* window)
+void GLFWWindow::windowCloseCallback(::GLFWwindow *window)
 {
-    auto* glfw_window = reinterpret_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    if(glfw_window)
+    auto *glfw_window = reinterpret_cast<GLFWWindow *>(glfwGetWindowUserPointer(window));
+    if (glfw_window)
         glfw_window->onWindowClose();
 }
 

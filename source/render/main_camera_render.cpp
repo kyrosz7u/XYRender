@@ -86,7 +86,7 @@ void MainCameraRender::setupDescriptorPool()
                                               {
                                                       {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1},
                                                       {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1},
-                                                      {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,2},
+                                                      {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       2},
                                                       {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1}
                                               };
 
@@ -170,10 +170,8 @@ void MainCameraRender::setupRenderpass()
 
 void MainCameraRender::Tick()
 {
-    static uint32_t frame_cnt  = 0;
+    RenderBase::Tick();
     draw();
-//    LOG_INFO("frame cnt: {}", frame_cnt)
-    ++frame_cnt;
 }
 
 void MainCameraRender::draw()
@@ -227,9 +225,9 @@ void MainCameraRender::loadSceneMeshes(std::vector<RenderMeshPtr> &visible_meshe
 
 void MainCameraRender::updateAfterSwapchainRecreate()
 {
-    vkDestroyImage(g_p_vulkan_context->_device, m_render_targets[0].image, nullptr);
-    vkDestroyImageView(g_p_vulkan_context->_device, m_render_targets[0].view, nullptr);
-    vkFreeMemory(g_p_vulkan_context->_device, m_render_targets[0].mem, nullptr);
+    vkDestroyImage(g_p_vulkan_context->_device, m_backup_targets[0].image, nullptr);
+    vkDestroyImageView(g_p_vulkan_context->_device, m_backup_targets[0].view, nullptr);
+    vkFreeMemory(g_p_vulkan_context->_device, m_backup_targets[0].mem, nullptr);
 
     setupBackupBuffer();
     setupRenderTargets();

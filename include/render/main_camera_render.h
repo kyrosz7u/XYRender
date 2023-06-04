@@ -12,7 +12,7 @@
 
 namespace RenderSystem
 {
-    enum
+    enum : unsigned int
     {
         _main_camera_renderpass = 0,
         _ui_overlay_renderpass,

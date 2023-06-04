@@ -3,21 +3,27 @@
 #include "scene/camera.h"
 #include "scene/model.h"
 #include "render/resource/render_mesh.h"
+#include "input/input_system.h"
 #include "ui/ui_overlay.h"
 
-int main() {
+int main()
+{
     GLFWWindowCreateInfo windowCreateInfo;
     GLFWWindow           window;
-    UIOverlayPtr         p_ui_overlay = std::make_shared<UIOverlay>();
 
     window.initialize(windowCreateInfo);
+    UIOverlayPtr         p_ui_overlay = std::make_shared<UIOverlay>();
     p_ui_overlay->initialize(std::make_shared<GLFWWindow>(window));
 
+    _InputSystem::Instance().initialize(&window);
     RenderBase::setupGlobally(window.getWindowHandler());
 
     Scene::Camera mainCamera;
 
-    mainCamera.aspect = (float) windowCreateInfo.width / windowCreateInfo.height;
+    p_ui_overlay->addDebugDrawCommand(std::bind(&_InputSystem::ImGuiDebugPanel, &_InputSystem::Instance()));
+    p_ui_overlay->addDebugDrawCommand(std::bind(&Scene::Camera::ImGuiDebugPanel, &mainCamera));
+
+    mainCamera.aspect   = (float) windowCreateInfo.width / windowCreateInfo.height;
     mainCamera.fov      = 90;
     mainCamera.znear    = 0.1f;
     mainCamera.zfar     = 100.0f;
@@ -31,15 +37,17 @@ int main() {
 
     model.loadModelFile("assets/models/Kong.fbx");
 
-    for (auto &mesh: model.m_meshes) {
+    for (auto &mesh: model.m_meshes)
+    {
         mesh->ToGPU();
     }
 
-    mainCamera.render->loadSceneMeshes(model.m_meshes);
-    mainCamera.render->setUIOverlay(p_ui_overlay);
+    mainCamera.m_render->loadSceneMeshes(model.m_meshes);
+    mainCamera.m_render->setUIOverlay(p_ui_overlay);
 
-    while (!window.shouldClose()) {
-        window.pollEvents();
+    while (!window.shouldClose())
+    {
+        _InputSystem::Instance().Tick();
         mainCamera.Tick();
     }
     return 0;

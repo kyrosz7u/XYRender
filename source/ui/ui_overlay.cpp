@@ -13,7 +13,7 @@ static inline void windowContentScaleUpdate(float scale)
     // TOOD: Reload fonts if DPI scale is larger than previous font loading DPI scale
 }
 
-static inline void windowContentScaleCallback(GLFWwindow* window, float x_scale, float y_scale)
+static inline void windowContentScaleCallback(GLFWwindow *window, float x_scale, float y_scale)
 {
     windowContentScaleUpdate(fmaxf(x_scale, y_scale));
 }
@@ -32,7 +32,7 @@ void UIOverlay::initialize(std::shared_ptr<GLFWWindow> window)
     glfwSetWindowContentScaleCallback(m_window->getWindowHandler(), windowContentScaleCallback);
 
     // load font for imgui
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io                          = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 //        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
@@ -54,21 +54,16 @@ void UIOverlay::initialize(std::shared_ptr<GLFWWindow> window)
 
 void UIOverlay::drawImGui()
 {
-    float light_speed = 0.5f;
+    float       light_speed         = 0.5f;
     static bool show_another_window = true;
 
-    ImGui::Begin("Hello, world!");
-    ImGui::ShowDemoWindow();
+    ImGui::Begin("Debug Panel");
+    for (auto &command: m_debug_draw_commands)
+    {
+        command();
+    }
     ImGui::End();
 
-    if(show_another_window)
-    {
-        ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-        ImGui::Text("Hello from another window!");
-        if (ImGui::Button("Close Me"))
-            show_another_window = false;
-        ImGui::End();
-    }
 }
 
 
