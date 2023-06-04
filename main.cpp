@@ -7,8 +7,8 @@
 
 int main() {
     GLFWWindowCreateInfo windowCreateInfo;
-    GLFWWindow   window;
-    UIOverlayPtr p_ui_overlay = std::make_shared<UIOverlay>();
+    GLFWWindow           window;
+    UIOverlayPtr         p_ui_overlay = std::make_shared<UIOverlay>();
 
     window.initialize(windowCreateInfo);
     p_ui_overlay->initialize(std::make_shared<GLFWWindow>(window));
@@ -17,11 +17,11 @@ int main() {
 
     Scene::Camera mainCamera;
 
-    mainCamera.aspect= (float)windowCreateInfo.width / windowCreateInfo.height;
-    mainCamera.fov   = 90;
-    mainCamera.znear = 0.1f;
-    mainCamera.zfar  = 100.0f;
-    mainCamera.mode = Scene::perspective;
+    mainCamera.aspect = (float) windowCreateInfo.width / windowCreateInfo.height;
+    mainCamera.fov      = 90;
+    mainCamera.znear    = 0.1f;
+    mainCamera.zfar     = 100.0f;
+    mainCamera.mode     = Scene::perspective;
     mainCamera.position = Math::Vector3(0, 10, -20);
     mainCamera.rotation = Math::EulerAngle(0, 0, 0);
 
@@ -31,18 +31,16 @@ int main() {
 
     model.loadModelFile("assets/models/Kong.fbx");
 
-    for (auto &mesh:model.m_meshes)
-    {
+    for (auto &mesh: model.m_meshes) {
         mesh->ToGPU();
     }
 
     mainCamera.render->loadSceneMeshes(model.m_meshes);
     mainCamera.render->setUIOverlay(p_ui_overlay);
 
-    while(!window.shouldClose())
-    {
-        mainCamera.Tick();
+    while (!window.shouldClose()) {
         window.pollEvents();
+        mainCamera.Tick();
     }
     return 0;
 }

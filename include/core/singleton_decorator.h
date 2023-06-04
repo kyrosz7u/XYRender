@@ -12,7 +12,7 @@ template<class T>
 class SingletonDecorator
 {
 public:
-    T& Instance()
+    static T& Instance()
     {
         static T instance;
         return instance;
