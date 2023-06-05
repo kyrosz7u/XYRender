@@ -37,38 +37,74 @@ namespace Math
         return std::fabs(b - a) <= tolerance;
     }
 
-    inline std::ostream &operator<<(std::ostream &os, const Vector3 &v) {
+    // write by Copilot
+    Matrix4x4 getRotationMatrix(const EulerAngle &eulerAngle)
+    {
+        Matrix4x4 r;
+
+        float cx = cos(eulerAngle.x * Math_PI / 180.0f);
+        float sx = sin(eulerAngle.x * Math_PI / 180.0f);
+        float cy = cos(eulerAngle.y * Math_PI / 180.0f);
+        float sy = sin(eulerAngle.y * Math_PI / 180.0f);
+        float cz = cos(eulerAngle.z * Math_PI / 180.0f);
+        float sz = sin(eulerAngle.z * Math_PI / 180.0f);
+
+        r.m_mat[0][0] = cy * cz;
+        r.m_mat[0][1] = cy * sz;
+        r.m_mat[0][2] = -sy;
+        r.m_mat[0][3] = 0.0;
+        r.m_mat[1][0] = sx * sy * cz - cx * sz;
+        r.m_mat[1][1] = sx * sy * sz + cx * cz;
+        r.m_mat[1][2] = sx * cy;
+        r.m_mat[1][3] = 0.0;
+        r.m_mat[2][0] = cx * sy * cz + sx * sz;
+        r.m_mat[2][1] = cx * sy * sz - sx * cz;
+        r.m_mat[2][2] = cx * cy;
+        r.m_mat[2][3] = 0.0;
+        r.m_mat[3][0] = 0.0;
+        r.m_mat[3][1] = 0.0;
+        r.m_mat[3][2] = 0.0;
+        r.m_mat[3][3] = 1.0;
+
+        return r;
+    }
+
+    inline std::ostream &operator<<(std::ostream &os, const Vector3 &v)
+    {
         char buf[128];
-        sprintf(buf,"[ %f, %f, %f ]", v.x, v.y, v.z);
+        sprintf(buf, "[ %f, %f, %f ]", v.x, v.y, v.z);
         os << buf;
         return os;
     }
 
-    inline std::ostream &operator<<(std::ostream &os, const Vector4 &v) {
+    inline std::ostream &operator<<(std::ostream &os, const Vector4 &v)
+    {
         char buf[128];
-        sprintf(buf,"[ %f, %f, %f %f]", v.x, v.y, v.z, v.w);
+        sprintf(buf, "[ %f, %f, %f %f]", v.x, v.y, v.z, v.w);
         os << buf;
         return os;
     }
 
-    inline std::ostream &operator<<(std::ostream &os, const Matrix4x4 &m) {
-        os<<"[";
+    inline std::ostream &operator<<(std::ostream &os, const Matrix4x4 &m)
+    {
+        os << "[";
         for (int i = 0; i < 3; ++i)
         {
-            os<<m[i]<<std::endl;
+            os << m[i] << std::endl;
         }
-        os<<m[3]<<"]";
+        os << m[3] << "]";
 
         return os;
     }
 
-    inline std::ostream &operator<<(std::ostream &os, const Matrix3x3 &m) {
-        os<<"[";
+    inline std::ostream &operator<<(std::ostream &os, const Matrix3x3 &m)
+    {
+        os << "[";
         for (int i = 0; i < 2; ++i)
         {
-            os<<m[i]<<std::endl;
+            os << m[i] << std::endl;
         }
-        os<<m[2]<<"]";
+        os << m[2] << "]";
 
         return os;
     }

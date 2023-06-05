@@ -8,19 +8,26 @@
 #include "render/resource/render_mesh.h"
 #include <vector>
 #include <string>
+#include <memory>
+
+using namespace RenderSystem;
 
 namespace Scene
 {
     class Model
     {
     public:
+        RenderMeshPtr m_loaded_mesh;
+    public:
         Model() {}
         ~Model() {}
         bool loadModelFile(const std::string &mesh_path);
         void processModelNode(aiNode *node, const aiScene *scene);
         void processMesh(aiMesh *mesh, const aiScene *scene);
-    public:
-        std::vector<RenderSystem::RenderMeshPtr> m_meshes;
+
+    private:
+        uint32_t m_index_count{0};
+        std::vector<RenderSystem::RenderSubmesh> m_submeshes;
     };
 }
 #endif //XEXAMPLE_MODEL_H

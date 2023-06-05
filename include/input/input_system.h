@@ -54,6 +54,8 @@ private:
     void onCursorPos(double current_cursor_x, double current_cursor_y);
 
     void onCursorButton(int button, int action, int mods);
+
+    void clearState();
 };
 
 #endif //XEXAMPLE_INPUT_SYSTEM_H

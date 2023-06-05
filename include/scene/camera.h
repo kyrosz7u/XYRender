@@ -33,16 +33,28 @@ namespace Scene
 
         void Tick()
         {
-            auto rotMat = Matrix4x4::getRotation(rotation);
+            auto rotMat = getRotationMatrix(rotation);
             Right   = rotMat * Vector3(1, 0, 0);
             Up      = rotMat * Vector3(0, 1, 0);
             Forward = rotMat * Vector3(0, 0, 1);
 
             if (InputSystem.Focused)
             {
-                float speed = InputSystem.SpeedUp ? 10.0f : 1.0f;
+                float speed = InputSystem.SpeedUp ? 10.0f : 5.0f;
                 moveDir  = rotMat * InputSystem.Move;
                 position = position + moveDir * speed * m_render->getFrameTime();
+
+                rotation.x+= InputSystem.Look.y * m_render->getFrameTime()*speed*2;
+                rotation.y+= InputSystem.Look.x * m_render->getFrameTime()*speed*2;
+
+                if(rotation.x > 89.0f)
+                    rotation.x = 89.0f;
+                if(rotation.x < -89.0f)
+                    rotation.x = -89.0f;
+                if (rotation.y > 360.0f)
+                    rotation.y -= 360.0f;
+                if (rotation.y < -360.0f)
+                    rotation.y += 360.0f;
             }
             m_render->setCameraMatrix(calculateViewMatrix(), calculatePerspectiveMatrix());
             m_render->Tick();
@@ -50,7 +62,7 @@ namespace Scene
 
         Matrix4x4 calculateViewMatrix()
         {
-            auto r_inverse = Matrix4x4::getRotation(rotation);
+            auto r_inverse = getRotationMatrix(rotation);
             r_inverse = r_inverse.transpose();
             auto t_inverse = Matrix4x4::getTrans(-position);
 

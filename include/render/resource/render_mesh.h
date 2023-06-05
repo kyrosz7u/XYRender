@@ -95,6 +95,14 @@ namespace RenderSystem
         }
     };
 
+    struct RenderSubmesh
+    {
+        uint32_t index_count;
+        uint32_t index_offset;
+        uint32_t vertex_offset;
+        uint32_t material_index;
+        std::weak_ptr<RenderMesh> parent_mesh;
+    };
 
     class RenderMesh
     {
@@ -104,8 +112,8 @@ namespace RenderSystem
         std::vector<VulkanMeshVertexNormal>    m_normals;
         std::vector<VulkanMeshVertexTexcoord>  m_texcoords;
         std::vector<uint16_t>                  m_indices;
+        std::vector<RenderSubmesh>             m_submeshes;
 
-//        Matrix4x4 model_matrix=Matrix4x4::getScale(0.4f,0.4f,0.4f);
         Matrix4x4 model_matrix=Matrix4x4::IDENTITY;
         uint16_t m_index_in_dynamic_buffer = 0;
 
@@ -131,8 +139,6 @@ namespace RenderSystem
         RenderMesh(RenderMesh const &) = delete;
 
         RenderMesh &operator=(RenderMesh const &) = delete;
-
-
 
         void ToGPU();
 

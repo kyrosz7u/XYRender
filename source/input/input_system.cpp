@@ -106,6 +106,9 @@ void _InputSystem::initialize(GLFWWindow *window)
 
 void _InputSystem::Tick()
 {
+    m_cursor_delta_x=0;
+    m_cursor_delta_y=0;
+
     m_window->pollEvents();
     Look    = Math::Vector2(m_cursor_delta_x, m_cursor_delta_y);
     Move    = Math::Vector3::ZERO;

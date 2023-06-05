@@ -36,13 +36,12 @@ int main()
     Scene::Model model;
 
     model.loadModelFile("assets/models/Kong.fbx");
+    model.m_loaded_mesh->ToGPU();
+    mainCamera.m_render->loadSingleMesh(model.m_loaded_mesh);
+    model.loadModelFile("assets/models/capsule.obj");
+    model.m_loaded_mesh->ToGPU();
+    mainCamera.m_render->loadSingleMesh(model.m_loaded_mesh);
 
-    for (auto &mesh: model.m_meshes)
-    {
-        mesh->ToGPU();
-    }
-
-    mainCamera.m_render->loadSceneMeshes(model.m_meshes);
     mainCamera.m_render->setUIOverlay(p_ui_overlay);
 
     while (!window.shouldClose())

@@ -596,36 +596,6 @@ public:
     */
     /** Sets the rotation part of the matrix via a Quaterion.
      */
-     // write by Copilot
-     static Matrix4x4 getRotation(const Vector3& EulerAngle)
-     {
-        Matrix4x4 r;
-        float cx = cos(EulerAngle.x);
-        float sx = sin(EulerAngle.x);
-        float cy = cos(EulerAngle.y);
-        float sy = sin(EulerAngle.y);
-        float cz = cos(EulerAngle.z);
-        float sz = sin(EulerAngle.z);
-
-        r.m_mat[0][0] = cy*cz;
-        r.m_mat[0][1] = cy*sz;
-        r.m_mat[0][2] = -sy;
-        r.m_mat[0][3] = 0.0;
-        r.m_mat[1][0] = sx*sy*cz-cx*sz;
-        r.m_mat[1][1] = sx*sy*sz+cx*cz;
-        r.m_mat[1][2] = sx*cy;
-        r.m_mat[1][3] = 0.0;
-        r.m_mat[2][0] = cx*sy*cz+sx*sz;
-        r.m_mat[2][1] = cx*sy*sz-sx*cz;
-        r.m_mat[2][2] = cx*cy;
-        r.m_mat[2][3] = 0.0;
-        r.m_mat[3][0] = 0.0;
-        r.m_mat[3][1] = 0.0;
-        r.m_mat[3][2] = 0.0;
-        r.m_mat[3][3] = 1.0;
-
-        return r;
-     }
 
     /*
     -----------------------------------------------------------------------

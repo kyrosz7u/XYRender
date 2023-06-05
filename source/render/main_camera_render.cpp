@@ -211,9 +211,20 @@ void MainCameraRender::draw()
                                               std::bind(&MainCameraRender::updateAfterSwapchainRecreate, this));
 }
 
+void MainCameraRender::loadSingleMesh(RenderMeshPtr &mesh)
+{
+    m_visible_meshes.push_back(mesh);
+    updateRenderModelUBO();
+}
+
 void MainCameraRender::loadSceneMeshes(std::vector<RenderMeshPtr> &visible_meshes)
 {
-    m_visible_meshes = visible_meshes;
+    m_visible_meshes.insert(m_visible_meshes.end(),visible_meshes.begin(),visible_meshes.end());
+    updateRenderModelUBO();
+}
+
+void MainCameraRender::updateRenderModelUBO()
+{
     m_render_model_ubo_list.ubo_data_list.resize(m_visible_meshes.size());
     for (int i = 0; i < m_visible_meshes.size(); ++i)
     {

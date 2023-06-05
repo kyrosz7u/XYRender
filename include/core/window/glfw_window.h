@@ -13,8 +13,8 @@
 
 struct GLFWWindowCreateInfo
 {
-    int width{1280};
-    int height{720};
+    int width{2280};
+    int height{1720};
     const char *title{"DefaultTitle"};
     bool is_fullscreen{false};
 };

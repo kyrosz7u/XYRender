@@ -38,6 +38,8 @@ namespace RenderSystem
 
         void loadSceneMeshes(std::vector<RenderMeshPtr> &visible_meshes);
 
+        void loadSingleMesh(RenderMeshPtr &mesh);
+
         void setCameraMatrix(Matrix4x4 view, Matrix4x4 proj)
         {
             m_render_per_frame_ubo.per_frame_ubo_list.view_proj = proj * view;
@@ -70,6 +72,8 @@ namespace RenderSystem
         RenderPerFrameUBO  m_render_per_frame_ubo;
 
         void setupRenderpass();
+
+        void updateRenderModelUBO();
     };
 }
 #endif //XEXAMPLE_MAIN_CAMERA_RENDER_H

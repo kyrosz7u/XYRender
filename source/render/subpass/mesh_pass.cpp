@@ -15,8 +15,8 @@ void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
     auto mesh_pass_init_info = static_cast<MeshPassInitInfo *>(subPassInitInfo);
     m_p_render_command_info  = mesh_pass_init_info->p_render_command_info;
     m_p_render_resource_info = mesh_pass_init_info->p_render_resource_info;
-    m_subpass_index = mesh_pass_init_info->subpass_index;
-    m_renderpass    = mesh_pass_init_info->renderpass;
+    m_subpass_index          = mesh_pass_init_info->subpass_index;
+    m_renderpass             = mesh_pass_init_info->renderpass;
 
     setupDescriptorSetLayout();
     setupDescriptorSet();
@@ -33,14 +33,14 @@ void MeshPass::setupDescriptorSetLayout()
     std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
     setLayoutBindings.resize(2);
 
-    VkDescriptorSetLayoutBinding& perframe_buffer_binding = setLayoutBindings[0];
+    VkDescriptorSetLayoutBinding &perframe_buffer_binding = setLayoutBindings[0];
 
     perframe_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     perframe_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
     perframe_buffer_binding.binding         = 0;
     perframe_buffer_binding.descriptorCount = 1;
 
-    VkDescriptorSetLayoutBinding& perobject_buffer_binding = setLayoutBindings[1];
+    VkDescriptorSetLayoutBinding &perobject_buffer_binding = setLayoutBindings[1];
 
     perobject_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     perobject_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
@@ -89,23 +89,23 @@ void MeshPass::updateDescriptorSet()
     std::vector<VkWriteDescriptorSet> write_descriptor_sets;
     write_descriptor_sets.resize(2);
 
-    VkWriteDescriptorSet& perframe_buffer_write = write_descriptor_sets[0];
-    perframe_buffer_write.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    perframe_buffer_write.dstSet               = descriptor_set;
-    perframe_buffer_write.dstBinding           = 0;
-    perframe_buffer_write.dstArrayElement      = 0;
-    perframe_buffer_write.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    perframe_buffer_write.descriptorCount      = 1;
-    perframe_buffer_write.pBufferInfo          = &m_p_render_resource_info->p_render_per_frame_ubo->buffer_descriptor;
+    VkWriteDescriptorSet &perframe_buffer_write = write_descriptor_sets[0];
+    perframe_buffer_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    perframe_buffer_write.dstSet          = descriptor_set;
+    perframe_buffer_write.dstBinding      = 0;
+    perframe_buffer_write.dstArrayElement = 0;
+    perframe_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    perframe_buffer_write.descriptorCount = 1;
+    perframe_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_per_frame_ubo->buffer_descriptor;
 
-    VkWriteDescriptorSet& perobject_buffer_write = write_descriptor_sets[1];
-    perobject_buffer_write.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    perobject_buffer_write.dstSet               = descriptor_set;
-    perobject_buffer_write.dstBinding           = 1;
-    perobject_buffer_write.dstArrayElement      = 0;
-    perobject_buffer_write.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    perobject_buffer_write.descriptorCount      = 1;
-    perobject_buffer_write.pBufferInfo          = &m_p_render_resource_info->p_render_model_ubo_list->buffer_descriptor;
+    VkWriteDescriptorSet &perobject_buffer_write = write_descriptor_sets[1];
+    perobject_buffer_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    perobject_buffer_write.dstSet          = descriptor_set;
+    perobject_buffer_write.dstBinding      = 1;
+    perobject_buffer_write.dstArrayElement = 0;
+    perobject_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    perobject_buffer_write.descriptorCount = 1;
+    perobject_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_model_ubo_list->buffer_descriptor;
 
     vkUpdateDescriptorSets(g_p_vulkan_context->_device,
                            write_descriptor_sets.size(),
@@ -296,32 +296,54 @@ void MeshPass::draw()
     //                                                 0,
     //                                                 NULL);
 
-    for(uint32_t i=0;i<(*m_p_render_resource_info->p_visible_meshes).size();i++)
+    // 后面最好改成hash
+    static RenderMesh *last_mesh = nullptr;
+
+    for (uint32_t i = 0; i < (*m_p_render_resource_info->p_visible_meshes).size(); i++)
     {
         auto mesh = (*m_p_render_resource_info->p_visible_meshes)[i];
-        auto index_num = mesh->m_indices.size();
-        VkBuffer vertex_buffers[] = {mesh->mesh_vertex_position_buffer, mesh->mesh_vertex_normal_buffer, mesh->mesh_vertex_texcoord_buffer};
-        VkDeviceSize offsets[]        = {0, 0, 0};
-        g_p_vulkan_context->_vkCmdBindVertexBuffers(*m_p_render_command_info->p_current_command_buffer,
-                               0,
-                               sizeof(vertex_buffers) / sizeof(vertex_buffers[0]),
-                               vertex_buffers,
-                               offsets);
-        g_p_vulkan_context->_vkCmdBindIndexBuffer(*m_p_render_command_info->p_current_command_buffer,
-                                                  mesh->mesh_index_buffer,
-                                                  0,
-                                                  VK_INDEX_TYPE_UINT16);
 
-        uint32_t dynamicOffset = mesh->m_index_in_dynamic_buffer * (*m_p_render_resource_info->p_render_model_ubo_list).dynamic_alignment;
-        vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
-                                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipeline_layout,
-                                0,
-                                1,
-                                &m_descriptorset_list[0].descriptor_set,
-                                1,
-                                &dynamicOffset);
-        vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer, index_num, 1, 0, 0, 0);
+        for (auto    &submesh: mesh->m_submeshes)
+        {
+//            if(submesh->m_material->m_pipeline != pipeline)
+//            {
+//                continue;
+//            }
+            auto parent_mesh = submesh.parent_mesh.lock();
+//            if (last_mesh != parent_mesh.get())
+            {
+                last_mesh                     = parent_mesh.get();
+                VkBuffer     vertex_buffers[] = {parent_mesh->mesh_vertex_position_buffer,
+                                                 parent_mesh->mesh_vertex_normal_buffer,
+                                                 parent_mesh->mesh_vertex_texcoord_buffer};
+                VkDeviceSize offsets[]        = {0, 0, 0};
+                g_p_vulkan_context->_vkCmdBindVertexBuffers(*m_p_render_command_info->p_current_command_buffer,
+                                                            0,
+                                                            sizeof(vertex_buffers) / sizeof(vertex_buffers[0]),
+                                                            vertex_buffers,
+                                                            offsets);
+                g_p_vulkan_context->_vkCmdBindIndexBuffer(*m_p_render_command_info->p_current_command_buffer,
+                                                          parent_mesh->mesh_index_buffer,
+                                                          0,
+                                                          VK_INDEX_TYPE_UINT16);
+            }
+            uint32_t dynamicOffset = mesh->m_index_in_dynamic_buffer *
+                                     (*m_p_render_resource_info->p_render_model_ubo_list).dynamic_alignment;
+            g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
+                                                         VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                         pipeline_layout,
+                                                         0,
+                                                         1,
+                                                         &m_descriptorset_list[0].descriptor_set,
+                                                         1,
+                                                         &dynamicOffset);
+            g_p_vulkan_context->_vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,
+                                                  submesh.index_count,
+                                                  1,
+                                                  submesh.index_offset,
+                                                  submesh.vertex_offset,
+                                                  0);
+        }
     }
     g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
 }
