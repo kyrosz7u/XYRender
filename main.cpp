@@ -2,6 +2,7 @@
 #include "core/window/glfw_window.h"
 #include "scene/camera.h"
 #include "scene/model.h"
+#include "scene/scene_manager.h"
 #include "render/resource/render_mesh.h"
 #include "input/input_system.h"
 #include "ui/ui_overlay.h"
@@ -35,14 +36,25 @@ int main()
 
     Scene::Model model;
 
-    model.loadModelFile("assets/models/Kong.fbx");
-    model.m_loaded_mesh->ToGPU();
-    mainCamera.m_render->loadSingleMesh(model.m_loaded_mesh);
-    model.loadModelFile("assets/models/capsule.obj");
-    model.m_loaded_mesh->ToGPU();
-    mainCamera.m_render->loadSingleMesh(model.m_loaded_mesh);
+    Scene::SceneManager sceneManager;
 
-    mainCamera.m_render->setUIOverlay(p_ui_overlay);
+    model.LoadModelFile("assets/models/Kong.fbx");
+    model.loaded_mesh->ToGPU();
+    sceneManager.addModel(model);
+
+//    mainCamera.m_render->loadSingleMesh(model.loaded_mesh);
+    model.LoadModelFile("assets/models/capsule.obj");
+    model.loaded_mesh->ToGPU();
+    sceneManager.addModel(model);
+
+    Scene::DirectionLight light;
+    light.transform = Transform(Math::Vector3(0, 15, -15), Math::EulerAngle(50, -30, 0), Math::Vector3(1, 1, 1));
+    light.color = Color(1, float(244/255), float(214/255),255);
+    sceneManager.addLight(light);
+
+    sceneManager.setUIOverlay(p_ui_overlay);
+
+//    mainCamera.m_render->setUIOverlay(p_ui_overlay);
 
     while (!window.shouldClose())
     {

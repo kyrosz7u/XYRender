@@ -234,6 +234,13 @@ void MainCameraRender::updateRenderModelUBO()
     m_render_model_ubo_list.ToGPU();
 }
 
+void MainCameraRender::updateRenderPerFrameUBO()
+{
+    m_render_per_frame_ubo.per_frame_ubo.proj_view = m_proj_matrix * m_view_matrix;
+
+    m_render_per_frame_ubo.ToGPU();
+}
+
 void MainCameraRender::updateAfterSwapchainRecreate()
 {
     vkDestroyImage(g_p_vulkan_context->_device, m_backup_targets[0].image, nullptr);

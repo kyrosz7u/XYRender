@@ -23,34 +23,35 @@ namespace RenderSystem
     };
     struct VulkanPerFrameDefine
     {
-        Math::Matrix4x4 view_proj;
-        Math::Vector3 camera_pos;
-        Math::Vector3 directionLight_dir;
+        Math::Matrix4x4 proj_view;
+        Math::Vector3   camera_pos;
+        Math::Vector3   directionLight_dir;
     };
 
     class RenderModelUBOList
     {
     public:
-        VkDeviceSize dynamic_alignment;
+        VkDeviceSize                   dynamic_alignment;
         VkDeviceSize                   buffer_size;
         std::vector<VulkanModelDefine> ubo_data_list;
         VkBuffer                       model_ubo_dynamic_buffer;
-        VkDeviceMemory model_ubo_dynamic_buffer_memory;
-        void* mapped_buffer_ptr;
+        VkDeviceMemory                 model_ubo_dynamic_buffer_memory;
+        void *mapped_buffer_ptr;
         VkDescriptorBufferInfo buffer_descriptor;
 
     public:
         RenderModelUBOList()
         {
             // Calculate required alignment based on minimum device offset alignment
-            VkDeviceSize min_ubo_alignment = g_p_vulkan_context->_physical_device_properties.limits.minUniformBufferOffsetAlignment;
+            VkDeviceSize min_ubo_alignment        = g_p_vulkan_context->_physical_device_properties.limits.minUniformBufferOffsetAlignment;
             VkDeviceSize max_uniform_buffer_range = g_p_vulkan_context->_physical_device_properties.limits.maxUniformBufferRange;
 
             dynamic_alignment = sizeof(VulkanModelDefine);
-            if (min_ubo_alignment > 0) {
+            if (min_ubo_alignment > 0)
+            {
                 dynamic_alignment = (dynamic_alignment + min_ubo_alignment - 1) & ~(min_ubo_alignment - 1);
             }
-            buffer_size = (max_uniform_buffer_range/dynamic_alignment) * dynamic_alignment;
+            buffer_size       = (max_uniform_buffer_range / dynamic_alignment) * dynamic_alignment;
 
             VulkanUtil::createBuffer(g_p_vulkan_context,
                                      buffer_size,
@@ -61,7 +62,7 @@ namespace RenderSystem
             buffer_descriptor.buffer = model_ubo_dynamic_buffer;
             buffer_descriptor.offset = 0;
             // dynamic buffer的range必须是dynamic_alignment，而非buffer_size
-            buffer_descriptor.range = dynamic_alignment;
+            buffer_descriptor.range  = dynamic_alignment;
         }
 
         ~RenderModelUBOList()
@@ -71,8 +72,9 @@ namespace RenderSystem
             vkFreeMemory(g_p_vulkan_context->_device, model_ubo_dynamic_buffer_memory, nullptr);
         }
 
-        RenderModelUBOList(const RenderModelUBOList& other) =delete;
-        RenderModelUBOList& operator=(const RenderModelUBOList& other) =delete;
+        RenderModelUBOList(const RenderModelUBOList &other) = delete;
+
+        RenderModelUBOList &operator=(const RenderModelUBOList &other) = delete;
 //        RenderModelUBOList(RenderModelUBOList&& other) noexcept
 //        {
 //            ubo_data_list = std::move(other.ubo_data_list);
@@ -95,14 +97,15 @@ namespace RenderSystem
             // Aligned offset
             for (int i = 0; i < ubo_data_list.size(); ++i)
             {
-                Math::Matrix4x4* model_matrix = (Math::Matrix4x4*)((uint64_t)mapped_buffer_ptr + (i * dynamic_alignment));
-                *model_matrix= ubo_data_list[i].model;
+                Math::Matrix4x4 *model_matrix = (Math::Matrix4x4 *) ((uint64_t) mapped_buffer_ptr +
+                                                                     (i * dynamic_alignment));
+                *model_matrix = ubo_data_list[i].model;
             }
 
-            VkMappedMemoryRange mappedMemoryRange {};
-            mappedMemoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+            VkMappedMemoryRange mappedMemoryRange{};
+            mappedMemoryRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
             mappedMemoryRange.memory = model_ubo_dynamic_buffer_memory;
-            mappedMemoryRange.size = mapped_size;
+            mappedMemoryRange.size   = mapped_size;
 
             vkFlushMappedMemoryRanges(g_p_vulkan_context->_device, 1, &mappedMemoryRange);
         }
@@ -111,16 +114,16 @@ namespace RenderSystem
     class RenderPerFrameUBO
     {
     public:
-        VkDeviceSize buffer_size;
-        VulkanPerFrameDefine per_frame_ubo_list;
-        VkBuffer  per_frame_buffer;
-        VkDeviceMemory per_frame_buffer_memory;
-        void* mapped_buffer_ptr;
+        VkDeviceSize         buffer_size;
+        VulkanPerFrameDefine per_frame_ubo;
+        VkBuffer             per_frame_buffer;
+        VkDeviceMemory       per_frame_buffer_memory;
+        void *mapped_buffer_ptr;
         VkDescriptorBufferInfo buffer_descriptor;
 
         RenderPerFrameUBO()
         {
-            buffer_size = sizeof(VulkanPerFrameDefine);
+            buffer_size                        = sizeof(VulkanPerFrameDefine);
             VkDeviceSize no_coherent_atom_size = g_p_vulkan_context->_physical_device_properties.limits.nonCoherentAtomSize;
             buffer_size = (buffer_size + no_coherent_atom_size - 1) & ~(no_coherent_atom_size - 1);
 //            dynamic_alignment = (dynamic_alignment + min_ubo_alignment - 1) & ~(min_ubo_alignment - 1);
@@ -137,7 +140,7 @@ namespace RenderSystem
 
             buffer_descriptor.buffer = per_frame_buffer;
             buffer_descriptor.offset = 0;
-            buffer_descriptor.range = buffer_size;
+            buffer_descriptor.range  = buffer_size;
         }
 
         ~RenderPerFrameUBO()
@@ -147,37 +150,38 @@ namespace RenderSystem
             vkFreeMemory(g_p_vulkan_context->_device, per_frame_buffer_memory, nullptr);
         }
 
-        void setCameraMatrix(const Math::Matrix4x4& view, const Math::Matrix4x4& proj)
+        void setCameraMatrix(const Math::Matrix4x4 &view, const Math::Matrix4x4 &proj)
         {
-            per_frame_ubo_list.view_proj = proj * view;
+            per_frame_ubo.proj_view = proj * view;
         }
 
-        void setCameraMatrix(const Math::Matrix4x4& view_proj)
+        void setCameraMatrix(const Math::Matrix4x4 &view_proj)
         {
-            per_frame_ubo_list.view_proj = view_proj;
+            per_frame_ubo.proj_view = view_proj;
         }
 
-        void setCameraPos(const Math::Vector3& camera_pos)
+        void setCameraPos(const Math::Vector3 &camera_pos)
         {
-            per_frame_ubo_list.camera_pos = camera_pos;
+            per_frame_ubo.camera_pos = camera_pos;
         }
 
-        void setDirectionLightDir(const Math::Vector3& dir)
+        void setDirectionLightDir(const Math::Vector3 &dir)
         {
-            per_frame_ubo_list.directionLight_dir = dir;
+            per_frame_ubo.directionLight_dir = dir;
         }
 
-        RenderPerFrameUBO(const RenderPerFrameUBO& other) =delete;
-        RenderPerFrameUBO& operator=(const RenderPerFrameUBO& other) =delete;
+        RenderPerFrameUBO(const RenderPerFrameUBO &other) = delete;
+
+        RenderPerFrameUBO &operator=(const RenderPerFrameUBO &other) = delete;
 
         void ToGPU()
         {
-            memcpy(mapped_buffer_ptr, &per_frame_ubo_list, sizeof(VulkanPerFrameDefine));
+            memcpy(mapped_buffer_ptr, &per_frame_ubo, sizeof(VulkanPerFrameDefine));
 
-            VkMappedMemoryRange mappedMemoryRange {};
-            mappedMemoryRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+            VkMappedMemoryRange mappedMemoryRange{};
+            mappedMemoryRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
             mappedMemoryRange.memory = per_frame_buffer_memory;
-            mappedMemoryRange.size = buffer_size;
+            mappedMemoryRange.size   = buffer_size;
 
             vkFlushMappedMemoryRanges(g_p_vulkan_context->_device, 1, &mappedMemoryRange);
         }

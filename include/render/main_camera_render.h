@@ -42,8 +42,9 @@ namespace RenderSystem
 
         void setCameraMatrix(Matrix4x4 view, Matrix4x4 proj)
         {
-            m_render_per_frame_ubo.per_frame_ubo_list.view_proj = proj * view;
-            m_render_per_frame_ubo.ToGPU();
+            m_view_matrix= view;
+            m_proj_matrix= proj;
+            updateRenderPerFrameUBO();
         }
 
         void setUIOverlay(UIOverlayPtr ui_overlay)
@@ -71,9 +72,14 @@ namespace RenderSystem
         RenderModelUBOList m_render_model_ubo_list;
         RenderPerFrameUBO  m_render_per_frame_ubo;
 
+        Matrix4x4 m_view_matrix;
+        Matrix4x4 m_proj_matrix;
+
         void setupRenderpass();
 
         void updateRenderModelUBO();
+
+        void updateRenderPerFrameUBO();
     };
 }
 #endif //XEXAMPLE_MAIN_CAMERA_RENDER_H

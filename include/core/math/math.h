@@ -14,11 +14,15 @@
 
 namespace Math
 {
-    typedef Vector3 EulerAngle; // degree unit
-    typedef Vector4 Color;
-    typedef Vector2 TexCoord;
+    typedef Vector3    EulerAngle; // degree unit
+    typedef Vector4    Color;
+    typedef Vector2    TexCoord;
+    typedef Vector3    Position;
+    typedef EulerAngle Rotation;
+    typedef Vector3    Scale;
 
     bool realEqual(float a, float b, float tolerance /* = std::numeric_limits<float>::epsilon() */);
+
     Matrix4x4 getRotationMatrix(const EulerAngle &eulerAngle);
 }
 

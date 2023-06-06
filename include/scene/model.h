@@ -6,6 +6,7 @@
 #define XEXAMPLE_MODEL_H
 
 #include "render/resource/render_mesh.h"
+#include "transform.h"
 #include <vector>
 #include <string>
 #include <memory>
@@ -17,15 +18,18 @@ namespace Scene
     class Model
     {
     public:
-        RenderMeshPtr m_loaded_mesh;
+        RenderMeshPtr loaded_mesh;
+        Transform     transform;
+
     public:
         Model() {}
         ~Model() {}
-        bool loadModelFile(const std::string &mesh_path);
+        void Tick();
+        bool LoadModelFile(const std::string &mesh_path);
+    private:
         void processModelNode(aiNode *node, const aiScene *scene);
         void processMesh(aiMesh *mesh, const aiScene *scene);
 
-    private:
         uint32_t m_index_count{0};
         std::vector<RenderSystem::RenderSubmesh> m_submeshes;
     };

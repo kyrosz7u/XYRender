@@ -6,7 +6,12 @@
 
 using namespace Scene;
 
-bool Model::loadModelFile(const std::string &mesh_path)
+void Model::Tick()
+{
+    loaded_mesh->model_matrix = transform.GetTransformMatrix();
+}
+
+bool Model::LoadModelFile(const std::string &mesh_path)
 {
     Assimp::Importer importer;
 
@@ -18,9 +23,9 @@ bool Model::loadModelFile(const std::string &mesh_path)
         return false;
     m_index_count=0;
     m_submeshes.clear();
-    m_loaded_mesh = std::make_shared<RenderSystem::RenderMesh>();
+    loaded_mesh = std::make_shared<RenderSystem::RenderMesh>();
     processModelNode(pScene->mRootNode, pScene);
-    m_loaded_mesh->m_submeshes = m_submeshes;
+    loaded_mesh->m_submeshes = m_submeshes;
     return true;
 }
 
@@ -41,7 +46,7 @@ void Model::processModelNode(aiNode *node, const aiScene *scene)
 
 void Model::processMesh(aiMesh *mesh, const aiScene *scene)
 {
-//    m_loaded_mesh->m_name = mesh->mName.C_Str();
+//    loaded_mesh->m_name = mesh->mName.C_Str();
     for (unsigned int i = 0; i < mesh->mNumVertices; i++)
     {
         RenderSystem::VulkanMeshVertexPostition vertex_position;
@@ -77,9 +82,9 @@ void Model::processMesh(aiMesh *mesh, const aiScene *scene)
         } else
             vertex_texcoord.texCoord = Vector2::ZERO;
 
-        m_loaded_mesh->m_positions.push_back(vertex_position);
-        m_loaded_mesh->m_normals.push_back(vertex_normal);
-        m_loaded_mesh->m_texcoords.push_back(vertex_texcoord);
+        loaded_mesh->m_positions.push_back(vertex_position);
+        loaded_mesh->m_normals.push_back(vertex_normal);
+        loaded_mesh->m_texcoords.push_back(vertex_texcoord);
     }
     // 处理索引
     uint32_t index_count=0;
@@ -88,7 +93,7 @@ void Model::processMesh(aiMesh *mesh, const aiScene *scene)
         aiFace            face = mesh->mFaces[i];
         for (unsigned int j    = 0; j < face.mNumIndices; j++)
         {
-            m_loaded_mesh->m_indices.push_back(face.mIndices[j]+m_index_count);
+            loaded_mesh->m_indices.push_back(face.mIndices[j] + m_index_count);
             index_count++;
         }
     }
@@ -97,7 +102,7 @@ void Model::processMesh(aiMesh *mesh, const aiScene *scene)
     render_submesh.index_count = index_count;
     render_submesh.index_offset = m_index_count;
     render_submesh.vertex_offset = 0;
-    render_submesh.parent_mesh = m_loaded_mesh;
+    render_submesh.parent_mesh = loaded_mesh;
     m_index_count += index_count;
     m_submeshes.push_back(render_submesh);
 
