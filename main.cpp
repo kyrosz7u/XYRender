@@ -27,14 +27,15 @@ int main()
 
 //    mainCamera.m_render->loadSingleMesh(model.loaded_mesh);
     model.LoadModelFile("assets/models/capsule.obj");
-    model.transform.position = Math::Vector3(10, 0, 0);
+    model.transform.position = Math::Vector3(10, 10, 0);
+//    model.transform.rotation = Math::Vector3(90, 0, 0);
     model.loaded_mesh->ToGPU();
     scene_manager->AddModel(model);
 
-//    model.LoadModelFile("assets/models/");
-//    model.transform.position = Math::Vector3(10, 0, 0);
-//    model.loaded_mesh->ToGPU();
-//    scene_manager->AddModel(model);
+    model.LoadModelFile("assets/models/floor.obj");
+    model.transform.position = Math::Vector3(0, 0, 0);
+    model.loaded_mesh->ToGPU();
+    scene_manager->AddModel(model);
 
     Scene::DirectionLight light;
     light.intensity = 1.0f;

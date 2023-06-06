@@ -96,7 +96,7 @@ void MeshPass::updateDescriptorSet()
     perframe_buffer_write.dstArrayElement = 0;
     perframe_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     perframe_buffer_write.descriptorCount = 1;
-    perframe_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_per_frame_ubo->buffer_descriptor;
+    perframe_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_per_frame_ubo->buffer_descriptors[0];
 
     VkWriteDescriptorSet &perobject_buffer_write = write_descriptor_sets[1];
     perobject_buffer_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
