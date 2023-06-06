@@ -94,7 +94,7 @@ void _InputSystem::onCursorPos(double current_cursor_x, double current_cursor_y)
     m_last_cursor_y = current_cursor_y;
 }
 
-void _InputSystem::initialize(GLFWWindow *window)
+void _InputSystem::initialize(std::shared_ptr<GLFWWindow> window)
 {
     m_window = window;
 

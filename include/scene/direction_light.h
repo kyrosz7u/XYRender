@@ -12,6 +12,7 @@ namespace Scene
     class DirectionLight
     {
     public:
+        float intensity;
         Math::Color color;
         Transform transform;
 

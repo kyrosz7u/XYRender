@@ -2,8 +2,8 @@
 // Created by kyrosz7u on 2023/5/19.
 //
 
-#ifndef XEXAMPLE_MAIN_CAMERA_RENDER_H
-#define XEXAMPLE_MAIN_CAMERA_RENDER_H
+#ifndef XEXAMPLE_FORWARD_RENDER_H
+#define XEXAMPLE_FORWARD_RENDER_H
 
 #include "render_base.h"
 #include "renderpass/main_camera_renderpass.h"
@@ -12,17 +12,16 @@
 
 namespace RenderSystem
 {
-    enum : unsigned int
-    {
-        _main_camera_renderpass = 0,
-        _ui_overlay_renderpass,
-        _renderpass_count
-    };
-
-    class MainCameraRender : public RenderBase
+    class ForwardRender : public RenderBase
     {
     public:
-        ~MainCameraRender() override;
+        enum _renderpasses
+        {
+            _main_camera_renderpass=0,
+            _ui_overlay_renderpass,
+            _renderpass_count
+        };
+        ~ForwardRender() override;
 
         void initialize() override;
 
@@ -36,22 +35,19 @@ namespace RenderSystem
 
         void draw();
 
-        void loadSceneMeshes(std::vector<RenderMeshPtr> &visible_meshes);
-
-        void loadSingleMesh(RenderMeshPtr &mesh);
-
         void setCameraMatrix(Matrix4x4 view, Matrix4x4 proj)
         {
             m_view_matrix= view;
             m_proj_matrix= proj;
-            updateRenderPerFrameUBO();
         }
 
         void setUIOverlay(UIOverlayPtr ui_overlay)
         {
-            m_render_resource_info.p_ui_overlay = ui_overlay;
+            m_p_ui_overlay=ui_overlay;
         }
+        void AddSingleMesh(RenderMeshPtr &mesh);
 
+        void LoadVisibleMeshes(std::vector<RenderMeshPtr> visible_meshes);
     private:
         void setupCommandBuffer();
 
@@ -63,7 +59,6 @@ namespace RenderSystem
         VkCommandPool                m_command_pool;
         std::vector<VkCommandBuffer> m_command_buffers;
         VkDescriptorPool             m_descriptor_pool;
-//        MainCameraRenderPass         renderPass;
         std::vector<RenderPassPtr>   m_render_passes;
         std::vector<ImageAttachment> m_render_targets;
         std::vector<ImageAttachment> m_backup_targets;
@@ -75,6 +70,8 @@ namespace RenderSystem
         Matrix4x4 m_view_matrix;
         Matrix4x4 m_proj_matrix;
 
+        UIOverlayPtr m_p_ui_overlay;
+
         void setupRenderpass();
 
         void updateRenderModelUBO();
@@ -82,4 +79,4 @@ namespace RenderSystem
         void updateRenderPerFrameUBO();
     };
 }
-#endif //XEXAMPLE_MAIN_CAMERA_RENDER_H
+#endif //XEXAMPLE_FORWARD_RENDER_H

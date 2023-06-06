@@ -108,6 +108,7 @@ namespace RenderSystem
             mappedMemoryRange.size   = mapped_size;
 
             vkFlushMappedMemoryRanges(g_p_vulkan_context->_device, 1, &mappedMemoryRange);
+            vkUnmapMemory(g_p_vulkan_context->_device, model_ubo_dynamic_buffer_memory);
         }
     };
 

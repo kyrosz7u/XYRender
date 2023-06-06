@@ -9,7 +9,7 @@
 
 #include "core/math/math.h"
 #include "input/input_system.h"
-#include "render/main_camera_render.h"
+#include "render/forward_render.h"
 
 using namespace Math;
 using namespace RenderSystem;
@@ -22,42 +22,45 @@ namespace Scene
         perspective
     };
 
+    class SceneManager;
+
     class Camera
     {
     public:
-        Camera()
+        Vector3                       position;
+        EulerAngle                    rotation;
+        Vector3                       Right                     = Vector3(1, 0, 0);
+        Vector3                       Up                        = Vector3(0, 1, 0);
+        Vector3                       Forward                   = Vector3(0, 0, 1);
+        CameraMode                    mode;
+        float                         width;
+        float                         height;
+        float                         aspect;
+        float                         fov;
+        float                         znear;
+        float                         zfar;
+
+        std::function<void(int, int)> windowSizeChangedDelegate = std::bind(
+                &Camera::windowSizeChangedHandler, this,
+                std::placeholders::_1,
+                std::placeholders::_2);
+
+    public:
+        Camera(float aspect, float fov, float znear, float zfar, CameraMode mode = perspective)
+                :  aspect(aspect), fov(fov), znear(znear), zfar(zfar), mode(mode)
         {
-            m_render = std::make_shared<MainCameraRender>();
-            m_render->initialize();
+            InputSystem.GetRawWindow()->registerOnWindowSizeFunc(windowSizeChangedDelegate);
         }
 
-        void Tick()
+        void PostInitialize();
+
+        void Tick();
+
+        void ImGuiDebugPanel();
+
+        void setParentScene(std::weak_ptr<SceneManager> parent_scene)
         {
-            auto rotMat = getRotationMatrix(rotation);
-            Right   = rotMat * Vector3(1, 0, 0);
-            Up      = rotMat * Vector3(0, 1, 0);
-            Forward = rotMat * Vector3(0, 0, 1);
-
-            if (InputSystem.Focused)
-            {
-                float speed = InputSystem.SpeedUp ? 10.0f : 5.0f;
-                moveDir  = rotMat * InputSystem.Move;
-                position = position + moveDir * speed * m_render->getFrameTime();
-
-                rotation.x+= InputSystem.Look.y * m_render->getFrameTime()*speed*2;
-                rotation.y+= InputSystem.Look.x * m_render->getFrameTime()*speed*2;
-
-                if(rotation.x > 89.0f)
-                    rotation.x = 89.0f;
-                if(rotation.x < -89.0f)
-                    rotation.x = -89.0f;
-                if (rotation.y > 360.0f)
-                    rotation.y -= 360.0f;
-                if (rotation.y < -360.0f)
-                    rotation.y += 360.0f;
-            }
-            m_render->setCameraMatrix(calculateViewMatrix(), calculatePerspectiveMatrix());
-            m_render->Tick();
+            m_p_parent_scene = parent_scene;
         }
 
         Matrix4x4 calculateViewMatrix()
@@ -84,47 +87,10 @@ namespace Scene
             aspect = (float) width / height;
         }
 
-        void ImGuiDebugPanel()
-        {
-            ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-            if (ImGui::TreeNode("MainCamera"))
-            {
-                ImGui::Text("position: %.2f, %.2f, %.2f", position.x, position.y, position.z);
-                ImGui::Text("rotation: %.2f, %.2f, %.2f", rotation.x, rotation.y, rotation.z);
-                ImGui::Text("Right: %.2f, %.2f, %.2f", Right.x, Right.y, Right.z);
-                ImGui::Text("Up: %.2f, %.2f, %.2f", Up.x, Up.y, Up.z);
-                ImGui::Text("Forward: %.2f, %.2f, %.2f", Forward.x, Forward.y, Forward.z);
-                ImGui::Text("moveDir: %.2f, %.2f, %.2f", moveDir.x, moveDir.y, moveDir.z);
-                ImGui::Text("mode: %s", mode == orthogonal ? "orthogonal" : "perspective");
-                ImGui::Text("width: %.1f height: %.1f", width, height);
-                ImGui::Text("aspect: %.1f fov: %.1f", aspect, fov);
-                ImGui::Text("znear: %.1f zfar: %.1f", znear, zfar);
-                ImGui::TreePop();
-            }
-        }
 
-    public:
-        Vector3    position;
-        EulerAngle rotation;
-        Vector3    Right   = Vector3(1, 0, 0);
-        Vector3    Up      = Vector3(0, 1, 0);
-        Vector3    Forward = Vector3(0, 0, 1);
-        CameraMode mode;
-        float      width;
-        float      height;
-        float      aspect;
-        float      fov;
-        float      znear;
-        float      zfar;
-
-        Vector3 moveDir;
-
-        std::shared_ptr<MainCameraRender> m_render;
-        std::function<void(int, int)>     windowSizeChangedDelegate = std::bind(
-                &Camera::windowSizeChangedHandler, this,
-                std::placeholders::_1,
-                std::placeholders::_2);
-
+    private:
+        std::weak_ptr<SceneManager>    m_p_parent_scene;
+        std::weak_ptr<ForwardRender> render_in_scene;
     };
 }
 

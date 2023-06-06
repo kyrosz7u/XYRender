@@ -8,7 +8,7 @@
 #define GLFW_INCLUDE_VULKAN
 
 #include "core/logger/logger_macros.h"
-
+#include "core/math/math.h"
 #include "GLFW/glfw3.h"
 
 struct GLFWWindowCreateInfo
@@ -38,6 +38,11 @@ public:
 
     ::GLFWwindow *getWindowHandler()
     { return m_window; }
+
+    Math::Vector2 getWindowSize()
+    {
+        return Math::Vector2(m_width, m_height);
+    }
 
     bool isMouseButtonDown(int button) const;
 

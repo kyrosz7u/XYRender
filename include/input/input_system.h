@@ -32,14 +32,19 @@ public:
     bool SpeedUp{false};
     bool Focused{false};
 
-    void initialize(GLFWWindow *window);
+    void initialize(std::shared_ptr<GLFWWindow> window);
 
     void Tick();
 
     void ImGuiDebugPanel();
 
+    std::shared_ptr<GLFWWindow> GetRawWindow()
+    {
+        return m_window;
+    }
+
 private:
-    GLFWWindow *m_window;
+    std::shared_ptr<GLFWWindow> m_window;
 
     uint16_t m_camera_command;
     bool     m_is_focus_mode{false};

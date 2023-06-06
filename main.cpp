@@ -10,56 +10,44 @@
 int main()
 {
     GLFWWindowCreateInfo windowCreateInfo;
-    GLFWWindow           window;
+    auto           window = std::make_shared<GLFWWindow>();
 
-    window.initialize(windowCreateInfo);
-    UIOverlayPtr         p_ui_overlay = std::make_shared<UIOverlay>();
-    p_ui_overlay->initialize(std::make_shared<GLFWWindow>(window));
+    window->initialize(windowCreateInfo);
 
-    _InputSystem::Instance().initialize(&window);
-    RenderBase::setupGlobally(window.getWindowHandler());
-
-    Scene::Camera mainCamera;
-
-    p_ui_overlay->addDebugDrawCommand(std::bind(&_InputSystem::ImGuiDebugPanel, &_InputSystem::Instance()));
-    p_ui_overlay->addDebugDrawCommand(std::bind(&Scene::Camera::ImGuiDebugPanel, &mainCamera));
-
-    mainCamera.aspect   = (float) windowCreateInfo.width / windowCreateInfo.height;
-    mainCamera.fov      = 90;
-    mainCamera.znear    = 0.1f;
-    mainCamera.zfar     = 100.0f;
-    mainCamera.mode     = Scene::perspective;
-    mainCamera.position = Math::Vector3(0, 10, -20);
-    mainCamera.rotation = Math::EulerAngle(0, 0, 0);
-
-    window.registerOnWindowSizeFunc(mainCamera.windowSizeChangedDelegate);
+    InputSystem.initialize(window);
+    RenderBase::setupGlobally(window->getWindowHandler());
 
     Scene::Model model;
 
-    Scene::SceneManager sceneManager;
+    auto scene_manager = std::make_shared<Scene::SceneManager>();
 
     model.LoadModelFile("assets/models/Kong.fbx");
     model.loaded_mesh->ToGPU();
-    sceneManager.addModel(model);
+    scene_manager->AddModel(model);
 
 //    mainCamera.m_render->loadSingleMesh(model.loaded_mesh);
     model.LoadModelFile("assets/models/capsule.obj");
+    model.transform.position = Math::Vector3(10, 0, 0);
     model.loaded_mesh->ToGPU();
-    sceneManager.addModel(model);
+    scene_manager->AddModel(model);
+
+//    model.LoadModelFile("assets/models/");
+//    model.transform.position = Math::Vector3(10, 0, 0);
+//    model.loaded_mesh->ToGPU();
+//    scene_manager->AddModel(model);
 
     Scene::DirectionLight light;
+    light.intensity = 1.0f;
     light.transform = Transform(Math::Vector3(0, 15, -15), Math::EulerAngle(50, -30, 0), Math::Vector3(1, 1, 1));
-    light.color = Color(1, float(244/255), float(214/255),255);
-    sceneManager.addLight(light);
+    light.color     = Color(1, float(244 / 255), float(214 / 255), 255);
+    scene_manager->AddLight(light);
 
-    sceneManager.setUIOverlay(p_ui_overlay);
+    scene_manager->PostInitialize();
 
-//    mainCamera.m_render->setUIOverlay(p_ui_overlay);
-
-    while (!window.shouldClose())
+    while (!window->shouldClose())
     {
-        _InputSystem::Instance().Tick();
-        mainCamera.Tick();
+        InputSystem.Tick();
+        scene_manager->Tick();
     }
     return 0;
 }

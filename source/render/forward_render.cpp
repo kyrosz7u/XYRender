@@ -2,14 +2,14 @@
 // Created by kyrosz7u on 2023/5/19.
 //
 
-#include "render/main_camera_render.h"
+#include "render/forward_render.h"
 #include "render/renderpass/main_camera_renderpass.h"
 #include "render/renderpass/ui_overlay_renderpass.h"
 #include "core/logger/logger_macros.h"
 
 using namespace RenderSystem;
 
-void MainCameraRender::initialize()
+void ForwardRender::initialize()
 {
     m_render_command_info.p_descriptor_pool = &m_descriptor_pool;
     m_render_command_info.p_viewport        = &m_viewport;
@@ -18,6 +18,7 @@ void MainCameraRender::initialize()
     m_render_resource_info.p_visible_meshes        = &m_visible_meshes;
     m_render_resource_info.p_render_model_ubo_list = &m_render_model_ubo_list;
     m_render_resource_info.p_render_per_frame_ubo  = &m_render_per_frame_ubo;
+    m_render_resource_info.p_ui_overlay            = m_p_ui_overlay;
 
     m_backup_targets.resize(1);
     setupBackupBuffer();
@@ -28,7 +29,7 @@ void MainCameraRender::initialize()
     setupRenderpass();
 }
 
-void MainCameraRender::setupRenderTargets()
+void ForwardRender::setupRenderTargets()
 {
     int                          renderTarget_nums = g_p_vulkan_context->_swapchain_images.size();
     std::vector<ImageAttachment> targets_tmp;
@@ -46,7 +47,7 @@ void MainCameraRender::setupRenderTargets()
     m_render_targets.swap(targets_tmp);
 }
 
-void MainCameraRender::setupCommandBuffer()
+void ForwardRender::setupCommandBuffer()
 {
     VkCommandPoolCreateInfo command_pool_create_info;
     command_pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -80,7 +81,7 @@ void MainCameraRender::setupCommandBuffer()
     }
 }
 
-void MainCameraRender::setupDescriptorPool()
+void ForwardRender::setupDescriptorPool()
 {
     std::vector<VkDescriptorPoolSize> descriptorTypes =
                                               {
@@ -102,7 +103,7 @@ void MainCameraRender::setupDescriptorPool()
                                            &m_descriptor_pool))
 }
 
-void MainCameraRender::setupBackupBuffer()
+void ForwardRender::setupBackupBuffer()
 {
     m_backup_targets[0] = ImageAttachment{
             VK_NULL_HANDLE,
@@ -134,7 +135,7 @@ void MainCameraRender::setupBackupBuffer()
                                                            1);
 }
 
-void MainCameraRender::setViewport()
+void ForwardRender::setViewport()
 {
     uint32_t width  = g_p_vulkan_context->_swapchain_extent.width;
     uint32_t height = g_p_vulkan_context->_swapchain_extent.height;
@@ -144,7 +145,7 @@ void MainCameraRender::setViewport()
                            {width, height}});
 }
 
-void MainCameraRender::setupRenderpass()
+void ForwardRender::setupRenderpass()
 {
     m_render_passes.resize(_renderpass_count);
 
@@ -168,16 +169,18 @@ void MainCameraRender::setupRenderpass()
     m_render_passes[_ui_overlay_renderpass]->initialize(&ui_overlay_renderpass_init_info);
 }
 
-void MainCameraRender::Tick()
+void ForwardRender::Tick()
 {
     RenderBase::Tick();
+    updateRenderModelUBO();
+    updateRenderPerFrameUBO();
     draw();
 }
 
-void MainCameraRender::draw()
+void ForwardRender::draw()
 {
     uint32_t next_image_index = g_p_vulkan_context->getNextSwapchainImageIndex(
-            std::bind(&MainCameraRender::updateAfterSwapchainRecreate, this));
+            std::bind(&ForwardRender::updateAfterSwapchainRecreate, this));
     if (next_image_index == -1)
     {
         LOG_INFO("next image index is -1");
@@ -208,22 +211,20 @@ void MainCameraRender::draw()
 
     g_p_vulkan_context->submitDrawSwapchainImageCmdBuffer(&m_command_buffers[next_image_index]);
     g_p_vulkan_context->presentSwapchainImage(next_image_index,
-                                              std::bind(&MainCameraRender::updateAfterSwapchainRecreate, this));
+                                              std::bind(&ForwardRender::updateAfterSwapchainRecreate, this));
 }
 
-void MainCameraRender::loadSingleMesh(RenderMeshPtr &mesh)
+void ForwardRender::AddSingleMesh(RenderMeshPtr &mesh)
 {
     m_visible_meshes.push_back(mesh);
-    updateRenderModelUBO();
 }
 
-void MainCameraRender::loadSceneMeshes(std::vector<RenderMeshPtr> &visible_meshes)
+void ForwardRender::LoadVisibleMeshes(std::vector<RenderMeshPtr> visible_meshes)
 {
-    m_visible_meshes.insert(m_visible_meshes.end(),visible_meshes.begin(),visible_meshes.end());
-    updateRenderModelUBO();
+    m_visible_meshes.swap(visible_meshes);
 }
 
-void MainCameraRender::updateRenderModelUBO()
+void ForwardRender::updateRenderModelUBO()
 {
     m_render_model_ubo_list.ubo_data_list.resize(m_visible_meshes.size());
     for (int i = 0; i < m_visible_meshes.size(); ++i)
@@ -234,14 +235,14 @@ void MainCameraRender::updateRenderModelUBO()
     m_render_model_ubo_list.ToGPU();
 }
 
-void MainCameraRender::updateRenderPerFrameUBO()
+void ForwardRender::updateRenderPerFrameUBO()
 {
     m_render_per_frame_ubo.per_frame_ubo.proj_view = m_proj_matrix * m_view_matrix;
 
     m_render_per_frame_ubo.ToGPU();
 }
 
-void MainCameraRender::updateAfterSwapchainRecreate()
+void ForwardRender::updateAfterSwapchainRecreate()
 {
     vkDestroyImage(g_p_vulkan_context->_device, m_backup_targets[0].image, nullptr);
     vkDestroyImageView(g_p_vulkan_context->_device, m_backup_targets[0].view, nullptr);
@@ -257,7 +258,7 @@ void MainCameraRender::updateAfterSwapchainRecreate()
     }
 }
 
-MainCameraRender::~MainCameraRender()
+ForwardRender::~ForwardRender()
 {
     g_p_vulkan_context->waitForFrameInFlightFence();
     vkDestroyCommandPool(g_p_vulkan_context->_device, m_command_pool, nullptr);
