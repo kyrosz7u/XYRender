@@ -10,6 +10,7 @@
 #include "core/math/math.h"
 
 #define MAX_MODEL_COUNT 128*1024
+#define MAX_DIRECTIONAL_LIGHT_COUNT 16
 
 using namespace VulkanAPI;
 
@@ -21,12 +22,18 @@ namespace RenderSystem
     {
         Math::Matrix4x4 model;
     };
-    struct VulkanPerFrameDefine
+    struct VulkanPerFrameSceneDefine
     {
         Math::Matrix4x4 proj_view;
         Math::Vector3   camera_pos;
-        Math::Vector3   directionLight_dir;
+        int             directional_light_number;
     };
+    struct VulkanPerFrameDirectionalLightDefine
+    {
+        float         intensity[MAX_DIRECTIONAL_LIGHT_COUNT];
+        Math::Vector3 direction[MAX_DIRECTIONAL_LIGHT_COUNT];
+    };
+
 
     class RenderModelUBOList
     {
@@ -36,8 +43,8 @@ namespace RenderSystem
         std::vector<VulkanModelDefine> ubo_data_list;
         VkBuffer                       model_ubo_dynamic_buffer;
         VkDeviceMemory                 model_ubo_dynamic_buffer_memory;
-        void *mapped_buffer_ptr;
-        VkDescriptorBufferInfo buffer_descriptor;
+        void                           *mapped_buffer_ptr;
+        VkDescriptorBufferInfo         buffer_descriptor;
 
     public:
         RenderModelUBOList()
@@ -115,16 +122,24 @@ namespace RenderSystem
     class RenderPerFrameUBO
     {
     public:
-        VkDeviceSize         buffer_size;
-        VulkanPerFrameDefine per_frame_ubo;
-        VkBuffer             per_frame_buffer;
-        VkDeviceMemory       per_frame_buffer_memory;
-        void *mapped_buffer_ptr;
-        VkDescriptorBufferInfo buffer_descriptor;
+        enum _preframe_buffer_data_block
+        {
+            _scene_block = 0,
+            _light_block,
+            _block_count
+        };
+        VkDeviceSize                         buffer_size;
+        VulkanPerFrameSceneDefine            per_frame_ubo;
+        VulkanPerFrameDirectionalLightDefine directional_light_ubo;
+        VkBuffer                             per_frame_buffer;
+        VkDeviceMemory                       per_frame_buffer_memory;
+        void                                 *mapped_buffer_ptr;
+        std::vector<VkDescriptorBufferInfo>  buffer_descriptors;
 
         RenderPerFrameUBO()
         {
-            buffer_size                        = sizeof(VulkanPerFrameDefine);
+            buffer_size                        =
+                    sizeof(VulkanPerFrameSceneDefine) + sizeof(VulkanPerFrameDirectionalLightDefine);
             VkDeviceSize no_coherent_atom_size = g_p_vulkan_context->_physical_device_properties.limits.nonCoherentAtomSize;
             buffer_size = (buffer_size + no_coherent_atom_size - 1) & ~(no_coherent_atom_size - 1);
 //            dynamic_alignment = (dynamic_alignment + min_ubo_alignment - 1) & ~(min_ubo_alignment - 1);
@@ -139,10 +154,16 @@ namespace RenderSystem
             vkMapMemory(g_p_vulkan_context->_device, per_frame_buffer_memory, 0,
                         buffer_size, 0, &mapped_buffer_ptr);
 
-            buffer_descriptor.buffer = per_frame_buffer;
-            buffer_descriptor.offset = 0;
-            buffer_descriptor.range  = buffer_size;
+            buffer_descriptors.resize(_block_count);
+            buffer_descriptors[_scene_block].buffer = per_frame_buffer;
+            buffer_descriptors[_scene_block].offset = 0;
+            buffer_descriptors[_scene_block].range  = buffer_size;
+
+            buffer_descriptors[_light_block].buffer = per_frame_buffer;
+            buffer_descriptors[_light_block].offset = sizeof(VulkanPerFrameSceneDefine);
+            buffer_descriptors[_light_block].range  = sizeof(VulkanPerFrameDirectionalLightDefine);
         }
+
 
         ~RenderPerFrameUBO()
         {
@@ -151,33 +172,17 @@ namespace RenderSystem
             vkFreeMemory(g_p_vulkan_context->_device, per_frame_buffer_memory, nullptr);
         }
 
-        void setCameraMatrix(const Math::Matrix4x4 &view, const Math::Matrix4x4 &proj)
-        {
-            per_frame_ubo.proj_view = proj * view;
-        }
-
-        void setCameraMatrix(const Math::Matrix4x4 &view_proj)
-        {
-            per_frame_ubo.proj_view = view_proj;
-        }
-
-        void setCameraPos(const Math::Vector3 &camera_pos)
-        {
-            per_frame_ubo.camera_pos = camera_pos;
-        }
-
-        void setDirectionLightDir(const Math::Vector3 &dir)
-        {
-            per_frame_ubo.directionLight_dir = dir;
-        }
-
         RenderPerFrameUBO(const RenderPerFrameUBO &other) = delete;
 
         RenderPerFrameUBO &operator=(const RenderPerFrameUBO &other) = delete;
 
         void ToGPU()
         {
-            memcpy(mapped_buffer_ptr, &per_frame_ubo, sizeof(VulkanPerFrameDefine));
+            memcpy(mapped_buffer_ptr, &per_frame_ubo, sizeof(VulkanPerFrameSceneDefine));
+            memcpy((void *) ((uint64_t) mapped_buffer_ptr + sizeof(VulkanPerFrameSceneDefine)),
+                   &directional_light_ubo,
+                   per_frame_ubo.directional_light_number * sizeof(VulkanPerFrameDirectionalLightDefine) /
+                   MAX_DIRECTIONAL_LIGHT_COUNT);
 
             VkMappedMemoryRange mappedMemoryRange{};
             mappedMemoryRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
