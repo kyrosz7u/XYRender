@@ -3,6 +3,8 @@
 //
 
 #include "scene/model.h"
+#include "core/logger/logger_macros.h"
+#include <filesystem>
 
 using namespace Scene;
 
@@ -11,11 +13,13 @@ void Model::Tick()
     mesh_loaded->model_matrix = transform.GetTransformMatrix();
 }
 
-bool Model::LoadModelFile(const std::string &mesh_path)
+bool Model::LoadModelFile(const std::string &model_path, const std::string &model_name)
 {
+    path = model_path;
+    name = model_name;
     Assimp::Importer importer;
 
-    const aiScene *pScene = importer.ReadFile(mesh_path,
+    const aiScene *pScene = importer.ReadFile(model_path,
                                               aiProcess_Triangulate |
                                               aiProcess_CalcTangentSpace | // 计算uv镜像
                                               aiProcess_ConvertToLeftHanded);
@@ -26,6 +30,19 @@ bool Model::LoadModelFile(const std::string &mesh_path)
     mesh_loaded = std::make_shared<RenderSystem::RenderMesh>();
     processModelNode(pScene->mRootNode, pScene);
     mesh_loaded->m_submeshes = m_submeshes;
+
+    for (unsigned int i = 0; i < pScene->mNumMaterials; i++)
+    {
+        aiMaterial *mat = pScene->mMaterials[i];
+        LOG_INFO("material name:{}", mat->GetName().C_Str());
+        auto absolutePath = std::filesystem::absolute(path);
+        auto texturePath  = absolutePath.parent_path().parent_path() / "textures"/name/mat->GetName().C_Str();
+        LOG_INFO("texture path:{}", texturePath.string()+".png");
+
+        // loadMaterialTextures(mat,aiTextureType_DIFFUSE,"texture_diffuse");
+//        Texture2DPtr texture = std::make_shared<RenderSystem::Texture2D>(path);
+    }
+
     return true;
 }
 
@@ -112,8 +129,8 @@ void Model::processMesh(aiMesh *mesh, const aiScene *scene)
 
         // 1. diffuse maps
 //        loadMaterialTextures(material,
-                             aiTextureType_DIFFUSE,
-                             "texture_diffuse");
+//        aiTextureType_DIFFUSE,
+//                           "texture_diffuse");
 //        mesh_loaded->m_textures.insert(mesh_loaded->m_textures.end(), diffuse_maps.begin(), diffuse_maps.end());
 //        // 2. specular maps
 //        std::vector<RenderSystem::RenderTexture> specular_maps = loadMaterialTextures(material,
@@ -133,21 +150,6 @@ void Model::processMesh(aiMesh *mesh, const aiScene *scene)
     }
     m_submeshes.push_back(render_submesh);
 }
-
-void Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, const std::string &typeName)
-{
-    for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
-    {
-        aiString str;
-        mat->GetTexture(type, i, &str);
-        ;
-//        RenderSystem::RenderTexture texture;
-//        texture.texture_type = typeName;
-//        texture.texture_path = str.C_Str();
-//        mesh_loaded->m_textures.push_back(texture);
-    }
-}
-
 
 
 

@@ -5,10 +5,11 @@
 #ifndef XEXAMPLE_RENDER_TEXTURE_H
 #define XEXAMPLE_RENDER_TEXTURE_H
 
+#include "core/graphic/vulkan/vulkan_context.h"
 #include <vulkan/vulkan.h>
 #include <stb_image.h>
 #include <string>
-#include "core/graphic/vulkan/vulkan_context.h"
+#include <memory>
 
 namespace RenderSystem
 {

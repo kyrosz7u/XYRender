@@ -4,6 +4,7 @@
 
 #include "render/subpass/combine_ui_pass.h"
 #include "core/logger/logger_macros.h"
+#include "core/logger/logger_macros.h"
 
 using namespace RenderSystem::SubPass;
 
@@ -72,12 +73,10 @@ void CombineUIPass::setupDescriptorSet()
         // 每个set的布局
         allocInfo.pSetLayouts        = &m_descriptorset_list[i].layout;
 
-        if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
+        VK_CHECK_RESULT(vkAllocateDescriptorSets(g_p_vulkan_context->_device,
                                      &allocInfo,
-                                     &m_descriptorset_list[i].descriptor_set) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to allocate descriptor sets!");
-        }
+                                     &m_descriptorset_list[i].descriptor_set))
+
     }
 }
 

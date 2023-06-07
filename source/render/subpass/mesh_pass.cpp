@@ -26,7 +26,7 @@ void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
 
 void MeshPass::setupDescriptorSetLayout()
 {
-    m_descriptorset_list.resize(_mesh_pass_descriptor_set_count);
+    m_descriptorset_list.resize(1);
 
     DescriptorSet &ubo_descriptor_set = m_descriptorset_list[_mesh_pass_ubo_data_descriptor_set];
 
@@ -59,27 +59,27 @@ void MeshPass::setupDescriptorSetLayout()
                                                 nullptr,
                                                 &ubo_descriptor_set.layout));
 
-    DescriptorSet &texture_descriptor_set = m_descriptorset_list[_mesh_pass_texture_sampler_descriptor_set];
-    std::vector<VkDescriptorSetLayoutBinding> texture_layout_bindings;
-    texture_layout_bindings.resize(1);
-
-    VkDescriptorSetLayoutBinding &texture_binding = texture_layout_bindings[0];
-    texture_binding.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    texture_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
-    texture_binding.binding         = 2;
-    texture_binding.descriptorCount = 1;
-
-    VkDescriptorSetLayoutCreateInfo texture_descriptorSetLayoutCreateInfo;
-    texture_descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    texture_descriptorSetLayoutCreateInfo.flags        = 0;
-    texture_descriptorSetLayoutCreateInfo.pNext        = nullptr;
-    texture_descriptorSetLayoutCreateInfo.bindingCount = texture_layout_bindings.size();
-    texture_descriptorSetLayoutCreateInfo.pBindings    = texture_layout_bindings.data();
-
-    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
-                                                &texture_descriptorSetLayoutCreateInfo,
-                                                nullptr,
-                                                &texture_descriptor_set.layout));
+//    DescriptorSet &texture_descriptor_set = m_descriptorset_list[_mesh_pass_texture_sampler_descriptor_set];
+//    std::vector<VkDescriptorSetLayoutBinding> texture_layout_bindings;
+//    texture_layout_bindings.resize(1);
+//
+//    VkDescriptorSetLayoutBinding &texture_binding = texture_layout_bindings[0];
+//    texture_binding.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+//    texture_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+//    texture_binding.binding         = 0;
+//    texture_binding.descriptorCount = 1;
+//
+//    VkDescriptorSetLayoutCreateInfo texture_descriptorSetLayoutCreateInfo;
+//    texture_descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+//    texture_descriptorSetLayoutCreateInfo.flags        = 0;
+//    texture_descriptorSetLayoutCreateInfo.pNext        = nullptr;
+//    texture_descriptorSetLayoutCreateInfo.bindingCount = texture_layout_bindings.size();
+//    texture_descriptorSetLayoutCreateInfo.pBindings    = texture_layout_bindings.data();
+//
+//    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
+//                                                &texture_descriptorSetLayoutCreateInfo,
+//                                                nullptr,
+//                                                &texture_descriptor_set.layout));
 }
 
 void MeshPass::setupDescriptorSet()

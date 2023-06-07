@@ -19,6 +19,8 @@ namespace Scene
     class Model
     {
     public:
+        std::string               name;
+        std::string               path;
         Transform                 transform;
         RenderMeshPtr             mesh_loaded;
         std::vector<Texture2DPtr> textures_loaded;
@@ -31,7 +33,7 @@ namespace Scene
 
         void Tick();
 
-        bool LoadModelFile(const std::string &mesh_path);
+        bool LoadModelFile(const std::string &model_path, const std::string &model_name);
 
     private:
         void processModelNode(aiNode *node, const aiScene *scene);
