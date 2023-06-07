@@ -20,6 +20,12 @@ if(NOT TARGET imgui)
     set_target_properties(imgui PROPERTIES FOLDER /imgui)
 endif()
 
+if(NOT TARGET stb)
+    add_subdirectory(stb)
+    set_target_properties(stb PROPERTIES FOLDER /stb)
+endif()
+
+
 #if(NOT TARGET assimp)
 #    option(ASSIMP_BUILD_ASSIMP_TOOLS "" OFF)
 #    option(ASSIMP_BUILD_TESTS "" OFF)

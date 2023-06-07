@@ -7,6 +7,7 @@ target_link_libraries(${RENDER_TARGET_NAME} PUBLIC glfw)
 target_link_libraries(${RENDER_TARGET_NAME} PUBLIC spdlog)
 target_link_libraries(${RENDER_TARGET_NAME} PUBLIC ${assimp_lib})
 target_link_libraries(${RENDER_TARGET_NAME} PUBLIC imgui)
+target_link_libraries(${RENDER_TARGET_NAME} PUBLIC stb)
 
 target_include_directories(${RENDER_TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${vulkan_include}>)
 target_include_directories(${RENDER_TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${glfw_include}>)
