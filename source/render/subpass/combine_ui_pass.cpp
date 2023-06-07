@@ -91,16 +91,12 @@ void CombineUIPass::updateDescriptorSets()
     VkDescriptorImageInfo input_image_attachment_info{};
     input_image_attachment_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     input_image_attachment_info.imageView   = m_p_input_color_attachment->view;
-    input_image_attachment_info.sampler     = VulkanUtil::getOrCreateNearestSampler(
-            g_p_vulkan_context->_physical_device,
-            g_p_vulkan_context->_device);
+    input_image_attachment_info.sampler     = VulkanUtil::getOrCreateNearestSampler(g_p_vulkan_context);
 
     VkDescriptorImageInfo uipass_image_attachment_info{};
     uipass_image_attachment_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     uipass_image_attachment_info.imageView   = m_p_uipass_color_attachment->view;
-    uipass_image_attachment_info.sampler     = VulkanUtil::getOrCreateNearestSampler(
-            g_p_vulkan_context->_physical_device,
-            g_p_vulkan_context->_device);
+    uipass_image_attachment_info.sampler     = VulkanUtil::getOrCreateNearestSampler(g_p_vulkan_context);
 
     VkWriteDescriptorSet &input_image_write = write_descriptor_sets[0];
     input_image_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

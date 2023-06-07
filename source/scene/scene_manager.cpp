@@ -21,7 +21,7 @@ void SceneManager::Tick()
     for (auto &model : m_models)
     {
         model.Tick();
-        visible_meshes.push_back(model.loaded_mesh);
+        visible_meshes.push_back(model.mesh_loaded);
     }
     m_render->LoadVisibleMeshes(visible_meshes);
     m_render->Tick();

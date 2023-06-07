@@ -26,21 +26,21 @@ void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
 
 void MeshPass::setupDescriptorSetLayout()
 {
-    m_descriptorset_list.resize(1);
+    m_descriptorset_list.resize(_mesh_pass_descriptor_set_count);
 
-    DescriptorSet &descriptor_set = m_descriptorset_list[0];
+    DescriptorSet &ubo_descriptor_set = m_descriptorset_list[_mesh_pass_ubo_data_descriptor_set];
 
-    std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
-    setLayoutBindings.resize(2);
+    std::vector<VkDescriptorSetLayoutBinding> ubo_layout_bindings;
+    ubo_layout_bindings.resize(2);
 
-    VkDescriptorSetLayoutBinding &perframe_buffer_binding = setLayoutBindings[0];
+    VkDescriptorSetLayoutBinding &perframe_buffer_binding = ubo_layout_bindings[0];
 
     perframe_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     perframe_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
     perframe_buffer_binding.binding         = 0;
     perframe_buffer_binding.descriptorCount = 1;
 
-    VkDescriptorSetLayoutBinding &perobject_buffer_binding = setLayoutBindings[1];
+    VkDescriptorSetLayoutBinding &perobject_buffer_binding = ubo_layout_bindings[1];
 
     perobject_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     perobject_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
@@ -51,13 +51,35 @@ void MeshPass::setupDescriptorSetLayout()
     descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descriptorSetLayoutCreateInfo.flags        = 0;
     descriptorSetLayoutCreateInfo.pNext        = nullptr;
-    descriptorSetLayoutCreateInfo.bindingCount = setLayoutBindings.size();
-    descriptorSetLayoutCreateInfo.pBindings    = setLayoutBindings.data();
+    descriptorSetLayoutCreateInfo.bindingCount = ubo_layout_bindings.size();
+    descriptorSetLayoutCreateInfo.pBindings    = ubo_layout_bindings.data();
 
     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
                                                 &descriptorSetLayoutCreateInfo,
                                                 nullptr,
-                                                &descriptor_set.layout));
+                                                &ubo_descriptor_set.layout));
+
+    DescriptorSet &texture_descriptor_set = m_descriptorset_list[_mesh_pass_texture_sampler_descriptor_set];
+    std::vector<VkDescriptorSetLayoutBinding> texture_layout_bindings;
+    texture_layout_bindings.resize(1);
+
+    VkDescriptorSetLayoutBinding &texture_binding = texture_layout_bindings[0];
+    texture_binding.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    texture_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+    texture_binding.binding         = 2;
+    texture_binding.descriptorCount = 1;
+
+    VkDescriptorSetLayoutCreateInfo texture_descriptorSetLayoutCreateInfo;
+    texture_descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    texture_descriptorSetLayoutCreateInfo.flags        = 0;
+    texture_descriptorSetLayoutCreateInfo.pNext        = nullptr;
+    texture_descriptorSetLayoutCreateInfo.bindingCount = texture_layout_bindings.size();
+    texture_descriptorSetLayoutCreateInfo.pBindings    = texture_layout_bindings.data();
+
+    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
+                                                &texture_descriptorSetLayoutCreateInfo,
+                                                nullptr,
+                                                &texture_descriptor_set.layout));
 }
 
 void MeshPass::setupDescriptorSet()

@@ -22,19 +22,19 @@ int main()
     auto scene_manager = std::make_shared<Scene::SceneManager>();
 
     model.LoadModelFile("assets/models/Kong.fbx");
-    model.loaded_mesh->ToGPU();
+    model.mesh_loaded->ToGPU();
     scene_manager->AddModel(model);
 
-//    mainCamera.m_render->loadSingleMesh(model.loaded_mesh);
+//    mainCamera.m_render->loadSingleMesh(model.mesh_loaded);
     model.LoadModelFile("assets/models/capsule.obj");
     model.transform.position = Math::Vector3(10, 10, 0);
 //    model.transform.rotation = Math::Vector3(90, 0, 0);
-    model.loaded_mesh->ToGPU();
+    model.mesh_loaded->ToGPU();
     scene_manager->AddModel(model);
 
     model.LoadModelFile("assets/models/floor.obj");
     model.transform.position = Math::Vector3(0, 0, 0);
-    model.loaded_mesh->ToGPU();
+    model.mesh_loaded->ToGPU();
     scene_manager->AddModel(model);
 
     Scene::DirectionLight light;

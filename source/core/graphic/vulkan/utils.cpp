@@ -56,7 +56,8 @@ std::string VulkanUtil::physicalDeviceTypeString(VkPhysicalDeviceType type)
         STR(VIRTUAL_GPU);
         STR(CPU);
 #undef STR
-        default: return "UNKNOWN_DEVICE_TYPE";
+        default:
+            return "UNKNOWN_DEVICE_TYPE";
     }
 }
 
@@ -363,12 +364,165 @@ void VulkanUtil::copyBufferToImage(std::shared_ptr<VulkanContext> p_context,
     p_context->endSingleTimeCommands(commandBuffer);
 }
 
-VkSampler VulkanUtil::getOrCreateNearestSampler(VkPhysicalDevice physical_device, VkDevice device)
+void VulkanUtil::genMipmappedImage(std::shared_ptr<VulkanContext> p_context,
+                                   VkImage image,
+                                   uint32_t width,
+                                   uint32_t height,
+                                   uint32_t mip_levels)
+{
+    VkCommandBuffer commandBuffer = p_context->beginSingleTimeCommands();
+
+    for (uint32_t i = 1; i < mip_levels; i++)
+    {
+        VkImageBlit imageBlit {};
+        imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageBlit.srcSubresource.layerCount = 1;
+        imageBlit.srcSubresource.mipLevel   = i - 1;
+        imageBlit.srcOffsets[1].x           = std::max((int32_t)(width >> (i - 1)), 1);
+        imageBlit.srcOffsets[1].y           = std::max((int32_t)(height >> (i - 1)), 1);
+        imageBlit.srcOffsets[1].z           = 1;
+
+        imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageBlit.dstSubresource.layerCount = 1;
+        imageBlit.dstSubresource.mipLevel   = i;
+        imageBlit.dstOffsets[1].x           = std::max((int32_t)(width >> i), 1);
+        imageBlit.dstOffsets[1].y           = std::max((int32_t)(height >> i), 1);
+        imageBlit.dstOffsets[1].z           = 1;
+
+        VkImageSubresourceRange mipSubRange {};
+        mipSubRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
+        mipSubRange.baseMipLevel = i;
+        mipSubRange.levelCount   = 1;
+        mipSubRange.layerCount   = 1;
+
+        VkImageMemoryBarrier barrier {};
+        barrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout           = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout           = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.srcAccessMask       = 0;
+        barrier.dstAccessMask       = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image               = image;
+        barrier.subresourceRange    = mipSubRange;
+
+        vkCmdPipelineBarrier(commandBuffer,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             0,
+                             0,
+                             nullptr,
+                             0,
+                             nullptr,
+                             1,
+                             &barrier);
+
+        vkCmdBlitImage(commandBuffer,
+                       image,
+                       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                       image,
+                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                       1,
+                       &imageBlit,
+                       VK_FILTER_LINEAR);
+
+        barrier.oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout     = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+        vkCmdPipelineBarrier(commandBuffer,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                             0,
+                             0,
+                             nullptr,
+                             0,
+                             nullptr,
+                             1,
+                             &barrier);
+    }
+
+    VkImageSubresourceRange mipSubRange {};
+    mipSubRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
+    mipSubRange.baseMipLevel = 0;
+    mipSubRange.levelCount   = mip_levels;
+    mipSubRange.layerCount   = 1;
+
+    VkImageMemoryBarrier barrier {};
+    barrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout           = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.newLayout           = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcAccessMask       = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.dstAccessMask       = VK_ACCESS_SHADER_READ_BIT;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image               = image;
+    barrier.subresourceRange    = mipSubRange;
+
+    vkCmdPipelineBarrier(commandBuffer,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                         0,
+                         0,
+                         nullptr,
+                         0,
+                         nullptr,
+                         1,
+                         &barrier);
+
+    p_context->endSingleTimeCommands(commandBuffer);
+}
+
+VkSampler VulkanUtil::getOrCreateMipmapSampler(std::shared_ptr<VulkanContext> p_context, uint32_t mip_levels)
+{
+    VkSampler sampler;
+    auto      find_sampler = m_mipmap_sampler_map.find(mip_levels);
+    if (find_sampler != m_mipmap_sampler_map.end())
+    {
+        return find_sampler->second;
+    }
+    else
+    {
+        VkPhysicalDeviceProperties physical_device_properties {};
+        vkGetPhysicalDeviceProperties(p_context->_physical_device, &physical_device_properties);
+
+        VkSamplerCreateInfo samplerInfo {};
+        samplerInfo.sType        = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter    = VK_FILTER_LINEAR;
+        samplerInfo.minFilter    = VK_FILTER_LINEAR;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
+        samplerInfo.anisotropyEnable = VK_TRUE;
+        samplerInfo.maxAnisotropy    = physical_device_properties.limits.maxSamplerAnisotropy;
+
+        samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+        samplerInfo.compareEnable           = VK_FALSE;
+        samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
+        samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+        samplerInfo.maxLod = mip_levels - 1;
+
+        if (vkCreateSampler(p_context->_device, &samplerInfo, nullptr, &sampler) != VK_SUCCESS)
+        {
+            assert(0);
+        }
+    }
+
+    m_mipmap_sampler_map.insert(std::make_pair(mip_levels, sampler));
+
+    return sampler;
+}
+
+VkSampler VulkanUtil::getOrCreateNearestSampler(std::shared_ptr<VulkanContext> p_context)
 {
     if (m_nearest_sampler == VK_NULL_HANDLE)
     {
         VkPhysicalDeviceProperties physical_device_properties{};
-        vkGetPhysicalDeviceProperties(physical_device, &physical_device_properties);
+        vkGetPhysicalDeviceProperties(p_context->_physical_device, &physical_device_properties);
 
         VkSamplerCreateInfo samplerInfo{};
 
@@ -389,7 +543,7 @@ VkSampler VulkanUtil::getOrCreateNearestSampler(VkPhysicalDevice physical_device
         samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         samplerInfo.unnormalizedCoordinates = VK_FALSE;
 
-        if (vkCreateSampler(device, &samplerInfo, nullptr, &m_nearest_sampler) != VK_SUCCESS)
+        if (vkCreateSampler(p_context->_device, &samplerInfo, nullptr, &m_nearest_sampler) != VK_SUCCESS)
         {
             throw std::runtime_error("vk create sampler");
         }
@@ -398,12 +552,12 @@ VkSampler VulkanUtil::getOrCreateNearestSampler(VkPhysicalDevice physical_device
     return m_nearest_sampler;
 }
 
-VkSampler VulkanUtil::getOrCreateLinearSampler(VkPhysicalDevice physical_device, VkDevice device)
+VkSampler VulkanUtil::getOrCreateLinearSampler(std::shared_ptr<VulkanContext> p_context)
 {
     if (m_linear_sampler == VK_NULL_HANDLE)
     {
         VkPhysicalDeviceProperties physical_device_properties{};
-        vkGetPhysicalDeviceProperties(physical_device, &physical_device_properties);
+        vkGetPhysicalDeviceProperties(p_context->_physical_device, &physical_device_properties);
 
         VkSamplerCreateInfo samplerInfo{};
 
@@ -424,7 +578,7 @@ VkSampler VulkanUtil::getOrCreateLinearSampler(VkPhysicalDevice physical_device,
         samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         samplerInfo.unnormalizedCoordinates = VK_FALSE;
 
-        if (vkCreateSampler(device, &samplerInfo, nullptr, &m_linear_sampler) != VK_SUCCESS)
+        if (vkCreateSampler(p_context->_device, &samplerInfo, nullptr, &m_linear_sampler) != VK_SUCCESS)
         {
             throw std::runtime_error("vk create sampler");
         }
