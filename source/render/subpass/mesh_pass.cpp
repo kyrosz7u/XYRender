@@ -59,7 +59,7 @@ void MeshPass::setupDescriptorSetLayout()
                                                 nullptr,
                                                 &ubo_descriptor_set.layout));
 
-    DescriptorSet &texture_descriptor_set = m_descriptorset_list[_mesh_pass_texture_descriptor_set];
+    DescriptorSet                             &texture_descriptor_set = m_descriptorset_list[_mesh_pass_texture_descriptor_set];
     std::vector<VkDescriptorSetLayoutBinding> texture_layout_bindings;
     texture_layout_bindings.resize(1);
 
@@ -338,61 +338,55 @@ void MeshPass::draw()
     //                                                 0,
     //                                                 NULL);
 
-    // 后面最好改成hash
-    static RenderMesh *last_mesh = nullptr;
+    auto &visible_submeshes = *m_p_render_resource_info->p_visible_submeshes;
+    auto &visible_texture   = *m_p_render_resource_info->p_visible_textures;
 
-    for (uint32_t i = 0; i < (*m_p_render_resource_info->p_visible_meshes).size(); i++)
+    for (uint32_t i = 0; i < (*m_p_render_resource_info->p_visible_submeshes).size(); i++)
     {
-        auto mesh = (*m_p_render_resource_info->p_visible_meshes)[i];
-
-        for (auto    &submesh: mesh->m_submeshes)
+        auto submesh     = (*m_p_render_resource_info->p_visible_submeshes)[i];
+        auto parent_mesh = submesh.parent_mesh.lock();
+        if (parent_mesh == nullptr)
         {
-//            if(submesh->m_material->m_pipeline != pipeline)
-//            {
-//                continue;
-//            }
-                if(submesh.material_index != -1)
-                {
-                    // TODO : load texture
-                    // updateTextureDescriptorSet(mesh->m_);
-                }
-
-            auto parent_mesh = submesh.parent_mesh.lock();
-//            if (last_mesh != parent_mesh.get())
-            {
-                last_mesh                     = parent_mesh.get();
-                VkBuffer     vertex_buffers[] = {parent_mesh->mesh_vertex_position_buffer,
-                                                 parent_mesh->mesh_vertex_normal_buffer,
-                                                 parent_mesh->mesh_vertex_texcoord_buffer};
-                VkDeviceSize offsets[]        = {0, 0, 0};
-                g_p_vulkan_context->_vkCmdBindVertexBuffers(*m_p_render_command_info->p_current_command_buffer,
-                                                            0,
-                                                            sizeof(vertex_buffers) / sizeof(vertex_buffers[0]),
-                                                            vertex_buffers,
-                                                            offsets);
-                g_p_vulkan_context->_vkCmdBindIndexBuffer(*m_p_render_command_info->p_current_command_buffer,
-                                                          parent_mesh->mesh_index_buffer,
-                                                          0,
-                                                          VK_INDEX_TYPE_UINT16);
-            }
-            // bind model ubo
-            uint32_t dynamicOffset = mesh->m_index_in_dynamic_buffer *
-                                     (*m_p_render_resource_info->p_render_model_ubo_list).dynamic_alignment;
-            g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
-                                                         VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                         pipeline_layout,
-                                                         0,
-                                                         1,
-                                                         &m_descriptorset_list[0].descriptor_set,
-                                                         1,
-                                                         &dynamicOffset);
-            g_p_vulkan_context->_vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,
-                                                  submesh.index_count,
-                                                  1,
-                                                  submesh.index_offset,
-                                                  submesh.vertex_offset,
-                                                  0);
+            continue;
         }
+        if(submesh.material_index!=-1)
+        {
+            updateTextureDescriptorSet(visible_texture[submesh.material_index]->descriptor);
+            LOG_INFO("bind texture {}\t index:{}",visible_texture[submesh.material_index]->name, submesh.material_index);
+        }
+
+        VkBuffer     vertex_buffers[] = {parent_mesh->mesh_vertex_position_buffer,
+                                         parent_mesh->mesh_vertex_normal_buffer,
+                                         parent_mesh->mesh_vertex_texcoord_buffer};
+        VkDeviceSize offsets[]        = {0, 0, 0};
+        g_p_vulkan_context->_vkCmdBindVertexBuffers(*m_p_render_command_info->p_current_command_buffer,
+                                                    0,
+                                                    sizeof(vertex_buffers) / sizeof(vertex_buffers[0]),
+                                                    vertex_buffers,
+                                                    offsets);
+        g_p_vulkan_context->_vkCmdBindIndexBuffer(*m_p_render_command_info->p_current_command_buffer,
+                                                  parent_mesh->mesh_index_buffer,
+                                                  0,
+                                                  VK_INDEX_TYPE_UINT16);
+
+        // bind model ubo
+        uint32_t dynamicOffset = parent_mesh->m_index_in_dynamic_buffer *
+                                 (*m_p_render_resource_info->p_render_model_ubo_list).dynamic_alignment;
+        g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
+                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                     pipeline_layout,
+                                                     0,
+                                                     1,
+                                                     &m_descriptorset_list[0].descriptor_set,
+                                                     1,
+                                                     &dynamicOffset);
+        g_p_vulkan_context->_vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,
+                                              submesh.index_count,
+                                              1,
+                                              submesh.index_offset,
+                                              submesh.vertex_offset,
+                                              0);
+
     }
     g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
 }

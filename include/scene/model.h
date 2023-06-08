@@ -34,6 +34,16 @@ namespace Scene
 
         bool LoadModelFile(const std::string &model_path, const std::string &model_name);
 
+        void ToGPU()
+        {
+            mesh_loaded->ToGPU();
+        }
+
+        void SetMeshIndex(uint32_t index)
+        {
+            mesh_loaded->m_index_in_dynamic_buffer =index;
+        }
+
         std::vector<RenderSystem::RenderSubmesh> getSubmeshes()
         {
             return m_submeshes;
@@ -55,6 +65,8 @@ namespace Scene
         std::vector<Texture2DPtr> textures_loaded;
 
         void loadMaterialTextures(aiMaterial *mat, aiTextureType type, const std::string &typeName);
+
+        void clearInternalState();
     };
 }
 #endif //XEXAMPLE_MODEL_H

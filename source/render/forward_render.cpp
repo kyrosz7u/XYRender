@@ -15,8 +15,8 @@ void ForwardRender::initialize()
     m_render_command_info.p_viewport        = &m_viewport;
     m_render_command_info.p_scissor         = &m_scissor;
 
-    m_render_resource_info.p_visible_meshes        = &m_visible_meshes;
-    m_render_resource_info.p_loaded_textures       = &m_loaded_textures;
+    m_render_resource_info.p_visible_submeshes     = nullptr;
+    m_render_resource_info.p_visible_textures      = nullptr;
     m_render_resource_info.p_render_model_ubo_list = &m_render_model_ubo_list;
     m_render_resource_info.p_render_per_frame_ubo  = &m_render_per_frame_ubo;
     m_render_resource_info.p_ui_overlay            = m_p_ui_overlay;
@@ -174,8 +174,6 @@ void ForwardRender::setupRenderpass()
 void ForwardRender::Tick()
 {
     RenderBase::Tick();
-    updateRenderModelUBO();
-    updateRenderPerFrameUBO();
     draw();
 }
 
@@ -216,36 +214,25 @@ void ForwardRender::draw()
                                               std::bind(&ForwardRender::updateAfterSwapchainRecreate, this));
 }
 
-void ForwardRender::AddSingleMesh(RenderMeshPtr &mesh)
+void ForwardRender::SetVisibleRenderData(std::vector<RenderSubmesh> *p_visible_submesh, std::vector<Texture2DPtr> *p_visible_texture)
 {
-    m_visible_meshes.push_back(mesh);
+    m_render_resource_info.p_visible_submeshes = p_visible_submesh;
+    m_render_resource_info.p_visible_textures  = p_visible_texture;
 }
 
-void ForwardRender::LoadVisibleMeshes(std::vector<RenderMeshPtr> visible_meshes)
+void ForwardRender::UpdateRenderModelUBOList(std::vector<VulkanModelDefine> &model_matrix)
 {
-    m_visible_meshes.swap(visible_meshes);
-}
-
-void ForwardRender::LoadTexture(std::vector<Texture2DPtr> textures)
-{
-    m_loaded_textures.swap(textures);
-}
-
-void ForwardRender::updateRenderModelUBO()
-{
-    m_render_model_ubo_list.ubo_data_list.resize(m_visible_meshes.size());
-    for (int i = 0; i < m_visible_meshes.size(); ++i)
+    m_render_model_ubo_list.ubo_data_list.resize(model_matrix.size());
+    for (int i = 0; i < model_matrix.size(); ++i)
     {
-        m_visible_meshes[i]->m_index_in_dynamic_buffer = i;
-        m_render_model_ubo_list.ubo_data_list[i].model = m_visible_meshes[i]->model_matrix;
+        m_render_model_ubo_list.ubo_data_list[i].model = model_matrix[i].model;
     }
     m_render_model_ubo_list.ToGPU();
 }
 
-void ForwardRender::updateRenderPerFrameUBO()
+void ForwardRender::UpdateRenderPerFrameScenceUBO(VulkanPerFrameSceneDefine &per_frame_scene_define)
 {
-    m_render_per_frame_ubo.per_frame_ubo.proj_view = m_proj_matrix * m_view_matrix;
-
+    m_render_per_frame_ubo.per_frame_ubo = per_frame_scene_define;
     m_render_per_frame_ubo.ToGPU();
 }
 

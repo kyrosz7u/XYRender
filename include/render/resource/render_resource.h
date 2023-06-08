@@ -19,8 +19,8 @@ namespace RenderSystem
 {
     struct RenderGlobalResourceInfo
     {
-        std::vector<RenderMeshPtr> *p_visible_meshes;
-        std::vector<Texture2DPtr>     *p_loaded_textures;
+        std::vector<RenderSubmesh> *p_visible_submeshes;
+        std::vector<Texture2DPtr>  *p_visible_textures;
         RenderModelUBOList         *p_render_model_ubo_list;
         RenderPerFrameUBO          *p_render_per_frame_ubo;
         std::weak_ptr<UIOverlay>   p_ui_overlay;

@@ -47,43 +47,37 @@ namespace RenderSystem
             m_p_ui_overlay = ui_overlay;
         }
 
-        void AddSingleMesh(RenderMeshPtr &mesh);
+        void SetVisibleRenderData(std::vector<RenderSubmesh> *p_visible_submesh,
+                                  std::vector<Texture2DPtr> *p_visible_texture);
 
-        void LoadVisibleMeshes(std::vector<RenderMeshPtr> visible_meshes);
+        void UpdateRenderModelUBOList(std::vector<VulkanModelDefine> &model_matrix);
 
-        void LoadTexture(std::vector<Texture2DPtr> textures);
-
+        void UpdateRenderPerFrameScenceUBO(VulkanPerFrameSceneDefine &per_frame_scene_define);
     private:
+
         void setupCommandBuffer();
 
         void setupDescriptorPool();
 
         void updateAfterSwapchainRecreate();
-
     private:
         VkCommandPool                m_command_pool;
         std::vector<VkCommandBuffer> m_command_buffers;
         VkDescriptorPool             m_descriptor_pool;
         std::vector<RenderPassPtr>   m_render_passes;
         std::vector<ImageAttachment> m_render_targets;
+
         std::vector<ImageAttachment> m_backup_targets;
-
-        std::vector<RenderMeshPtr> m_visible_meshes;
-        std::vector<Texture2DPtr>  m_loaded_textures;
-
         RenderModelUBOList m_render_model_ubo_list;
-        RenderPerFrameUBO  m_render_per_frame_ubo;
 
+        RenderPerFrameUBO  m_render_per_frame_ubo;
         Matrix4x4 m_view_matrix;
+
         Matrix4x4 m_proj_matrix;
 
         UIOverlayPtr m_p_ui_overlay;
 
         void setupRenderpass();
-
-        void updateRenderModelUBO();
-
-        void updateRenderPerFrameUBO();
     };
 }
 #endif //XEXAMPLE_FORWARD_RENDER_H

@@ -14,6 +14,13 @@ void Model::Tick()
     mesh_loaded->model_matrix = transform.GetTransformMatrix();
 }
 
+void Model::clearInternalState()
+{
+    m_index_count = 0;
+    m_submeshes.clear();
+    textures_loaded.clear();
+}
+
 bool Model::LoadModelFile(const std::string &model_path, const std::string &model_name)
 {
     path = model_path;
@@ -26,9 +33,10 @@ bool Model::LoadModelFile(const std::string &model_path, const std::string &mode
                                               aiProcess_ConvertToLeftHanded);
     if (pScene == nullptr)
         return false;
-    m_index_count = 0;
-    m_submeshes.clear();
+
+    clearInternalState();
     mesh_loaded = std::make_shared<RenderSystem::RenderMesh>();
+    mesh_loaded->m_name = model_name;
     processModelNode(pScene->mRootNode, pScene);
     mesh_loaded->m_submeshes = m_submeshes;
 
@@ -92,11 +100,13 @@ void Model::processMesh(aiMesh *mesh, const aiScene *scene)
         mesh_loaded->m_texcoords.push_back(vertex_texcoord);
     }
     // 处理索引
-    uint32_t          index_count = 0;
-    for (unsigned int i           = 0; i < mesh->mNumFaces; i++)
+    uint32_t index_count = 0;
+
+    for (unsigned int i = 0; i < mesh->mNumFaces; i++)
     {
-        aiFace            face = mesh->mFaces[i];
-        for (unsigned int j    = 0; j < face.mNumIndices; j++)
+        aiFace face = mesh->mFaces[i];
+
+        for (unsigned int j = 0; j < face.mNumIndices; j++)
         {
             mesh_loaded->m_indices.push_back(face.mIndices[j] + m_index_count);
             index_count++;
@@ -155,10 +165,10 @@ void Model::processMesh(aiMesh *mesh, const aiScene *scene)
         }
         catch (const std::exception &e)
         {
-            LOG_ERROR("load texture error:{}", e.what());
+            render_submesh.material_index = -1;
+            LOG_ERROR("load texture error:{}\tpath:{}", e.what(), texture_path_str);
         }
     }
-
     m_submeshes.push_back(render_submesh);
 }
 

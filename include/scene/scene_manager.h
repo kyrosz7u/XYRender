@@ -18,7 +18,7 @@ namespace Scene
             m_main_camera = std::make_shared<Camera>(window_size.x / window_size.y,
                                                      90, 0.1f, 100.0f,
                                                      Scene::perspective);
-            m_ui_overlay = std::make_shared<UIOverlay>();
+            m_ui_overlay  = std::make_shared<UIOverlay>();
             m_ui_overlay->initialize(window);
 
             m_render = std::make_shared<ForwardRender>();
@@ -50,8 +50,13 @@ namespace Scene
 
         std::shared_ptr<ForwardRender> m_render;
 
-        void
-        getVisibleMeshesAndTexture(std::vector<RenderSubmesh> &visible_meshes, std::vector<Texture2DPtr> &textures);
+        std::vector<RenderSubmesh>           m_visible_meshes;
+        std::vector<Texture2DPtr>            m_visible_textures;
+        std::vector<VulkanModelDefine>       m_visible_model_matrix;
+        VulkanPerFrameSceneDefine            m_per_frame_scene_define;
+        VulkanPerFrameDirectionalLightDefine m_per_frame_directional_light_define;
+
+        void updateScene();
     };
 }
 

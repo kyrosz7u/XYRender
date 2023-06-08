@@ -23,7 +23,7 @@ void Camera::PostInitialize()
 
 void Camera::Tick()
 {
-    auto render_ptr = render_in_scene.lock();
+    const auto render_ptr = render_in_scene.lock();
     if(render_ptr == nullptr) return ;
 
     auto rotMat = getRotationMatrix(rotation);
@@ -49,7 +49,6 @@ void Camera::Tick()
         if (rotation.y < -360.0f)
             rotation.y += 360.0f;
     }
-    render_ptr->setCameraMatrix(calculateViewMatrix(), calculatePerspectiveMatrix());
 }
 
 void Camera::ImGuiDebugPanel()

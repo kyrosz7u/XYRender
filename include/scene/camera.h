@@ -47,7 +47,7 @@ namespace Scene
 
     public:
         Camera(float aspect, float fov, float znear, float zfar, CameraMode mode = perspective)
-                :  aspect(aspect), fov(fov), znear(znear), zfar(zfar), mode(mode)
+                : aspect(aspect), fov(fov), znear(znear), zfar(zfar), mode(mode)
         {
             InputSystem.GetRawWindow()->registerOnWindowSizeFunc(windowSizeChangedDelegate);
         }
@@ -89,7 +89,7 @@ namespace Scene
 
 
     private:
-        std::weak_ptr<SceneManager>    m_p_parent_scene;
+        std::weak_ptr<SceneManager>  m_p_parent_scene;
         std::weak_ptr<ForwardRender> render_in_scene;
     };
 }
