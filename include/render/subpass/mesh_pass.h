@@ -17,7 +17,7 @@ namespace RenderSystem
         enum _mesh_pass_descriptor_set_define
         {
             _mesh_pass_ubo_data_descriptor_set = 0,
-            _mesh_pass_texture_sampler_descriptor_set,
+            _mesh_pass_texture_descriptor_set,
             _mesh_pass_descriptor_set_count
         };
         struct MeshPassInitInfo : public SubPassInitInfo
@@ -36,7 +36,7 @@ namespace RenderSystem
 
             void draw() override;
 
-            void updateDescriptorSet();
+            void updateRenderDescriptorSet();
 
             void updateAfterSwapchainRecreate() override;
 
@@ -45,6 +45,8 @@ namespace RenderSystem
             void setupDescriptorSetLayout() override;
             void setupDescriptorSet() override;
             void setupPipelines() override;
+
+            void updateTextureDescriptorSet(VkDescriptorImageInfo texture_descriptor);
         };
     }
 }

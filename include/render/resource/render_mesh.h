@@ -97,10 +97,10 @@ namespace RenderSystem
 
     struct RenderSubmesh
     {
-        uint32_t index_count;
-        uint32_t index_offset;
-        uint32_t vertex_offset;
-        uint32_t material_index;
+        uint32_t index_count{0};
+        uint32_t index_offset{0};
+        uint32_t vertex_offset{};
+        int material_index{-1};
         std::weak_ptr<RenderMesh> parent_mesh;
     };
 

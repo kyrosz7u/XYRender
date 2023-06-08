@@ -10,6 +10,7 @@
 #include "render/resource/render_ubo.h"
 #include "render_mesh.h"
 #include "ui/ui_overlay.h"
+#include "render_texture.h"
 #include <memory>
 
 using namespace VulkanAPI;
@@ -19,6 +20,7 @@ namespace RenderSystem
     struct RenderGlobalResourceInfo
     {
         std::vector<RenderMeshPtr> *p_visible_meshes;
+        std::vector<Texture2DPtr>     *p_loaded_textures;
         RenderModelUBOList         *p_render_model_ubo_list;
         RenderPerFrameUBO          *p_render_per_frame_ubo;
         std::weak_ptr<UIOverlay>   p_ui_overlay;

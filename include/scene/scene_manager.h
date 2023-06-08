@@ -49,6 +49,9 @@ namespace Scene
         UIOverlayPtr                       m_ui_overlay;
 
         std::shared_ptr<ForwardRender> m_render;
+
+        void
+        getVisibleMeshesAndTexture(std::vector<RenderSubmesh> &visible_meshes, std::vector<Texture2DPtr> &textures);
     };
 }
 

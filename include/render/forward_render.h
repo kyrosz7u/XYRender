@@ -17,10 +17,11 @@ namespace RenderSystem
     public:
         enum _renderpasses
         {
-            _main_camera_renderpass=0,
+            _main_camera_renderpass = 0,
             _ui_overlay_renderpass,
             _renderpass_count
         };
+
         ~ForwardRender() override;
 
         void initialize() override;
@@ -37,17 +38,21 @@ namespace RenderSystem
 
         void setCameraMatrix(Matrix4x4 view, Matrix4x4 proj)
         {
-            m_view_matrix= view;
-            m_proj_matrix= proj;
+            m_view_matrix = view;
+            m_proj_matrix = proj;
         }
 
         void setUIOverlay(UIOverlayPtr ui_overlay)
         {
-            m_p_ui_overlay=ui_overlay;
+            m_p_ui_overlay = ui_overlay;
         }
+
         void AddSingleMesh(RenderMeshPtr &mesh);
 
         void LoadVisibleMeshes(std::vector<RenderMeshPtr> visible_meshes);
+
+        void LoadTexture(std::vector<Texture2DPtr> textures);
+
     private:
         void setupCommandBuffer();
 
@@ -62,7 +67,9 @@ namespace RenderSystem
         std::vector<RenderPassPtr>   m_render_passes;
         std::vector<ImageAttachment> m_render_targets;
         std::vector<ImageAttachment> m_backup_targets;
-        std::vector<RenderMeshPtr>   m_visible_meshes;
+
+        std::vector<RenderMeshPtr> m_visible_meshes;
+        std::vector<Texture2DPtr>  m_loaded_textures;
 
         RenderModelUBOList m_render_model_ubo_list;
         RenderPerFrameUBO  m_render_per_frame_ubo;

@@ -10,9 +10,15 @@
 #define LOG_HELPER(LOG_LEVEL, ...) \
     Logger::Instance().logger(LOG_LEVEL, "[" + std::string(__FUNCTION__) + "] " + __VA_ARGS__);
 
+#ifdef _DEBUG
 #define LOG_DEBUG(...) LOG_HELPER(Logger::LogLevel::debug, __VA_ARGS__);
 
 #define LOG_INFO(...) LOG_HELPER(Logger::LogLevel::info, __VA_ARGS__);
+#else
+#define LOG_DEBUG(...) void(0);
+#define LOG_INFO(...) void(0);
+#endif
+
 
 #define LOG_WARN(...) LOG_HELPER(Logger::LogLevel::warn, __VA_ARGS__);
 

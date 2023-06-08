@@ -22,8 +22,7 @@ namespace Scene
         std::string               name;
         std::string               path;
         Transform                 transform;
-        RenderMeshPtr             mesh_loaded;
-        std::vector<Texture2DPtr> textures_loaded;
+
     public:
         Model()
         {}
@@ -35,6 +34,16 @@ namespace Scene
 
         bool LoadModelFile(const std::string &model_path, const std::string &model_name);
 
+        std::vector<RenderSystem::RenderSubmesh> getSubmeshes()
+        {
+            return m_submeshes;
+        }
+
+        std::vector<Texture2DPtr> getTextures()
+        {
+            return textures_loaded;
+        }
+
     private:
         void processModelNode(aiNode *node, const aiScene *scene);
 
@@ -42,6 +51,8 @@ namespace Scene
 
         uint32_t                                 m_index_count{0};
         std::vector<RenderSystem::RenderSubmesh> m_submeshes;
+        RenderMeshPtr             mesh_loaded;
+        std::vector<Texture2DPtr> textures_loaded;
 
         void loadMaterialTextures(aiMaterial *mat, aiTextureType type, const std::string &typeName);
     };

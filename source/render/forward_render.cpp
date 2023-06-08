@@ -16,6 +16,7 @@ void ForwardRender::initialize()
     m_render_command_info.p_scissor         = &m_scissor;
 
     m_render_resource_info.p_visible_meshes        = &m_visible_meshes;
+    m_render_resource_info.p_loaded_textures       = &m_loaded_textures;
     m_render_resource_info.p_render_model_ubo_list = &m_render_model_ubo_list;
     m_render_resource_info.p_render_per_frame_ubo  = &m_render_per_frame_ubo;
     m_render_resource_info.p_ui_overlay            = m_p_ui_overlay;
@@ -95,7 +96,8 @@ void ForwardRender::setupDescriptorPool()
     descriptorPoolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(descriptorTypes.size());
     descriptorPoolInfo.pPoolSizes    = descriptorTypes.data();
-    descriptorPoolInfo.maxSets       = 3;
+    // NOTICE: the maxSets must be equal to the descriptorSets in all subpasses
+    descriptorPoolInfo.maxSets       = 4;
 
     VK_CHECK_RESULT(vkCreateDescriptorPool(g_p_vulkan_context->_device,
                                            &descriptorPoolInfo,
@@ -222,6 +224,11 @@ void ForwardRender::AddSingleMesh(RenderMeshPtr &mesh)
 void ForwardRender::LoadVisibleMeshes(std::vector<RenderMeshPtr> visible_meshes)
 {
     m_visible_meshes.swap(visible_meshes);
+}
+
+void ForwardRender::LoadTexture(std::vector<Texture2DPtr> textures)
+{
+    m_loaded_textures.swap(textures);
 }
 
 void ForwardRender::updateRenderModelUBO()

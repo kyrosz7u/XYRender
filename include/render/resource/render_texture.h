@@ -7,27 +7,33 @@
 
 #include "core/graphic/vulkan/vulkan_context.h"
 #include <vulkan/vulkan.h>
-#include <stb_image.h>
 #include <string>
 #include <memory>
 
 namespace RenderSystem
 {
     extern std::shared_ptr<VulkanAPI::VulkanContext> g_p_vulkan_context;
+
     class Texture2D;
+
     typedef std::shared_ptr<Texture2D> Texture2DPtr;
+
     class Texture2D
     {
     public:
-        VkSampler      sampler;
-        VkImage        image;
-        VkImageLayout  image_layout;
-        VkDeviceMemory memory;
-        VkImageView    view;
-        uint32_t       width, height;
-        uint32_t       mip_levels;
+        std::string name;
+        std::string path;
+        uint32_t    width, height;
+        uint32_t    mip_levels;
+
+        VkImage               image;
+        VkDeviceMemory        memory;
+        VkImageView           view;
+        VkSampler             sampler;
+        VkImageLayout         image_layout;
+        VkDescriptorImageInfo descriptor;
     public:
-        Texture2D(std::string texture_path, bool gen_mipmap = false);
+        Texture2D(const std::string &path, const std::string &name, bool gen_mipmap = false);
 
         ~Texture2D();
     };

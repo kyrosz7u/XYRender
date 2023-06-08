@@ -4,16 +4,24 @@
 
 #include "render/resource/render_texture.h"
 #include "core/graphic/vulkan/vulkan_utils.h"
+#include "core/logger/logger_macros.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+
+#include <stb_image.h>
 #include <cmath>
 #include <stdexcept>
 
 using namespace RenderSystem;
 using namespace VulkanAPI;
 
-Texture2D::Texture2D(std::string texture_path, bool gen_mipmap)
+Texture2D::Texture2D(const std::string& texture_path, const std::string& texture_name, bool gen_mipmap)
 {
+    name = texture_name;
+    path = texture_path;
+
     int          texWidth, texHeight, texChannels;
-    stbi_uc      *pixels   = stbi_load(texture_path.c_str(),
+    stbi_uc      *pixels   = stbi_load(path.c_str(),
                                        &texWidth,
                                        &texHeight,
                                        &texChannels,
@@ -21,7 +29,7 @@ Texture2D::Texture2D(std::string texture_path, bool gen_mipmap)
     VkDeviceSize imageSize = texWidth * texHeight * 4;
     width      = texWidth;
     height     = texHeight;
-    mip_levels = gen_mipmap ? static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1 : 0;
+    mip_levels = gen_mipmap ? static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1 : 1;
 
     if (!pixels)
     {
@@ -39,21 +47,21 @@ Texture2D::Texture2D(std::string texture_path, bool gen_mipmap)
     memcpy(data, pixels, static_cast<size_t>(imageSize));
     vkUnmapMemory(g_p_vulkan_context->_device, stagingBufferMemory);
 
-    stbi_image_free(pixels);
+    free(pixels);
 
     VulkanUtil::createImage(g_p_vulkan_context,
                             texWidth, texHeight,
                             VK_FORMAT_R8G8B8A8_UNORM,
                             VK_IMAGE_TILING_OPTIMAL,
-                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                            VK_IMAGE_USAGE_SAMPLED_BIT| VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory,
-                            0, 0, mip_levels);
+                            0, 1, mip_levels);
 
     VulkanUtil::transitionImageLayout(g_p_vulkan_context,
                                       image,
                                       VK_IMAGE_LAYOUT_UNDEFINED,
                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                      1, mip_levels, 0);
+                                      1, mip_levels, VK_IMAGE_ASPECT_COLOR_BIT);
 
     VulkanUtil::copyBufferToImage(g_p_vulkan_context,
                                   stagingBuffer,
@@ -83,6 +91,10 @@ Texture2D::Texture2D(std::string texture_path, bool gen_mipmap)
                                        1, mip_levels);
 
     image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    descriptor.sampler     = sampler;
+    descriptor.imageView   = view;
+    descriptor.imageLayout = image_layout;
 }
 
 Texture2D::~Texture2D()
@@ -91,4 +103,5 @@ Texture2D::~Texture2D()
     vkDestroyImage(g_p_vulkan_context->_device, image, nullptr);
     vkFreeMemory(g_p_vulkan_context->_device, memory, nullptr);
     image_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    LOG_INFO("texture2d destroyed {}", name);
 }

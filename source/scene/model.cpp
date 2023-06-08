@@ -4,6 +4,7 @@
 
 #include "scene/model.h"
 #include "core/logger/logger_macros.h"
+#include "render/resource/render_texture.h"
 #include <filesystem>
 
 using namespace Scene;
@@ -30,18 +31,6 @@ bool Model::LoadModelFile(const std::string &model_path, const std::string &mode
     mesh_loaded = std::make_shared<RenderSystem::RenderMesh>();
     processModelNode(pScene->mRootNode, pScene);
     mesh_loaded->m_submeshes = m_submeshes;
-
-    for (unsigned int i = 0; i < pScene->mNumMaterials; i++)
-    {
-        aiMaterial *mat = pScene->mMaterials[i];
-        LOG_INFO("material name:{}", mat->GetName().C_Str());
-        auto absolutePath = std::filesystem::absolute(path);
-        auto texturePath  = absolutePath.parent_path().parent_path() / "textures"/name/mat->GetName().C_Str();
-        LOG_INFO("texture path:{}", texturePath.string()+".png");
-
-        // loadMaterialTextures(mat,aiTextureType_DIFFUSE,"texture_diffuse");
-//        Texture2DPtr texture = std::make_shared<RenderSystem::Texture2D>(path);
-    }
 
     return true;
 }
@@ -147,7 +136,29 @@ void Model::processMesh(aiMesh *mesh, const aiScene *scene)
 //                                                                                   aiTextureType_AMBIENT,
 //                                                                                   "texture_height");
 //        mesh_loaded->m_textures.insert(mesh_loaded->m_textures.end(), height_maps.begin(), height_maps.end());
+
+        aiMaterial *mat = scene->mMaterials[mesh->mMaterialIndex];
+
+        auto absolute_path    = std::filesystem::absolute(path);
+        auto texture_path     = absolute_path.parent_path().parent_path() / "textures" / name / mat->GetName().C_Str();
+        auto texture_path_str = texture_path.string() + ".png";
+
+        // loadMaterialTextures(mat,aiTextureType_DIFFUSE,"texture_diffuse");
+        try
+        {
+            Texture2DPtr texture = std::make_shared<RenderSystem::Texture2D>(
+                    texture_path_str,
+                    mat->GetName().C_Str(),
+                    false);
+            textures_loaded.push_back(texture);
+            LOG_INFO("texture loaded name:{}\tpath:{}", mat->GetName().C_Str(), texture_path_str)
+        }
+        catch (const std::exception &e)
+        {
+            LOG_ERROR("load texture error:{}", e.what());
+        }
     }
+
     m_submeshes.push_back(render_submesh);
 }
 
