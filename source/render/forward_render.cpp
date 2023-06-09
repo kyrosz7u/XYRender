@@ -11,9 +11,10 @@ using namespace RenderSystem;
 
 void ForwardRender::initialize()
 {
-    m_render_command_info.p_descriptor_pool = &m_descriptor_pool;
-    m_render_command_info.p_viewport        = &m_viewport;
-    m_render_command_info.p_scissor         = &m_scissor;
+    m_render_command_info.command_buffer_list = &m_command_buffers;
+    m_render_command_info.p_descriptor_pool   = &m_descriptor_pool;
+    m_render_command_info.p_viewport          = &m_viewport;
+    m_render_command_info.p_scissor           = &m_scissor;
 
     m_render_resource_info.p_visible_submeshes     = nullptr;
     m_render_resource_info.p_visible_textures      = nullptr;
@@ -89,7 +90,7 @@ void ForwardRender::setupDescriptorPool()
                                                       {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1},
                                                       {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1},
                                                       {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       2},
-                                                      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2}
+                                                      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8}
                                               };
 
     VkDescriptorPoolCreateInfo descriptorPoolInfo{};
@@ -97,7 +98,7 @@ void ForwardRender::setupDescriptorPool()
     descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(descriptorTypes.size());
     descriptorPoolInfo.pPoolSizes    = descriptorTypes.data();
     // NOTICE: the maxSets must be equal to the descriptorSets in all subpasses
-    descriptorPoolInfo.maxSets       = 4;
+    descriptorPoolInfo.maxSets       = 6;
 
     VK_CHECK_RESULT(vkCreateDescriptorPool(g_p_vulkan_context->_device,
                                            &descriptorPoolInfo,
@@ -214,7 +215,8 @@ void ForwardRender::draw()
                                               std::bind(&ForwardRender::updateAfterSwapchainRecreate, this));
 }
 
-void ForwardRender::SetVisibleRenderData(std::vector<RenderSubmesh> *p_visible_submesh, std::vector<Texture2DPtr> *p_visible_texture)
+void ForwardRender::SetVisibleRenderData(std::vector<RenderSubmesh> *p_visible_submesh,
+                                         std::vector<Texture2DPtr> *p_visible_texture)
 {
     m_render_resource_info.p_visible_submeshes = p_visible_submesh;
     m_render_resource_info.p_visible_textures  = p_visible_texture;
@@ -234,6 +236,34 @@ void ForwardRender::UpdateRenderPerFrameScenceUBO(VulkanPerFrameSceneDefine &per
 {
     m_render_per_frame_ubo.per_frame_ubo = per_frame_scene_define;
     m_render_per_frame_ubo.ToGPU();
+}
+
+void ForwardRender::UpdateRenderTextures(std::vector<Texture2DPtr> &visible_textures)
+{
+    std::vector<VkDescriptorSet> _descriptor_sets;
+
+    _descriptor_sets.resize(visible_textures.size());
+
+    for(int i = 0; i < _descriptor_sets.size(); ++i)
+    {
+        VkDescriptorSetAllocateInfo allocInfo{};
+
+        allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool     = m_descriptor_pool;
+        // determines the number of descriptor sets to be allocated from the pool.
+        allocInfo.descriptorSetCount = 1;
+        // 每个set的布局
+        allocInfo.pSetLayouts        = &m_descriptor_set_layouts[_mesh_pass_ubo_data_layout];
+
+        if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
+                                     &allocInfo,
+                                     &m_mesh_global_descriptor_set) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to allocate descriptor sets!");
+        }
+    }
+
+    m_render_resource_info.p_visible_textures = &visible_textures;
 }
 
 void ForwardRender::updateAfterSwapchainRecreate()

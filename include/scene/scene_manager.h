@@ -53,8 +53,8 @@ namespace Scene
         std::vector<RenderSubmesh>           m_visible_meshes;
         std::vector<Texture2DPtr>            m_visible_textures;
         std::vector<VulkanModelDefine>       m_visible_model_matrix;
-        VulkanPerFrameSceneDefine            m_per_frame_scene_define;
-        VulkanPerFrameDirectionalLightDefine m_per_frame_directional_light_define;
+        VulkanPerFrameSceneDefine            m_per_frame_scene_cache;
+        VulkanPerFrameDirectionalLightDefine m_per_frame_directional_light_cache[MAX_DIRECTIONAL_LIGHT_COUNT];
 
         void updateScene();
     };

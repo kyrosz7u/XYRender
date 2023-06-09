@@ -53,31 +53,35 @@ namespace RenderSystem
         void UpdateRenderModelUBOList(std::vector<VulkanModelDefine> &model_matrix);
 
         void UpdateRenderPerFrameScenceUBO(VulkanPerFrameSceneDefine &per_frame_scene_define);
+
     private:
 
         void setupCommandBuffer();
 
         void setupDescriptorPool();
 
+        void setupRenderpass();
+
         void updateAfterSwapchainRecreate();
+
     private:
         VkCommandPool                m_command_pool;
         std::vector<VkCommandBuffer> m_command_buffers;
         VkDescriptorPool             m_descriptor_pool;
         std::vector<RenderPassPtr>   m_render_passes;
+        // render target
         std::vector<ImageAttachment> m_render_targets;
-
         std::vector<ImageAttachment> m_backup_targets;
-        RenderModelUBOList m_render_model_ubo_list;
+        // ubo
+        RenderModelUBOList           m_render_model_ubo_list;
+        RenderPerFrameUBO m_render_per_frame_ubo;
+        // texture descriptor list
+        std::vector<VkDescriptorSet> m_texture_descriptor_sets;
 
-        RenderPerFrameUBO  m_render_per_frame_ubo;
-        Matrix4x4 m_view_matrix;
-
-        Matrix4x4 m_proj_matrix;
+        Matrix4x4         m_view_matrix;
+        Matrix4x4         m_proj_matrix;
 
         UIOverlayPtr m_p_ui_overlay;
-
-        void setupRenderpass();
     };
 }
 #endif //XEXAMPLE_FORWARD_RENDER_H

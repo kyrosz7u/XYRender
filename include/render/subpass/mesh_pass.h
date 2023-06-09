@@ -14,12 +14,6 @@ namespace RenderSystem
 {
     namespace SubPass
     {
-        enum _mesh_pass_descriptor_set_define
-        {
-            _mesh_pass_ubo_data_descriptor_set = 0,
-            _mesh_pass_texture_descriptor_set,
-            _mesh_pass_descriptor_set_count
-        };
         struct MeshPassInitInfo : public SubPassInitInfo
         {
             std::vector<RenderMeshPtr> *render_mesh_list = nullptr;
@@ -28,25 +22,32 @@ namespace RenderSystem
         class MeshPass : public SubPassBase
         {
         public:
+            enum _mesh_pass_pipeline_layout_define
+            {
+                _mesh_pass_ubo_data_layout = 0,
+                _mesh_pass_texture_layout,
+                _mesh_pass_pipeline_layout_count
+            };
             MeshPass()
             {
                 name = "mesh_subpass";
-                // m_descriptor_list.resize(1);
+                m_descriptor_set_layouts.resize(_mesh_pass_pipeline_layout_count, VK_NULL_HANDLE);
             }
 
             void draw() override;
 
-            void updateRenderDescriptorSet();
+            void updateGlobalRenderDescriptorSet();
 
             void updateAfterSwapchainRecreate() override;
 
         private:
             void initialize(SubPassInitInfo *subPassInitInfo) override;
-            void setupDescriptorSetLayout() override;
+            void setupPipeLineLayout();
             void setupDescriptorSet() override;
             void setupPipelines() override;
 
-            void updateTextureDescriptorSet(VkDescriptorImageInfo texture_descriptor);
+            std::vector<VkDescriptorSetLayout> m_descriptor_set_layouts;
+            VkDescriptorSet m_mesh_global_descriptor_set = VK_NULL_HANDLE;
         };
     }
 }

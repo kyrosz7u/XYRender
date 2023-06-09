@@ -38,6 +38,21 @@ public:
         model_matrix = Matrix4x4::getScale(scale)*model_matrix;
         return model_matrix;
     }
+
+    Vector3 GetRight()
+    {
+        return Math::getRotationMatrix(rotation) * Vector3(1, 0, 0);
+    }
+
+    Vector3 GetUp()
+    {
+        return Math::getRotationMatrix(rotation) * Vector3(0, 1, 0);
+    }
+
+    Vector3 GetForward()
+    {
+        return Math::getRotationMatrix(rotation) * Vector3(0, 0, 1);
+    }
 };
 
 #endif //XEXAMPLE_TRANSFORM_H

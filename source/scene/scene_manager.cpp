@@ -20,10 +20,23 @@ void SceneManager::updateScene()
     m_visible_textures.clear();
     m_visible_model_matrix.clear();
 
-    m_per_frame_scene_define.camera_pos = m_main_camera->position;
-    m_per_frame_scene_define.proj_view =
+    // update scene cache
+    m_per_frame_scene_cache.camera_pos = m_main_camera->position;
+    m_per_frame_scene_cache.proj_view =
             m_main_camera->calculatePerspectiveMatrix() * m_main_camera->calculateViewMatrix();
+    assert(m_directional_lights.size() <= MAX_DIRECTIONAL_LIGHT_COUNT);
+    m_per_frame_scene_cache.directional_light_number = m_directional_lights.size();
 
+    // update direction lighting cache
+    for (int i = 0; i < m_directional_lights.size(); ++i)
+    {
+        auto &light = m_directional_lights[i];
+        m_per_frame_directional_light_cache[i].intensity = light.intensity;
+        m_per_frame_directional_light_cache[i].direction = light.transform.GetForward();
+        m_per_frame_directional_light_cache[i].color     = light.color;
+    }
+
+    // update model and texture cache
     m_visible_model_matrix.resize(m_models.size());
     int texture_offset = 0;
 
@@ -42,7 +55,7 @@ void SceneManager::updateScene()
         }
         for (auto       submesh: model_submeshes)
         {
-            if(submesh.material_index >= 0)
+            if (submesh.material_index >= 0)
                 submesh.material_index += texture_offset;
             m_visible_meshes.push_back(submesh);
         }
@@ -62,7 +75,7 @@ void SceneManager::Tick()
     updateScene();
     m_render->SetVisibleRenderData(&m_visible_meshes, &m_visible_textures);
     m_render->UpdateRenderModelUBOList(m_visible_model_matrix);
-    m_render->UpdateRenderPerFrameScenceUBO(m_per_frame_scene_define);
+    m_render->UpdateRenderPerFrameScenceUBO(m_per_frame_scene_cache);
 
     m_render->Tick();
 }

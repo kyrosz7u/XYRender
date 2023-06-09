@@ -40,7 +40,7 @@ int main()
     Scene::DirectionLight light;
     light.intensity = 1.0f;
     light.transform = Transform(Math::Vector3(0, 15, -15), Math::EulerAngle(50, -30, 0), Math::Vector3(1, 1, 1));
-    light.color     = Color(1, float(244 / 255), float(214 / 255), 255);
+    light.color     = Color(1, float(244) / 255, float(214) / 255, 1.0f);
     scene_manager->AddLight(light);
 
     scene_manager->PostInitialize();

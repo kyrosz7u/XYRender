@@ -18,17 +18,15 @@ void MeshPass::initialize(SubPassInitInfo *subPassInitInfo)
     m_subpass_index          = mesh_pass_init_info->subpass_index;
     m_renderpass             = mesh_pass_init_info->renderpass;
 
-    setupDescriptorSetLayout();
+    setupPipeLineLayout();
     setupDescriptorSet();
-    updateRenderDescriptorSet();
+    updateGlobalRenderDescriptorSet();
     setupPipelines();
 }
 
-void MeshPass::setupDescriptorSetLayout()
+void MeshPass::setupPipeLineLayout()
 {
-    m_descriptorset_list.resize(_mesh_pass_descriptor_set_count);
-
-    DescriptorSet &ubo_descriptor_set = m_descriptorset_list[_mesh_pass_ubo_data_descriptor_set];
+    auto &ubo_data_layout = m_descriptor_set_layouts[_mesh_pass_ubo_data_layout];
 
     std::vector<VkDescriptorSetLayoutBinding> ubo_layout_bindings;
     ubo_layout_bindings.resize(2);
@@ -57,9 +55,10 @@ void MeshPass::setupDescriptorSetLayout()
     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
                                                 &descriptorSetLayoutCreateInfo,
                                                 nullptr,
-                                                &ubo_descriptor_set.layout));
+                                                &ubo_data_layout))
 
-    DescriptorSet                             &texture_descriptor_set = m_descriptorset_list[_mesh_pass_texture_descriptor_set];
+    auto &texture_data_layout = m_descriptor_set_layouts[_mesh_pass_texture_layout];
+
     std::vector<VkDescriptorSetLayoutBinding> texture_layout_bindings;
     texture_layout_bindings.resize(1);
 
@@ -76,44 +75,40 @@ void MeshPass::setupDescriptorSetLayout()
     texture_descriptorSetLayoutCreateInfo.bindingCount = texture_layout_bindings.size();
     texture_descriptorSetLayoutCreateInfo.pBindings    = texture_layout_bindings.data();
 
-    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
-                                                &texture_descriptorSetLayoutCreateInfo,
-                                                nullptr,
-                                                &texture_descriptor_set.layout));
+        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
+                                                    &texture_descriptorSetLayoutCreateInfo,
+                                                    nullptr,
+                                                    &texture_data_layout))
+
 }
 
 void MeshPass::setupDescriptorSet()
 {
-    for (int i = 0; i < m_descriptorset_list.size(); ++i)
+    VkDescriptorSetAllocateInfo allocInfo{};
+
+    allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool     = *m_p_render_command_info->p_descriptor_pool;
+    // determines the number of descriptor sets to be allocated from the pool.
+    allocInfo.descriptorSetCount = 1;
+    // 每个set的布局
+    allocInfo.pSetLayouts        = &m_descriptor_set_layouts[_mesh_pass_ubo_data_layout];
+
+    if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
+                                 &allocInfo,
+                                 &m_mesh_global_descriptor_set) != VK_SUCCESS)
     {
-        VkDescriptorSetAllocateInfo allocInfo{};
-
-        allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool     = *m_p_render_command_info->p_descriptor_pool;
-        // determines the number of descriptor sets to be allocated from the pool.
-        allocInfo.descriptorSetCount = 1;
-        // 每个set的布局
-        allocInfo.pSetLayouts        = &m_descriptorset_list[i].layout;
-
-        if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
-                                     &allocInfo,
-                                     &m_descriptorset_list[i].descriptor_set) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to allocate descriptor sets!");
-        }
+        throw std::runtime_error("failed to allocate descriptor sets!");
     }
 }
 
-void MeshPass::updateRenderDescriptorSet()
+void MeshPass::updateGlobalRenderDescriptorSet()
 {
-    VkDescriptorSet descriptor_set = m_descriptorset_list[_mesh_pass_ubo_data_descriptor_set].descriptor_set;
-
     std::vector<VkWriteDescriptorSet> write_descriptor_sets;
     write_descriptor_sets.resize(2);
 
     VkWriteDescriptorSet &perframe_buffer_write = write_descriptor_sets[0];
     perframe_buffer_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    perframe_buffer_write.dstSet          = descriptor_set;
+    perframe_buffer_write.dstSet          = m_mesh_global_descriptor_set;
     perframe_buffer_write.dstBinding      = 0;
     perframe_buffer_write.dstArrayElement = 0;
     perframe_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -122,7 +117,7 @@ void MeshPass::updateRenderDescriptorSet()
 
     VkWriteDescriptorSet &perobject_buffer_write = write_descriptor_sets[1];
     perobject_buffer_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    perobject_buffer_write.dstSet          = descriptor_set;
+    perobject_buffer_write.dstSet          = m_mesh_global_descriptor_set;
     perobject_buffer_write.dstBinding      = 1;
     perobject_buffer_write.dstArrayElement = 0;
     perobject_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
@@ -137,33 +132,13 @@ void MeshPass::updateRenderDescriptorSet()
 
 }
 
-void MeshPass::updateTextureDescriptorSet(VkDescriptorImageInfo texture_descriptor)
-{
-    DescriptorSet &texture_descriptor_set = m_descriptorset_list[_mesh_pass_texture_descriptor_set];
-
-    VkWriteDescriptorSet write_descriptor_set{};
-    write_descriptor_set.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write_descriptor_set.dstSet          = texture_descriptor_set.descriptor_set;
-    write_descriptor_set.dstBinding      = 0;
-    write_descriptor_set.dstArrayElement = 0;
-    write_descriptor_set.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    write_descriptor_set.descriptorCount = 1;
-    write_descriptor_set.pImageInfo      = &texture_descriptor;
-
-    vkUpdateDescriptorSets(g_p_vulkan_context->_device,
-                           1,
-                           &write_descriptor_set,
-                           0,
-                           nullptr);
-}
-
 void MeshPass::setupPipelines()
 {
     std::vector<VkDescriptorSetLayout> descriptorset_layouts;
 
-    for (auto &descriptor: m_descriptorset_list)
+    for (auto &layout: m_descriptor_set_layouts)
     {
-        descriptorset_layouts.push_back(descriptor.layout);
+        descriptorset_layouts.push_back(layout);
     }
 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
@@ -319,6 +294,7 @@ void MeshPass::setupPipelines()
 
 void MeshPass::draw()
 {
+//    updateGlobalRenderDescriptorSet();
     VkDebugUtilsLabelEXT label_info = {
             VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Mesh", {1.0f, 1.0f, 1.0f, 1.0f}};
     g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
@@ -351,8 +327,17 @@ void MeshPass::draw()
         }
         if(submesh.material_index!=-1)
         {
-            updateTextureDescriptorSet(visible_texture[submesh.material_index]->descriptor);
-            LOG_INFO("bind texture {}\t index:{}",visible_texture[submesh.material_index]->name, submesh.material_index);
+            updateTextureDescriptorSet(m_p_render_command_info->p_current_command_buffer, visible_texture[submesh.material_index]->descriptor);
+            DescriptorSet &texture_descriptor_set = m_texture_descriptor_set_per_command_buffer[m_p_render_command_info->p_current_command_buffer];
+            g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
+                                                         VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                         pipeline_layout,
+                                                         1,
+                                                         1,
+                                                         &texture_descriptor_set.descriptor_set,
+                                                         0,
+                                                         NULL);
+//            LOG_INFO("bind texture {}\t index:{}",visible_texture[submesh.material_index]->name, submesh.material_index);
         }
 
         VkBuffer     vertex_buffers[] = {parent_mesh->mesh_vertex_position_buffer,
@@ -377,7 +362,7 @@ void MeshPass::draw()
                                                      pipeline_layout,
                                                      0,
                                                      1,
-                                                     &m_descriptorset_list[0].descriptor_set,
+                                                     &m_descriptorset_list[_mesh_pass_ubo_data_descriptor_set].descriptor_set,
                                                      1,
                                                      &dynamicOffset);
         g_p_vulkan_context->_vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,
@@ -386,7 +371,14 @@ void MeshPass::draw()
                                               submesh.index_offset,
                                               submesh.vertex_offset,
                                               0);
-
+        g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
+                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                     pipeline_layout,
+                                                     1,
+                                                     0,
+                                                     VK_NULL_HANDLE ,
+                                                     0,
+                                                     NULL);
     }
     g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
 }

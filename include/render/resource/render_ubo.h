@@ -26,12 +26,13 @@ namespace RenderSystem
     {
         Math::Matrix4x4 proj_view;
         Math::Vector3   camera_pos;
-        int             directional_light_number;
+        uint32_t        directional_light_number;
     };
     struct VulkanPerFrameDirectionalLightDefine
     {
-        float         intensity[MAX_DIRECTIONAL_LIGHT_COUNT];
-        Math::Vector3 direction[MAX_DIRECTIONAL_LIGHT_COUNT];
+        float         intensity;
+        Math::Vector3 direction;
+        Math::Color   color;
     };
 
 
@@ -130,7 +131,7 @@ namespace RenderSystem
         };
         VkDeviceSize                         buffer_size;
         VulkanPerFrameSceneDefine            per_frame_ubo;
-        VulkanPerFrameDirectionalLightDefine directional_light_ubo;
+        VulkanPerFrameDirectionalLightDefine directional_light_list_ubo[MAX_DIRECTIONAL_LIGHT_COUNT];
         VkBuffer                             per_frame_buffer;
         VkDeviceMemory                       per_frame_buffer_memory;
         void                                 *mapped_buffer_ptr;
@@ -139,7 +140,8 @@ namespace RenderSystem
         RenderPerFrameUBO()
         {
             buffer_size                        =
-                    sizeof(VulkanPerFrameSceneDefine) + sizeof(VulkanPerFrameDirectionalLightDefine);
+                    sizeof(VulkanPerFrameSceneDefine) +
+                    sizeof(VulkanPerFrameDirectionalLightDefine) * MAX_DIRECTIONAL_LIGHT_COUNT;
             VkDeviceSize no_coherent_atom_size = g_p_vulkan_context->_physical_device_properties.limits.nonCoherentAtomSize;
             buffer_size = (buffer_size + no_coherent_atom_size - 1) & ~(no_coherent_atom_size - 1);
 //            dynamic_alignment = (dynamic_alignment + min_ubo_alignment - 1) & ~(min_ubo_alignment - 1);
@@ -157,7 +159,7 @@ namespace RenderSystem
             buffer_descriptors.resize(_block_count);
             buffer_descriptors[_scene_block].buffer = per_frame_buffer;
             buffer_descriptors[_scene_block].offset = 0;
-            buffer_descriptors[_scene_block].range  = buffer_size;
+            buffer_descriptors[_scene_block].range  = sizeof(VulkanPerFrameSceneDefine);
 
             buffer_descriptors[_light_block].buffer = per_frame_buffer;
             buffer_descriptors[_light_block].offset = sizeof(VulkanPerFrameSceneDefine);
@@ -178,11 +180,12 @@ namespace RenderSystem
 
         void ToGPU()
         {
+            assert(per_frame_ubo.directional_light_number > 0 &&
+                   per_frame_ubo.directional_light_number <= MAX_DIRECTIONAL_LIGHT_COUNT);
             memcpy(mapped_buffer_ptr, &per_frame_ubo, sizeof(VulkanPerFrameSceneDefine));
             memcpy((void *) ((uint64_t) mapped_buffer_ptr + sizeof(VulkanPerFrameSceneDefine)),
-                   &directional_light_ubo,
-                   per_frame_ubo.directional_light_number * sizeof(VulkanPerFrameDirectionalLightDefine) /
-                   MAX_DIRECTIONAL_LIGHT_COUNT);
+                   &directional_light_list_ubo,
+                   per_frame_ubo.directional_light_number * sizeof(VulkanPerFrameDirectionalLightDefine));
 
             VkMappedMemoryRange mappedMemoryRange{};
             mappedMemoryRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;

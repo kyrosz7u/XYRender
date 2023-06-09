@@ -23,10 +23,11 @@ namespace VulkanAPI
 {
     struct RenderCommandInfo
     {
-        VkCommandBuffer *p_current_command_buffer;
-        VkDescriptorPool *p_descriptor_pool;
-        VkViewport *p_viewport;
-        VkRect2D   *p_scissor;
+        VkCommandBuffer              *p_current_command_buffer{nullptr};
+        std::vector<VkCommandBuffer> *command_buffer_list{nullptr};
+        VkDescriptorPool             *p_descriptor_pool{nullptr};
+        const VkViewport             *p_viewport{nullptr};
+        const VkRect2D               *p_scissor{nullptr};
     };
 
     struct QueueFamilyIndices
@@ -51,10 +52,10 @@ namespace VulkanAPI
     class VulkanContext
     {
     public:
-        GLFWwindow         *_window        = nullptr;
-        VkInstance         _instance;
-        VkSurfaceKHR       _surface;
-        VkPhysicalDevice   _physical_device;
+        GLFWwindow                 *_window = nullptr;
+        VkInstance                 _instance;
+        VkSurfaceKHR               _surface;
+        VkPhysicalDevice           _physical_device;
         VkPhysicalDeviceProperties _physical_device_properties;
 
         QueueFamilyIndices _queue_indices;
