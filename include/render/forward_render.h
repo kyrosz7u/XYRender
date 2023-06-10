@@ -47,12 +47,13 @@ namespace RenderSystem
             m_p_ui_overlay = ui_overlay;
         }
 
-        void SetVisibleRenderData(std::vector<RenderSubmesh> *p_visible_submesh,
-                                  std::vector<Texture2DPtr> *p_visible_texture);
-
         void UpdateRenderModelUBOList(std::vector<VulkanModelDefine> &model_matrix);
 
         void UpdateRenderPerFrameScenceUBO(VulkanPerFrameSceneDefine &per_frame_scene_define);
+
+        void UpdateRenderSubMesh(const std::vector<RenderSubmesh> &_visible_submesh);
+
+        void UpdateRenderTextures(std::vector<Texture2DPtr> &_visible_textures);
 
     private:
 
@@ -64,6 +65,8 @@ namespace RenderSystem
 
         void updateAfterSwapchainRecreate();
 
+        void setupTextureDescriptorSetLayout();
+
     private:
         VkCommandPool                m_command_pool;
         std::vector<VkCommandBuffer> m_command_buffers;
@@ -72,14 +75,17 @@ namespace RenderSystem
         // render target
         std::vector<ImageAttachment> m_render_targets;
         std::vector<ImageAttachment> m_backup_targets;
+        // render submesh cache
+        std::vector<RenderSubmesh>   m_render_submeshes;
         // ubo
         RenderModelUBOList           m_render_model_ubo_list;
-        RenderPerFrameUBO m_render_per_frame_ubo;
+        RenderPerFrameUBO            m_render_per_frame_ubo;
         // texture descriptor list
+        VkDescriptorSetLayout        m_texture_descriptor_set_layout;
         std::vector<VkDescriptorSet> m_texture_descriptor_sets;
 
-        Matrix4x4         m_view_matrix;
-        Matrix4x4         m_proj_matrix;
+        Matrix4x4 m_view_matrix;
+        Matrix4x4 m_proj_matrix;
 
         UIOverlayPtr m_p_ui_overlay;
     };

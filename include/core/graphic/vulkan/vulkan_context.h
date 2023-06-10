@@ -93,6 +93,9 @@ namespace VulkanAPI
         PFN_vkCmdBindDescriptorSets      _vkCmdBindDescriptorSets;
         PFN_vkCmdDrawIndexed             _vkCmdDrawIndexed;
         PFN_vkCmdClearAttachments        _vkCmdClearAttachments;
+        PFN_vkAllocateDescriptorSets     _vkAllocateDescriptorSets;
+        PFN_vkUpdateDescriptorSets       _vkUpdateDescriptorSets;
+        PFN_vkFreeDescriptorSets         _vkFreeDescriptorSets;
 
         VkFormat                 _swapchain_image_format = VK_FORMAT_UNDEFINED;
         VkExtent2D               _swapchain_extent;

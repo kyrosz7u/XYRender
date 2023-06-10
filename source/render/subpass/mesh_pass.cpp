@@ -75,10 +75,10 @@ void MeshPass::setupPipeLineLayout()
     texture_descriptorSetLayoutCreateInfo.bindingCount = texture_layout_bindings.size();
     texture_descriptorSetLayoutCreateInfo.pBindings    = texture_layout_bindings.data();
 
-        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
-                                                    &texture_descriptorSetLayoutCreateInfo,
-                                                    nullptr,
-                                                    &texture_data_layout))
+    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
+                                                &texture_descriptorSetLayoutCreateInfo,
+                                                nullptr,
+                                                &texture_data_layout))
 
 }
 
@@ -209,7 +209,7 @@ void MeshPass::setupPipelines()
     rasterization_state_create_info.polygonMode             = VK_POLYGON_MODE_FILL;
     rasterization_state_create_info.lineWidth               = 1.0f;
     rasterization_state_create_info.cullMode                = VK_CULL_MODE_BACK_BIT;
-    rasterization_state_create_info.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterization_state_create_info.frontFace               = VK_FRONT_FACE_CLOCKWISE;
     rasterization_state_create_info.depthBiasEnable         = VK_FALSE;
     rasterization_state_create_info.depthBiasConstantFactor = 0.0f;
     rasterization_state_create_info.depthBiasClamp          = 0.0f;
@@ -314,27 +314,26 @@ void MeshPass::draw()
     //                                                 0,
     //                                                 NULL);
 
-    auto &visible_submeshes = *m_p_render_resource_info->p_visible_submeshes;
-    auto &visible_texture   = *m_p_render_resource_info->p_visible_textures;
+    auto &render_submeshes         = *m_p_render_resource_info->p_render_submeshes;
+    auto &render_texture_desc_sets = *m_p_render_resource_info->p_texture_descriptor_sets;
 
-    for (uint32_t i = 0; i < (*m_p_render_resource_info->p_visible_submeshes).size(); i++)
+    for (uint32_t i = 0; i < (*m_p_render_resource_info->p_render_submeshes).size(); i++)
     {
-        auto submesh     = (*m_p_render_resource_info->p_visible_submeshes)[i];
+        auto submesh     = (*m_p_render_resource_info->p_render_submeshes)[i];
         auto parent_mesh = submesh.parent_mesh.lock();
         if (parent_mesh == nullptr)
         {
             continue;
         }
-        if(submesh.material_index!=-1)
+        if (submesh.material_index != -1)
         {
-            updateTextureDescriptorSet(m_p_render_command_info->p_current_command_buffer, visible_texture[submesh.material_index]->descriptor);
-            DescriptorSet &texture_descriptor_set = m_texture_descriptor_set_per_command_buffer[m_p_render_command_info->p_current_command_buffer];
+
             g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
                                                          VK_PIPELINE_BIND_POINT_GRAPHICS,
                                                          pipeline_layout,
                                                          1,
                                                          1,
-                                                         &texture_descriptor_set.descriptor_set,
+                                                         &render_texture_desc_sets[submesh.material_index],
                                                          0,
                                                          NULL);
 //            LOG_INFO("bind texture {}\t index:{}",visible_texture[submesh.material_index]->name, submesh.material_index);
@@ -362,7 +361,7 @@ void MeshPass::draw()
                                                      pipeline_layout,
                                                      0,
                                                      1,
-                                                     &m_descriptorset_list[_mesh_pass_ubo_data_descriptor_set].descriptor_set,
+                                                     &m_mesh_global_descriptor_set,
                                                      1,
                                                      &dynamicOffset);
         g_p_vulkan_context->_vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,
@@ -371,14 +370,6 @@ void MeshPass::draw()
                                               submesh.index_offset,
                                               submesh.vertex_offset,
                                               0);
-        g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
-                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                     pipeline_layout,
-                                                     1,
-                                                     0,
-                                                     VK_NULL_HANDLE ,
-                                                     0,
-                                                     NULL);
     }
     g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
 }

@@ -12,6 +12,17 @@ void SceneManager::PostInitialize()
 
     m_ui_overlay->addDebugDrawCommand(std::bind(&_InputSystem::ImGuiDebugPanel, &_InputSystem::Instance()));
     m_ui_overlay->addDebugDrawCommand(std::bind(&Scene::Camera::ImGuiDebugPanel, m_main_camera));
+
+    for (int i = 0; i < m_models.size(); ++i)
+    {
+        auto       &model           = m_models[i];
+        const auto &model_textures  = model.getTextures();
+        for (const auto &texture: model_textures)
+        {
+            m_visible_textures.push_back(texture);
+        }
+        m_render->UpdateRenderTextures(m_visible_textures);
+    }
 }
 
 void SceneManager::updateScene()
@@ -51,7 +62,7 @@ void SceneManager::updateScene()
 
         for (const auto &texture: model_textures)
         {
-            m_visible_textures.push_back(texture);
+//            m_visible_textures.push_back(texture);
         }
         for (auto       submesh: model_submeshes)
         {
@@ -73,7 +84,7 @@ void SceneManager::Tick()
     m_main_camera->Tick();
 
     updateScene();
-    m_render->SetVisibleRenderData(&m_visible_meshes, &m_visible_textures);
+    m_render->UpdateRenderSubMesh(m_visible_meshes);
     m_render->UpdateRenderModelUBOList(m_visible_model_matrix);
     m_render->UpdateRenderPerFrameScenceUBO(m_per_frame_scene_cache);
 

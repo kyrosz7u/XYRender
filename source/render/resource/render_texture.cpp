@@ -69,6 +69,12 @@ Texture2D::Texture2D(const std::string& texture_path, const std::string& texture
                                   static_cast<uint32_t>(texWidth),
                                   static_cast<uint32_t>(texHeight), 1);
 
+    VulkanUtil::transitionImageLayout(g_p_vulkan_context,
+                                      image,
+                                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                      1, mip_levels, VK_IMAGE_ASPECT_COLOR_BIT);
+
     vkFreeMemory(g_p_vulkan_context->_device, stagingBufferMemory, nullptr);
     vkDestroyBuffer(g_p_vulkan_context->_device, stagingBuffer, nullptr);
 

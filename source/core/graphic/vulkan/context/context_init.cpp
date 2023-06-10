@@ -206,7 +206,7 @@ void VulkanContext::pickPhysicalDevice()
 
     std::vector<std::pair<int, std::pair<VkPhysicalDevice, VkPhysicalDeviceProperties>>> ranked_physical_devices;
     // 4.2 choose a suitable physical device
-    for (const auto &device: devices)
+    for (const auto                                                                      &device: devices)
     {
         VkPhysicalDeviceProperties deviceProperties;
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -240,7 +240,7 @@ void VulkanContext::pickPhysicalDevice()
             _physical_device_properties = device.second.second;
             LOG_INFO("Device: {}  Type: {}",
                      _physical_device_properties.deviceName,
-                 VulkanUtil::physicalDeviceTypeString(_physical_device_properties.deviceType))
+                     VulkanUtil::physicalDeviceTypeString(_physical_device_properties.deviceType))
 
             LOG_INFO("Vulkan API {}.{}.{}",
                      VK_API_VERSION_MAJOR(_physical_device_properties.apiVersion),
@@ -302,22 +302,25 @@ void VulkanContext::createLogicalDevice()
     vkGetDeviceQueue(_device, _queue_indices.presentFamily.value(), 0, &_present_queue);
 
     // more efficient pointer
-    _vkWaitForFences         = (PFN_vkWaitForFences) vkGetDeviceProcAddr(_device, "vkWaitForFences");
-    _vkResetFences           = (PFN_vkResetFences) vkGetDeviceProcAddr(_device, "vkResetFences");
-    _vkResetCommandPool      = (PFN_vkResetCommandPool) vkGetDeviceProcAddr(_device, "vkResetCommandPool");
-    _vkBeginCommandBuffer    = (PFN_vkBeginCommandBuffer) vkGetDeviceProcAddr(_device, "vkBeginCommandBuffer");
-    _vkEndCommandBuffer      = (PFN_vkEndCommandBuffer) vkGetDeviceProcAddr(_device, "vkEndCommandBuffer");
-    _vkCmdBeginRenderPass    = (PFN_vkCmdBeginRenderPass) vkGetDeviceProcAddr(_device, "vkCmdBeginRenderPass");
-    _vkCmdNextSubpass        = (PFN_vkCmdNextSubpass) vkGetDeviceProcAddr(_device, "vkCmdNextSubpass");
-    _vkCmdEndRenderPass      = (PFN_vkCmdEndRenderPass) vkGetDeviceProcAddr(_device, "vkCmdEndRenderPass");
-    _vkCmdBindPipeline       = (PFN_vkCmdBindPipeline) vkGetDeviceProcAddr(_device, "vkCmdBindPipeline");
-    _vkCmdSetViewport        = (PFN_vkCmdSetViewport) vkGetDeviceProcAddr(_device, "vkCmdSetViewport");
-    _vkCmdSetScissor         = (PFN_vkCmdSetScissor) vkGetDeviceProcAddr(_device, "vkCmdSetScissor");
-    _vkCmdBindVertexBuffers  = (PFN_vkCmdBindVertexBuffers) vkGetDeviceProcAddr(_device, "vkCmdBindVertexBuffers");
-    _vkCmdBindIndexBuffer    = (PFN_vkCmdBindIndexBuffer) vkGetDeviceProcAddr(_device, "vkCmdBindIndexBuffer");
-    _vkCmdBindDescriptorSets = (PFN_vkCmdBindDescriptorSets) vkGetDeviceProcAddr(_device, "vkCmdBindDescriptorSets");
-    _vkCmdDrawIndexed        = (PFN_vkCmdDrawIndexed) vkGetDeviceProcAddr(_device, "vkCmdDrawIndexed");
-    _vkCmdClearAttachments   = (PFN_vkCmdClearAttachments) vkGetDeviceProcAddr(_device, "vkCmdClearAttachments");
+    _vkWaitForFences          = (PFN_vkWaitForFences) vkGetDeviceProcAddr(_device, "vkWaitForFences");
+    _vkResetFences            = (PFN_vkResetFences) vkGetDeviceProcAddr(_device, "vkResetFences");
+    _vkResetCommandPool       = (PFN_vkResetCommandPool) vkGetDeviceProcAddr(_device, "vkResetCommandPool");
+    _vkBeginCommandBuffer     = (PFN_vkBeginCommandBuffer) vkGetDeviceProcAddr(_device, "vkBeginCommandBuffer");
+    _vkEndCommandBuffer       = (PFN_vkEndCommandBuffer) vkGetDeviceProcAddr(_device, "vkEndCommandBuffer");
+    _vkCmdBeginRenderPass     = (PFN_vkCmdBeginRenderPass) vkGetDeviceProcAddr(_device, "vkCmdBeginRenderPass");
+    _vkCmdNextSubpass         = (PFN_vkCmdNextSubpass) vkGetDeviceProcAddr(_device, "vkCmdNextSubpass");
+    _vkCmdEndRenderPass       = (PFN_vkCmdEndRenderPass) vkGetDeviceProcAddr(_device, "vkCmdEndRenderPass");
+    _vkCmdBindPipeline        = (PFN_vkCmdBindPipeline) vkGetDeviceProcAddr(_device, "vkCmdBindPipeline");
+    _vkCmdSetViewport         = (PFN_vkCmdSetViewport) vkGetDeviceProcAddr(_device, "vkCmdSetViewport");
+    _vkCmdSetScissor          = (PFN_vkCmdSetScissor) vkGetDeviceProcAddr(_device, "vkCmdSetScissor");
+    _vkCmdBindVertexBuffers   = (PFN_vkCmdBindVertexBuffers) vkGetDeviceProcAddr(_device, "vkCmdBindVertexBuffers");
+    _vkCmdBindIndexBuffer     = (PFN_vkCmdBindIndexBuffer) vkGetDeviceProcAddr(_device, "vkCmdBindIndexBuffer");
+    _vkCmdBindDescriptorSets  = (PFN_vkCmdBindDescriptorSets) vkGetDeviceProcAddr(_device, "vkCmdBindDescriptorSets");
+    _vkCmdDrawIndexed         = (PFN_vkCmdDrawIndexed) vkGetDeviceProcAddr(_device, "vkCmdDrawIndexed");
+    _vkCmdClearAttachments    = (PFN_vkCmdClearAttachments) vkGetDeviceProcAddr(_device, "vkCmdClearAttachments");
+    _vkAllocateDescriptorSets = (PFN_vkAllocateDescriptorSets) vkGetDeviceProcAddr(_device, "vkAllocateDescriptorSets");
+    _vkUpdateDescriptorSets   = (PFN_vkUpdateDescriptorSets) vkGetDeviceProcAddr(_device, "vkUpdateDescriptorSets");
+    _vkFreeDescriptorSets     = (PFN_vkFreeDescriptorSets) vkGetDeviceProcAddr(_device, "vkFreeDescriptorSets");
 
     _depth_image_format = findDepthFormat();
 }

@@ -16,11 +16,11 @@ void ForwardRender::initialize()
     m_render_command_info.p_viewport          = &m_viewport;
     m_render_command_info.p_scissor           = &m_scissor;
 
-    m_render_resource_info.p_visible_submeshes     = nullptr;
-    m_render_resource_info.p_visible_textures      = nullptr;
-    m_render_resource_info.p_render_model_ubo_list = &m_render_model_ubo_list;
-    m_render_resource_info.p_render_per_frame_ubo  = &m_render_per_frame_ubo;
-    m_render_resource_info.p_ui_overlay            = m_p_ui_overlay;
+    m_render_resource_info.p_render_submeshes        = &m_render_submeshes;
+    m_render_resource_info.p_texture_descriptor_sets = &m_texture_descriptor_sets;
+    m_render_resource_info.p_render_model_ubo_list   = &m_render_model_ubo_list;
+    m_render_resource_info.p_render_per_frame_ubo    = &m_render_per_frame_ubo;
+    m_render_resource_info.p_ui_overlay              = m_p_ui_overlay;
 
     m_backup_targets.resize(1);
     setupBackupBuffer();
@@ -29,6 +29,9 @@ void ForwardRender::initialize()
     setupDescriptorPool();
     setViewport();
     setupRenderpass();
+
+    setupTextureDescriptorSetLayout();
+
 }
 
 void ForwardRender::setupRenderTargets()
@@ -95,10 +98,11 @@ void ForwardRender::setupDescriptorPool()
 
     VkDescriptorPoolCreateInfo descriptorPoolInfo{};
     descriptorPoolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptorPoolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(descriptorTypes.size());
     descriptorPoolInfo.pPoolSizes    = descriptorTypes.data();
     // NOTICE: the maxSets must be equal to the descriptorSets in all subpasses
-    descriptorPoolInfo.maxSets       = 6;
+    descriptorPoolInfo.maxSets       = 11;
 
     VK_CHECK_RESULT(vkCreateDescriptorPool(g_p_vulkan_context->_device,
                                            &descriptorPoolInfo,
@@ -215,11 +219,9 @@ void ForwardRender::draw()
                                               std::bind(&ForwardRender::updateAfterSwapchainRecreate, this));
 }
 
-void ForwardRender::SetVisibleRenderData(std::vector<RenderSubmesh> *p_visible_submesh,
-                                         std::vector<Texture2DPtr> *p_visible_texture)
+void ForwardRender::UpdateRenderSubMesh(const std::vector<RenderSubmesh> &_visible_submesh)
 {
-    m_render_resource_info.p_visible_submeshes = p_visible_submesh;
-    m_render_resource_info.p_visible_textures  = p_visible_texture;
+    m_render_submeshes = _visible_submesh;
 }
 
 void ForwardRender::UpdateRenderModelUBOList(std::vector<VulkanModelDefine> &model_matrix)
@@ -238,13 +240,46 @@ void ForwardRender::UpdateRenderPerFrameScenceUBO(VulkanPerFrameSceneDefine &per
     m_render_per_frame_ubo.ToGPU();
 }
 
-void ForwardRender::UpdateRenderTextures(std::vector<Texture2DPtr> &visible_textures)
+void ForwardRender::setupTextureDescriptorSetLayout()
 {
-    std::vector<VkDescriptorSet> _descriptor_sets;
+    std::vector<VkDescriptorSetLayoutBinding> texture_layout_bindings;
+    texture_layout_bindings.resize(1);
 
-    _descriptor_sets.resize(visible_textures.size());
+    VkDescriptorSetLayoutBinding &texture_binding = texture_layout_bindings[0];
+    texture_binding.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    texture_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+    texture_binding.binding         = 0;
+    texture_binding.descriptorCount = 1;
 
-    for(int i = 0; i < _descriptor_sets.size(); ++i)
+    VkDescriptorSetLayoutCreateInfo texture_descriptorSetLayoutCreateInfo;
+    texture_descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    texture_descriptorSetLayoutCreateInfo.flags        = 0;
+    texture_descriptorSetLayoutCreateInfo.pNext        = nullptr;
+    texture_descriptorSetLayoutCreateInfo.bindingCount = texture_layout_bindings.size();
+    texture_descriptorSetLayoutCreateInfo.pBindings    = texture_layout_bindings.data();
+
+    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
+                                                &texture_descriptorSetLayoutCreateInfo,
+                                                nullptr,
+                                                &m_texture_descriptor_set_layout));
+}
+
+void ForwardRender::UpdateRenderTextures(std::vector<Texture2DPtr> &_visible_textures)
+{
+    // wait for device idle
+    // 很慢的，慎用
+    vkDeviceWaitIdle(g_p_vulkan_context->_device);
+    if (m_texture_descriptor_sets.size() > 0)
+    {
+        g_p_vulkan_context->_vkFreeDescriptorSets(g_p_vulkan_context->_device,
+                                                  m_descriptor_pool,
+                                                  m_texture_descriptor_sets.size(),
+                                                  m_texture_descriptor_sets.data());
+    }
+
+    m_texture_descriptor_sets.resize(_visible_textures.size());
+
+    for (int i = 0; i < m_texture_descriptor_sets.size(); ++i)
     {
         VkDescriptorSetAllocateInfo allocInfo{};
 
@@ -253,17 +288,41 @@ void ForwardRender::UpdateRenderTextures(std::vector<Texture2DPtr> &visible_text
         // determines the number of descriptor sets to be allocated from the pool.
         allocInfo.descriptorSetCount = 1;
         // 每个set的布局
-        allocInfo.pSetLayouts        = &m_descriptor_set_layouts[_mesh_pass_ubo_data_layout];
+        allocInfo.pSetLayouts        = &m_texture_descriptor_set_layout;
 
         if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
                                      &allocInfo,
-                                     &m_mesh_global_descriptor_set) != VK_SUCCESS)
+                                     &m_texture_descriptor_sets[i]) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to allocate descriptor sets!");
         }
     }
 
-    m_render_resource_info.p_visible_textures = &visible_textures;
+    assert(m_texture_descriptor_sets.size() == _visible_textures.size());
+
+    for (int i = 0; i < _visible_textures.size(); ++i)
+    {
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView   = _visible_textures[i]->view;
+        imageInfo.sampler     = _visible_textures[i]->sampler;
+
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet          = m_texture_descriptor_sets[i];
+        descriptorWrite.dstBinding      = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pImageInfo      = &imageInfo;
+
+        vkUpdateDescriptorSets(g_p_vulkan_context->_device,
+                               1,
+                               &descriptorWrite,
+                               0,
+                               nullptr);
+    }
+
 }
 
 void ForwardRender::updateAfterSwapchainRecreate()
