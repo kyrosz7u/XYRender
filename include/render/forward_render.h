@@ -53,7 +53,7 @@ namespace RenderSystem
 
         void UpdateRenderSubMesh(const std::vector<RenderSubmesh> &_visible_submesh);
 
-        void UpdateRenderTextures(std::vector<Texture2DPtr> &_visible_textures);
+        void UpdateRenderTextures(const std::vector<Texture2DPtr> &_visible_textures);
 
     private:
 

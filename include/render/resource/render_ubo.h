@@ -35,7 +35,7 @@ namespace RenderSystem
         Math::Color   color;
     };
 
-
+    // 保存场景中所有的模型的model_matrix
     class RenderModelUBOList
     {
     public:
@@ -75,7 +75,6 @@ namespace RenderSystem
 
         ~RenderModelUBOList()
         {
-            vkUnmapMemory(g_p_vulkan_context->_device, model_ubo_dynamic_buffer_memory);
             vkDestroyBuffer(g_p_vulkan_context->_device, model_ubo_dynamic_buffer, nullptr);
             vkFreeMemory(g_p_vulkan_context->_device, model_ubo_dynamic_buffer_memory, nullptr);
         }
@@ -120,6 +119,7 @@ namespace RenderSystem
         }
     };
 
+    // 保存场景中全局信息，如相机矩阵，光照参数等
     class RenderPerFrameUBO
     {
     public:

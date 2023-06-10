@@ -264,7 +264,7 @@ void ForwardRender::setupTextureDescriptorSetLayout()
                                                 &m_texture_descriptor_set_layout));
 }
 
-void ForwardRender::UpdateRenderTextures(std::vector<Texture2DPtr> &_visible_textures)
+void ForwardRender::UpdateRenderTextures(const std::vector<Texture2DPtr> &_visible_textures)
 {
     // wait for device idle
     // 很慢的，慎用

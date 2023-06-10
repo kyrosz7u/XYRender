@@ -28,7 +28,7 @@ void SceneManager::PostInitialize()
 void SceneManager::updateScene()
 {
     m_visible_meshes.clear();
-    m_visible_textures.clear();
+//    m_visible_textures.clear();
     m_visible_model_matrix.clear();
 
     // update scene cache
