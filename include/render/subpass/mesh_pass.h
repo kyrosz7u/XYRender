@@ -45,8 +45,6 @@ namespace RenderSystem
             void setupPipeLineLayout();
             void setupDescriptorSet() override;
             void setupPipelines() override;
-
-            std::vector<VkDescriptorSetLayout> m_descriptor_set_layouts;
             VkDescriptorSet m_mesh_global_descriptor_set = VK_NULL_HANDLE;
         };
     }

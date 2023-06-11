@@ -8,6 +8,7 @@
 #include <vulkan/vulkan.h>
 #include "core/graphic/vulkan/vulkan_utils.h"
 #include "core/math/math.h"
+#include "render_common.h"
 
 #define MAX_MODEL_COUNT 128*1024
 #define MAX_DIRECTIONAL_LIGHT_COUNT 16
@@ -18,22 +19,7 @@ namespace RenderSystem
 {
     extern std::shared_ptr<VulkanContext> g_p_vulkan_context;
 
-    struct VulkanModelDefine
-    {
-        Math::Matrix4x4 model;
-    };
-    struct VulkanPerFrameSceneDefine
-    {
-        Math::Matrix4x4 proj_view;
-        Math::Vector3   camera_pos;
-        uint32_t        directional_light_number;
-    };
-    struct VulkanPerFrameDirectionalLightDefine
-    {
-        float         intensity;
-        Math::Vector3 direction;
-        Math::Color   color;
-    };
+
 
     // 保存场景中所有的模型的model_matrix
     class RenderModelUBOList

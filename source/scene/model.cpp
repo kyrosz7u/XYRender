@@ -119,7 +119,6 @@ void Model::processMesh(aiMesh *mesh, const aiScene *scene)
     render_submesh.vertex_offset = 0;
     render_submesh.parent_mesh   = mesh_loaded;
     m_index_count += index_count;
-    render_submesh.material_index = mesh->mMaterialIndex;
 
     // 处理材质
     if (mesh->mMaterialIndex >= 0)
@@ -161,6 +160,7 @@ void Model::processMesh(aiMesh *mesh, const aiScene *scene)
                     mat->GetName().C_Str(),
                     false);
             textures_loaded.push_back(texture);
+            render_submesh.material_index = textures_loaded.size() - 1;
             LOG_INFO("texture loaded name:{}\tpath:{}", mat->GetName().C_Str(), texture_path_str)
         }
         catch (const std::exception &e)

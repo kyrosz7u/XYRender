@@ -143,7 +143,7 @@ void _InputSystem::Tick()
 void _InputSystem::ImGuiDebugPanel()
 {
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::TreeNode("_InputSystem"))
+    if (ImGui::TreeNode("InputSystem"))
     {
         ImGui::Text("Focused: %s", Focused ? "true" : "false");
         ImGui::Text("cursor_delta: (%f, %f)", m_cursor_delta_x, m_cursor_delta_y);

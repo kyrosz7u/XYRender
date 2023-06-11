@@ -93,7 +93,7 @@ void ForwardRender::setupDescriptorPool()
                                                       {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1},
                                                       {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1},
                                                       {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       2},
-                                                      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8}
+                                                      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 11}
                                               };
 
     VkDescriptorPoolCreateInfo descriptorPoolInfo{};
@@ -102,7 +102,7 @@ void ForwardRender::setupDescriptorPool()
     descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(descriptorTypes.size());
     descriptorPoolInfo.pPoolSizes    = descriptorTypes.data();
     // NOTICE: the maxSets must be equal to the descriptorSets in all subpasses
-    descriptorPoolInfo.maxSets       = 11;
+    descriptorPoolInfo.maxSets       = 13;
 
     VK_CHECK_RESULT(vkCreateDescriptorPool(g_p_vulkan_context->_device,
                                            &descriptorPoolInfo,

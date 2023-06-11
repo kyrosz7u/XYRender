@@ -199,6 +199,90 @@ void VulkanUtil::createImage(std::shared_ptr<VulkanContext> p_context,
     vkBindImageMemory(p_context->_device, image, memory, 0);
 }
 
+void VulkanUtil::createCubeMapImage(std::shared_ptr<VulkanContext> p_context,
+                                    uint32_t image_width,
+                                    uint32_t image_height,
+                                    VkFormat image_format,
+                                    VkMemoryPropertyFlags memory_property_flags,
+                                    VkImage &image,
+                                    VkDeviceMemory &memory,
+                                    uint32_t mip_levels)
+{
+    VkDeviceSize texture_layer_byte_size;
+    VkDeviceSize cube_byte_size;
+
+    switch (image_format)
+    {
+        case VK_FORMAT_R8G8B8_UNORM:
+            texture_layer_byte_size = image_width * image_height * 3;
+            break;
+        case VK_FORMAT_R8G8B8_SRGB:
+            texture_layer_byte_size = image_width * image_height * 3;
+            break;
+        case VK_FORMAT_R8G8B8A8_UNORM:
+            texture_layer_byte_size = image_width * image_height * 4;
+            break;
+        case VK_FORMAT_R8G8B8A8_SRGB:
+            texture_layer_byte_size = image_width * image_height * 4;
+            break;
+        case VK_FORMAT_R32G32_SFLOAT:
+            texture_layer_byte_size = image_width * image_height * 4 * 2;
+            break;
+        case VK_FORMAT_R32G32B32_SFLOAT:
+            texture_layer_byte_size = image_width * image_height * 4 * 3;
+            break;
+        case VK_FORMAT_R32G32B32A32_SFLOAT:
+            texture_layer_byte_size = image_width * image_height * 4 * 4;
+            break;
+        default:
+            texture_layer_byte_size = VkDeviceSize(-1);
+            throw std::runtime_error("invalid texture_layer_byte_size");
+            break;
+    }
+
+    cube_byte_size = texture_layer_byte_size * 6;
+
+    // create cubemap texture image
+    // use the vmaAllocator to allocate asset texture image
+    VkImageCreateInfo image_create_info{};
+    image_create_info.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.flags         = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    image_create_info.imageType     = VK_IMAGE_TYPE_2D;
+    image_create_info.extent.width  = static_cast<uint32_t>(image_width);
+    image_create_info.extent.height = static_cast<uint32_t>(image_height);
+    image_create_info.extent.depth  = 1;
+    image_create_info.mipLevels     = mip_levels;
+    image_create_info.arrayLayers   = 6;
+    image_create_info.format        = image_format;
+    image_create_info.tiling        = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage =
+            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_create_info.samples     = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateImage(p_context->_device, &image_create_info, nullptr, &image) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to create cubemap image!");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(p_context->_device, image, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize  = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(p_context->_physical_device, memRequirements.memoryTypeBits,
+                                               memory_property_flags);
+
+    if (vkAllocateMemory(p_context->_device, &allocInfo, nullptr, &memory) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to allocate cubemap image memory!");
+    }
+
+    vkBindImageMemory(p_context->_device, image, memory, 0);
+}
+
 VkImageView VulkanUtil::createImageView(VkDevice device,
                                         VkImage &image,
                                         VkFormat format,
@@ -383,28 +467,28 @@ void VulkanUtil::genMipmappedImage(std::shared_ptr<VulkanContext> p_context,
 
     for (uint32_t i = 1; i < mip_levels; i++)
     {
-        VkImageBlit imageBlit {};
+        VkImageBlit imageBlit{};
         imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         imageBlit.srcSubresource.layerCount = 1;
         imageBlit.srcSubresource.mipLevel   = i - 1;
-        imageBlit.srcOffsets[1].x           = std::max((int32_t)(width >> (i - 1)), 1);
-        imageBlit.srcOffsets[1].y           = std::max((int32_t)(height >> (i - 1)), 1);
+        imageBlit.srcOffsets[1].x           = std::max((int32_t) (width >> (i - 1)), 1);
+        imageBlit.srcOffsets[1].y           = std::max((int32_t) (height >> (i - 1)), 1);
         imageBlit.srcOffsets[1].z           = 1;
 
         imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         imageBlit.dstSubresource.layerCount = 1;
         imageBlit.dstSubresource.mipLevel   = i;
-        imageBlit.dstOffsets[1].x           = std::max((int32_t)(width >> i), 1);
-        imageBlit.dstOffsets[1].y           = std::max((int32_t)(height >> i), 1);
+        imageBlit.dstOffsets[1].x           = std::max((int32_t) (width >> i), 1);
+        imageBlit.dstOffsets[1].y           = std::max((int32_t) (height >> i), 1);
         imageBlit.dstOffsets[1].z           = 1;
 
-        VkImageSubresourceRange mipSubRange {};
+        VkImageSubresourceRange mipSubRange{};
         mipSubRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
         mipSubRange.baseMipLevel = i;
         mipSubRange.levelCount   = 1;
         mipSubRange.layerCount   = 1;
 
-        VkImageMemoryBarrier barrier {};
+        VkImageMemoryBarrier barrier{};
         barrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.oldLayout           = VK_IMAGE_LAYOUT_UNDEFINED;
         barrier.newLayout           = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -452,13 +536,13 @@ void VulkanUtil::genMipmappedImage(std::shared_ptr<VulkanContext> p_context,
                              &barrier);
     }
 
-    VkImageSubresourceRange mipSubRange {};
+    VkImageSubresourceRange mipSubRange{};
     mipSubRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
     mipSubRange.baseMipLevel = 0;
     mipSubRange.levelCount   = mip_levels;
     mipSubRange.layerCount   = 1;
 
-    VkImageMemoryBarrier barrier {};
+    VkImageMemoryBarrier barrier{};
     barrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     barrier.oldLayout           = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     barrier.newLayout           = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -483,6 +567,21 @@ void VulkanUtil::genMipmappedImage(std::shared_ptr<VulkanContext> p_context,
     p_context->endSingleTimeCommands(commandBuffer);
 }
 
+void VulkanUtil::createImage(std::shared_ptr<VulkanContext> p_context,
+                             uint32_t image_width,
+                             uint32_t image_height,
+                             VkFormat format,
+                             VkImageTiling image_tiling,
+                             VkImageUsageFlags image_usage_flags,
+                             VkMemoryPropertyFlags memory_property_flags,
+                             VkImage &image,
+                             VkDeviceMemory &memory,
+                             VkImageCreateFlags image_create_flags,
+                             uint32_t array_layers,
+                             uint32_t miplevels);
+
+
+
 VkSampler VulkanUtil::getOrCreateMipmapSampler(std::shared_ptr<VulkanContext> p_context, uint32_t mip_levels)
 {
     VkSampler sampler;
@@ -490,13 +589,12 @@ VkSampler VulkanUtil::getOrCreateMipmapSampler(std::shared_ptr<VulkanContext> p_
     if (find_sampler != m_mipmap_sampler_map.end())
     {
         return find_sampler->second;
-    }
-    else
+    } else
     {
-        VkPhysicalDeviceProperties physical_device_properties {};
+        VkPhysicalDeviceProperties physical_device_properties{};
         vkGetPhysicalDeviceProperties(p_context->_physical_device, &physical_device_properties);
 
-        VkSamplerCreateInfo samplerInfo {};
+        VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType        = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         samplerInfo.magFilter    = VK_FILTER_LINEAR;
         samplerInfo.minFilter    = VK_FILTER_LINEAR;

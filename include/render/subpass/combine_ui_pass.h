@@ -14,13 +14,13 @@ namespace RenderSystem
 {
     namespace SubPass
     {
-        struct CombineUIPassInitInfo: public SubPassInitInfo
+        struct CombineUIPassInitInfo : public SubPassInitInfo
         {
-            ImageAttachment* p_input_color_attachment;
-            ImageAttachment* p_uipass_color_attachment;
+            ImageAttachment *p_input_color_attachment;
+            ImageAttachment *p_uipass_color_attachment;
         };
 
-        class CombineUIPass: public SubPassBase
+        class CombineUIPass : public SubPassBase
         {
         public:
             CombineUIPass()
@@ -29,17 +29,23 @@ namespace RenderSystem
             }
 
             void draw() override;
+
             void updateDescriptorSets();
+
             void updateAfterSwapchainRecreate() override;
 
-        private: 
+        private:
             void initialize(SubPassInitInfo *subpass_init_info) override;
+
             void setupDescriptorSetLayout() override;
+
             void setupDescriptorSet() override;
+
             void setupPipelines() override;
 
-            ImageAttachment* m_p_input_color_attachment;
-            ImageAttachment* m_p_uipass_color_attachment;
+            ImageAttachment *m_p_input_color_attachment;
+            ImageAttachment *m_p_uipass_color_attachment;
+            VkDescriptorSet m_combine_ui_descriptor_set = VK_NULL_HANDLE;
         };
     }
 }

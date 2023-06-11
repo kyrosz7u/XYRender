@@ -26,9 +26,9 @@ void CombineUIPass::initialize(SubPassInitInfo *subpass_init_info)
 
 void CombineUIPass::setupDescriptorSetLayout()
 {
-    m_descriptorset_list.resize(1);
+    m_descriptor_set_layouts.resize(1);
 
-    DescriptorSet &descriptor_set = m_descriptorset_list[0];
+    auto &descriptor_set_layout = m_descriptor_set_layouts[0];
 
     std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
     setLayoutBindings.resize(2);
@@ -57,33 +57,30 @@ void CombineUIPass::setupDescriptorSetLayout()
     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
                                                 &descriptorSetLayoutCreateInfo,
                                                 nullptr,
-                                                &descriptor_set.layout));
+                                                &descriptor_set_layout));
 }
 
 void CombineUIPass::setupDescriptorSet()
 {
-    for (int i = 0; i < m_descriptorset_list.size(); ++i)
-    {
-        VkDescriptorSetAllocateInfo allocInfo{};
 
-        allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool     = *m_p_render_command_info->p_descriptor_pool;
-        // determines the number of descriptor sets to be allocated from the pool.
-        allocInfo.descriptorSetCount = 1;
-        // 每个set的布局
-        allocInfo.pSetLayouts        = &m_descriptorset_list[i].layout;
+    VkDescriptorSetAllocateInfo allocInfo{};
 
-        VK_CHECK_RESULT(vkAllocateDescriptorSets(g_p_vulkan_context->_device,
-                                     &allocInfo,
-                                     &m_descriptorset_list[i].descriptor_set))
+    allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool     = *m_p_render_command_info->p_descriptor_pool;
+    // determines the number of descriptor sets to be allocated from the pool.
+    allocInfo.descriptorSetCount = 1;
+    // 每个set的布局
+    allocInfo.pSetLayouts        = &m_descriptor_set_layouts[0];
 
-    }
+    VK_CHECK_RESULT(vkAllocateDescriptorSets(g_p_vulkan_context->_device,
+                                 &allocInfo,
+                                 &m_combine_ui_descriptor_set))
+
+
 }
 
 void CombineUIPass::updateDescriptorSets()
 {
-    VkDescriptorSet descriptor_set = m_descriptorset_list[0].descriptor_set;
-
     std::vector<VkWriteDescriptorSet> write_descriptor_sets;
     write_descriptor_sets.resize(2);
 
@@ -99,7 +96,7 @@ void CombineUIPass::updateDescriptorSets()
 
     VkWriteDescriptorSet &input_image_write = write_descriptor_sets[0];
     input_image_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    input_image_write.dstSet          = descriptor_set;
+    input_image_write.dstSet          = m_combine_ui_descriptor_set;
     input_image_write.dstBinding      = 0;
     input_image_write.dstArrayElement = 0;
     input_image_write.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
@@ -108,7 +105,7 @@ void CombineUIPass::updateDescriptorSets()
 
     VkWriteDescriptorSet &uipass_image_write = write_descriptor_sets[1];
     uipass_image_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    uipass_image_write.dstSet          = descriptor_set;
+    uipass_image_write.dstSet          = m_combine_ui_descriptor_set;
     uipass_image_write.dstBinding      = 1;
     uipass_image_write.dstArrayElement = 0;
     uipass_image_write.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
@@ -127,9 +124,9 @@ void CombineUIPass::setupPipelines()
 {
     std::vector<VkDescriptorSetLayout> descriptorset_layouts;
 
-    for (auto &descriptor: m_descriptorset_list)
+    for (auto &descriptor: m_descriptor_set_layouts)
     {
-        descriptorset_layouts.push_back(descriptor.layout);
+        descriptorset_layouts.push_back(descriptor);
     }
 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
@@ -299,7 +296,7 @@ void CombineUIPass::draw()
                             pipeline_layout,
                             0,
                             1,
-                            &m_descriptorset_list[0].descriptor_set,
+                            &m_combine_ui_descriptor_set,
                             0,
                             nullptr);
     vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,

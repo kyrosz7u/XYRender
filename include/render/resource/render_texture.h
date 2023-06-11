@@ -33,9 +33,27 @@ namespace RenderSystem
         VkImageLayout         image_layout;
         VkDescriptorImageInfo descriptor;
     public:
-        Texture2D(const std::string &path, const std::string &name, bool gen_mipmap = false);
-
+        Texture2D(const std::string &path, const std::string &name, bool gen_mipmap = false, VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM);
         ~Texture2D();
+    };
+
+    class TextureCube
+    {
+    public:
+        std::string name;
+        std::string path;
+        uint32_t    width, height;
+        uint32_t    mip_levels;
+
+        VkImage               image;
+        VkDeviceMemory        memory;
+        VkImageView           view;
+        VkSampler             sampler;
+        VkImageLayout         image_layout;
+        VkDescriptorImageInfo descriptor;
+    public:
+        TextureCube(const std::vector<std::string> &path, const std::string &name, bool gen_mipmap, VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM);
+        ~TextureCube();
     };
 }
 

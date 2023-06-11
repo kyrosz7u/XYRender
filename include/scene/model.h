@@ -19,9 +19,9 @@ namespace Scene
     class Model
     {
     public:
-        std::string               name;
-        std::string               path;
-        Transform                 transform;
+        std::string name;
+        std::string path;
+        Transform   transform;
 
     public:
         Model()
@@ -41,7 +41,7 @@ namespace Scene
 
         void SetMeshIndex(uint32_t index)
         {
-            mesh_loaded->m_index_in_dynamic_buffer =index;
+            mesh_loaded->m_index_in_dynamic_buffer = index;
         }
 
         std::vector<RenderSystem::RenderSubmesh> getSubmeshes()
@@ -61,8 +61,8 @@ namespace Scene
 
         uint32_t                                 m_index_count{0};
         std::vector<RenderSystem::RenderSubmesh> m_submeshes;
-        RenderMeshPtr             mesh_loaded;
-        std::vector<Texture2DPtr> textures_loaded;
+        RenderMeshPtr                            mesh_loaded;
+        std::vector<Texture2DPtr>                textures_loaded;
 
         void loadMaterialTextures(aiMaterial *mat, aiTextureType type, const std::string &typeName);
 

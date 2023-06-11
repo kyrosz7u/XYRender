@@ -90,7 +90,7 @@ namespace RenderSystem
             virtual void setupPipelines()
             {}
 
-            RenderCommandInfo *m_p_render_command_info         = nullptr;
+            RenderCommandInfo        *m_p_render_command_info  = nullptr;
             RenderGlobalResourceInfo *m_p_render_resource_info = nullptr;
 
             VkRenderPass                            m_renderpass         = VK_NULL_HANDLE;
@@ -98,7 +98,8 @@ namespace RenderSystem
             VkPipelineLayout                        pipeline_layout      = VK_NULL_HANDLE;
             VkPipeline                              pipeline             = VK_NULL_HANDLE;
             VkDescriptorSetLayout                   descriptorset_layout = VK_NULL_HANDLE;
-            std::vector<DescriptorSet>              m_descriptorset_list;
+//            std::vector<DescriptorSet>              m_descriptorset_list;
+            std::vector<VkDescriptorSetLayout>      m_descriptor_set_layouts;
             std::vector<std::vector<unsigned char>> m_shader_list;
         };
     }
