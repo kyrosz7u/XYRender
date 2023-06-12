@@ -38,7 +38,7 @@ namespace Scene
 
         void LoadSkybox(const std::vector<std::string>& pathes)
         {
-            m_skybox = std::make_unique<TextureCube>(pathes, "skybox");
+            m_skybox = std::make_shared<TextureCube>(pathes, "skybox");
         }
 
         void Tick();
@@ -62,7 +62,7 @@ namespace Scene
         std::vector<VulkanModelDefine>       m_visible_model_matrix;
         // texture
         std::vector<Texture2DPtr>            m_visible_textures;
-        std::unique_ptr<TextureCube>         m_skybox;
+        std::shared_ptr<TextureCube>         m_skybox;
 
         void updateScene();
     };

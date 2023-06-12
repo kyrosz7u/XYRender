@@ -23,6 +23,7 @@ namespace RenderSystem
         enum _main_camera_subpass : unsigned int
         {
             _main_camera_subpass_mesh,
+            _main_camera_subpass_skybox,
             _main_camera_subpass_count
         };
 

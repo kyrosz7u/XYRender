@@ -4,7 +4,6 @@
 
 #include "render/subpass/combine_ui_pass.h"
 #include "core/logger/logger_macros.h"
-#include "core/logger/logger_macros.h"
 
 using namespace RenderSystem::SubPass;
 
@@ -62,7 +61,6 @@ void CombineUIPass::setupDescriptorSetLayout()
 
 void CombineUIPass::setupDescriptorSet()
 {
-
     VkDescriptorSetAllocateInfo allocInfo{};
 
     allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -75,7 +73,6 @@ void CombineUIPass::setupDescriptorSet()
     VK_CHECK_RESULT(vkAllocateDescriptorSets(g_p_vulkan_context->_device,
                                  &allocInfo,
                                  &m_combine_ui_descriptor_set))
-
 
 }
 
@@ -117,7 +114,6 @@ void CombineUIPass::updateDescriptorSets()
                            write_descriptor_sets.data(),
                            0,
                            nullptr);
-
 }
 
 void CombineUIPass::setupPipelines()

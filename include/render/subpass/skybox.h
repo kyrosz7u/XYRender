@@ -23,21 +23,28 @@ namespace RenderSystem
         public:
             enum _skybox_pass_pipeline_layout_define
             {
-                _skybox_pass_ubo_data_layout = 0,
-                _skybox_pass_texture_layout,
-                _skybox_pass_pipeline_layout_count
+                _skybox_pass_ubo_data_binding = 0,
+                _skybox_pass_cubemap_binding,
+                _skybox_pass_binding_count
             };
             SkyBoxPass()
             {
                 name = "skybox_subpass";
-                m_descriptor_set_layouts.resize(_skybox_pass_pipeline_layout_count, VK_NULL_HANDLE);
+                m_descriptor_set_layouts.resize(_skybox_pass_binding_count, VK_NULL_HANDLE);
             }
+
+            void initialize(SubPassInitInfo *subpass_init_info) override;
 
             void draw() override;
 
-            void updateGlobalRenderDescriptorSet();
-
             void updateAfterSwapchainRecreate() override;
+
+        private:
+            void setupDescriptorSetLayout() override;
+
+            void setupDescriptorSet() override;
+
+            void setupPipelines() override;
         };
     }
 }

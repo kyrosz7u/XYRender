@@ -191,14 +191,15 @@ TextureCube::TextureCube(const std::vector<std::string> &path, const std::string
             texture_layer_byte_size = VkDeviceSize(-1);
             throw std::runtime_error("invalid texture_layer_byte_size");
     }
+    VkDeviceSize cubemap_byte_size = texture_layer_byte_size * 6;
 
     VkBuffer       stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
-    VulkanUtil::createBuffer(g_p_vulkan_context, texture_layer_byte_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+    VulkanUtil::createBuffer(g_p_vulkan_context, cubemap_byte_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                              stagingBuffer, stagingBufferMemory);
 
-    VkDeviceSize cubemap_size = 0;
+    VkDeviceSize cubemap_offset = 0;
 
     for (int i = 0; i < 6; i++)
     {
@@ -213,11 +214,12 @@ TextureCube::TextureCube(const std::vector<std::string> &path, const std::string
         assert(image_channel == texture_channel);
 
         void *data;
-        vkMapMemory(g_p_vulkan_context->_device, stagingBufferMemory, cubemap_size, texture_layer_byte_size, 0, &data);
+        vkMapMemory(g_p_vulkan_context->_device, stagingBufferMemory, cubemap_offset, texture_layer_byte_size, 0,
+                    &data);
         memcpy(data, pixels, static_cast<size_t>(texture_layer_byte_size));
         free(pixels);
         vkUnmapMemory(g_p_vulkan_context->_device, stagingBufferMemory);
-        cubemap_size += texture_layer_byte_size;
+        cubemap_offset += texture_layer_byte_size;
     }
     VulkanUtil::createCubeMapImage(g_p_vulkan_context,
                                    texture_width,
@@ -232,12 +234,33 @@ TextureCube::TextureCube(const std::vector<std::string> &path, const std::string
                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                       1, mip_levels, VK_IMAGE_ASPECT_COLOR_BIT);
 
+    cubemap_offset = 0;
+    std::vector<VkBufferImageCopy> bufferCopyRegions;
 
-    VulkanUtil::copyBufferToImage(g_p_vulkan_context,
-                                  stagingBuffer,
-                                  image,
-                                  static_cast<uint32_t>(texture_width),
-                                  static_cast<uint32_t>(texture_height), 6);
+    VkCommandBuffer commandBuffer = g_p_vulkan_context->beginSingleTimeCommands();
+    for (uint32_t   face          = 0; face < 6; face++)
+    {
+        VkBufferImageCopy region{};
+        region.bufferOffset                    = cubemap_offset;
+        region.bufferRowLength                 = 0;
+        region.bufferImageHeight               = 0;
+        region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel       = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount     = 1;
+        region.imageOffset                     = {0, 0, 0};
+        region.imageExtent                     = {width, height, 1};
+        bufferCopyRegions.push_back(region);
+        cubemap_offset += texture_layer_byte_size;
+    }
+    vkCmdCopyBufferToImage(commandBuffer,
+                           stagingBuffer,
+                           image,
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           bufferCopyRegions.size(),
+                           bufferCopyRegions.data());
+
+    g_p_vulkan_context->endSingleTimeCommands(commandBuffer);
 
     VulkanUtil::transitionImageLayout(g_p_vulkan_context,
                                       image,
@@ -250,11 +273,11 @@ TextureCube::TextureCube(const std::vector<std::string> &path, const std::string
 
     sampler = VulkanUtil::getOrCreateCubeMapSampler(g_p_vulkan_context, mip_levels);
     view    = VulkanUtil::createImageView(g_p_vulkan_context,
-                                       image,
-                                       image_format,
-                                       VK_IMAGE_ASPECT_COLOR_BIT,
-                                       VK_IMAGE_VIEW_TYPE_CUBE,
-                                       1, mip_levels);
+                                          image,
+                                          image_format,
+                                          VK_IMAGE_ASPECT_COLOR_BIT,
+                                          VK_IMAGE_VIEW_TYPE_CUBE,
+                                          6, mip_levels);
 
     image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     info.sampler     = sampler;

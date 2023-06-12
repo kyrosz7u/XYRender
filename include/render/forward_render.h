@@ -55,7 +55,7 @@ namespace RenderSystem
 
         void UpdateRenderTextures(const std::vector<Texture2DPtr> &_visible_textures);
 
-        void UpdateSkyboxTexture(const std::unique_ptr<TextureCube> &skybox_texture);
+        void UpdateSkyboxTexture(const std::shared_ptr<TextureCube> skybox_texture);
 
     private:
 
@@ -94,7 +94,6 @@ namespace RenderSystem
         Matrix4x4 m_proj_matrix;
 
         UIOverlayPtr m_p_ui_overlay;
-
     };
 }
 #endif //XEXAMPLE_FORWARD_RENDER_H

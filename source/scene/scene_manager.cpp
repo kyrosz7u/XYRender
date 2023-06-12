@@ -21,8 +21,9 @@ void SceneManager::PostInitialize()
         {
             m_visible_textures.push_back(texture);
         }
-        m_render->UpdateRenderTextures(m_visible_textures);
     }
+    m_render->UpdateRenderTextures(m_visible_textures);
+    m_render->UpdateSkyboxTexture(m_skybox);
 }
 
 void SceneManager::updateScene()

@@ -5,6 +5,7 @@
 
 #include "core/graphic/vulkan/vulkan_utils.h"
 #include "render/subpass/mesh_pass.h"
+#include "render/subpass/skybox.h"
 #include "render/renderpass/main_camera_renderpass.h"
 #include "mesh_vert.h"
 #include "mesh_frag.h"
@@ -87,25 +88,54 @@ void MainCameraRenderPass::setupRenderPass()
 
     VkSubpassDescription subpasses[_main_camera_subpass_count] = {};
 
-    VkAttachmentReference mesh_pass_color_attachments_reference[_main_camera_subpass_count] = {};
-    mesh_pass_color_attachments_reference[_main_camera_subpass_mesh].attachment =
+    VkAttachmentReference color_attachments_reference[_main_camera_subpass_count] = {};
+    color_attachments_reference[_main_camera_subpass_mesh].attachment =
             &framebuffer_image_attachment_description - attachments;
     // 指定在subpass执行时，管线访问图像的布局
-    mesh_pass_color_attachments_reference[_main_camera_subpass_mesh].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachments_reference[_main_camera_subpass_mesh].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-
-    VkAttachmentReference mesh_pass_depth_attachment_reference{};
-    mesh_pass_depth_attachment_reference.attachment = &depth_attachment_description - attachments;
-    mesh_pass_depth_attachment_reference.layout     = depth_attachment_description.finalLayout;
+    VkAttachmentReference depth_attachment_reference{};
+    depth_attachment_reference.attachment = &depth_attachment_description - attachments;
+    depth_attachment_reference.layout     = depth_attachment_description.finalLayout;
 
     VkSubpassDescription &base_pass = subpasses[_main_camera_subpass_mesh];
     base_pass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     base_pass.colorAttachmentCount =
-            sizeof(mesh_pass_color_attachments_reference) / sizeof(mesh_pass_color_attachments_reference[0]);
-    base_pass.pColorAttachments       = &mesh_pass_color_attachments_reference[0];
-    base_pass.pDepthStencilAttachment = &mesh_pass_depth_attachment_reference;
+            sizeof(color_attachments_reference) / sizeof(color_attachments_reference[0]);
+    base_pass.pColorAttachments       = &color_attachments_reference[0];
+    base_pass.pDepthStencilAttachment = &depth_attachment_reference;
     base_pass.preserveAttachmentCount = 0;
     base_pass.pPreserveAttachments    = NULL;
+
+    VkSubpassDescription &skybox_pass = subpasses[_main_camera_subpass_skybox];
+    skybox_pass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    skybox_pass.colorAttachmentCount    = 1;
+    skybox_pass.pColorAttachments       = &color_attachments_reference[0];
+    skybox_pass.pDepthStencilAttachment = &depth_attachment_reference;
+    skybox_pass.preserveAttachmentCount = 0;
+    skybox_pass.pPreserveAttachments    = NULL;
+
+    VkSubpassDependency dependencies[2];
+
+    VkSubpassDependency &base_pass_dependency = dependencies[0];
+    base_pass_dependency.srcSubpass    = VK_SUBPASS_EXTERNAL;
+    base_pass_dependency.dstSubpass    = _main_camera_subpass_mesh;
+    base_pass_dependency.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    base_pass_dependency.dstStageMask  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    base_pass_dependency.srcAccessMask = 0;
+    base_pass_dependency.dstAccessMask =
+            VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    base_pass_dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    VkSubpassDependency &skybox_pass_dependency = dependencies[1];
+    skybox_pass_dependency.srcSubpass      = _main_camera_subpass_mesh;
+    skybox_pass_dependency.dstSubpass      = _main_camera_subpass_skybox;
+    skybox_pass_dependency.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    skybox_pass_dependency.dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    skybox_pass_dependency.srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    skybox_pass_dependency.dstAccessMask   = VK_ACCESS_SHADER_READ_BIT;
+    skybox_pass_dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
 
     VkRenderPassCreateInfo renderpass_create_info{};
     renderpass_create_info.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -113,8 +143,8 @@ void MainCameraRenderPass::setupRenderPass()
     renderpass_create_info.pAttachments    = attachments;
     renderpass_create_info.subpassCount    = (sizeof(subpasses) / sizeof(subpasses[0]));
     renderpass_create_info.pSubpasses      = subpasses;
-    renderpass_create_info.dependencyCount = 0;
-    renderpass_create_info.pDependencies   = nullptr;
+    renderpass_create_info.dependencyCount = (sizeof(dependencies) / sizeof(dependencies[0]));
+    renderpass_create_info.pDependencies   = dependencies;
 
     if (vkCreateRenderPass(
             g_p_vulkan_context->_device, &renderpass_create_info,
@@ -135,7 +165,7 @@ void MainCameraRenderPass::setupFrameBuffer()
     // create frame buffer for every imageview
     for (size_t i = 0; i < targetCount; i++)
     {
-        std::vector<VkImageView> framebuffer_attachments;
+        std::vector <VkImageView> framebuffer_attachments;
         framebuffer_attachments.resize(_main_camera_framebuffer_attachment_count);
 
         framebuffer_attachments[_main_camera_framebuffer_attachment_color] = (*m_p_render_targets)[i].view;
@@ -168,14 +198,15 @@ void MainCameraRenderPass::setupSubpass()
     mesh_pass_init_info.p_render_command_info  = m_p_render_command_info;
     mesh_pass_init_info.p_render_resource_info = m_p_render_resource_info;
     mesh_pass_init_info.renderpass             = m_renderpass;
-    mesh_pass_init_info.subpass_index        = _main_camera_subpass_mesh;
+    mesh_pass_init_info.subpass_index          = _main_camera_subpass_mesh;
 
     m_subpass_list[_main_camera_subpass_mesh] = std::make_shared<SubPass::MeshPass>();
-
     m_subpass_list[_main_camera_subpass_mesh]->setShader(SubPass::VERTEX_SHADER, MESH_VERT);
     m_subpass_list[_main_camera_subpass_mesh]->setShader(SubPass::FRAGMENT_SHADER, MESH_FRAG);
-
     m_subpass_list[_main_camera_subpass_mesh]->initialize(&mesh_pass_init_info);
+
+    SubPass::SubPassInitInfo skybox_pass_init_info{};
+    m_subpass_list[_main_camera_subpass_skybox] = std::make_shared<SubPass::SkyBoxPass>();
 }
 
 void MainCameraRenderPass::draw(int render_target_index)
@@ -193,10 +224,12 @@ void MainCameraRenderPass::draw(int render_target_index)
     renderpass_begin_info.clearValueCount   = (sizeof(clear_values) / sizeof(clear_values[0]));
     renderpass_begin_info.pClearValues      = clear_values;
 
-    g_p_vulkan_context->_vkCmdBeginRenderPass(*m_p_render_command_info->p_current_command_buffer, &renderpass_begin_info,
+    g_p_vulkan_context->_vkCmdBeginRenderPass(*m_p_render_command_info->p_current_command_buffer,
+                                              &renderpass_begin_info,
                                               VK_SUBPASS_CONTENTS_INLINE);
 
     m_subpass_list[_main_camera_subpass_mesh]->draw();
+    m_subpass_list[_main_camera_subpass_skybox]->draw();
 
     g_p_vulkan_context->_vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
 }
