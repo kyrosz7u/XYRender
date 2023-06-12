@@ -5862,7 +5862,7 @@ static void stbi__tga_read_rgb16(stbi__context *s, stbi_uc* out)
    out[2] = (stbi_uc)((b * 255)/31);
 
    // some people claim that the most significant bit might be used for alpha
-   // (possibly if an alpha-bit is set in the "image descriptor byte")
+   // (possibly if an alpha-bit is set in the "image info byte")
    // but that only made 16bit test images completely translucent..
    // so let's treat all 15 and 16bit TGAs as RGB with no alpha.
 }

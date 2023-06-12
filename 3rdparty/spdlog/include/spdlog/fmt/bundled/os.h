@@ -273,7 +273,7 @@ class buffered_file {
 };
 
 #if FMT_USE_FCNTL
-// A file. Closed file is represented by a file object with descriptor -1.
+// A file. Closed file is represented by a file object with info -1.
 // Methods that are not declared with noexcept may throw
 // fmt::system_error in case of failure. Note that some errors such as
 // closing the file multiple times will cause a crash on Windows rather
@@ -281,9 +281,9 @@ class buffered_file {
 // invalid parameter handler with _set_invalid_parameter_handler.
 class FMT_API file {
  private:
-  int fd_;  // File descriptor.
+  int fd_;  // File info.
 
-  // Constructs a file object with a given descriptor.
+  // Constructs a file object with a given info.
   explicit file(int fd) : fd_(fd) {}
 
  public:
@@ -320,7 +320,7 @@ class FMT_API file {
   // Destroys the object closing the file it represents if any.
   ~file() noexcept;
 
-  // Returns the file descriptor.
+  // Returns the file info.
   int descriptor() const noexcept { return fd_; }
 
   // Closes the file.
@@ -336,15 +336,15 @@ class FMT_API file {
   // Attempts to write count bytes from the specified buffer to the file.
   size_t write(const void* buffer, size_t count);
 
-  // Duplicates a file descriptor with the dup function and returns
+  // Duplicates a file info with the dup function and returns
   // the duplicate as a file object.
   static file dup(int fd);
 
-  // Makes fd be the copy of this file descriptor, closing fd first if
+  // Makes fd be the copy of this file info, closing fd first if
   // necessary.
   void dup2(int fd);
 
-  // Makes fd be the copy of this file descriptor, closing fd first if
+  // Makes fd be the copy of this file info, closing fd first if
   // necessary.
   void dup2(int fd, std::error_code& ec) noexcept;
 

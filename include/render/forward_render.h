@@ -55,6 +55,8 @@ namespace RenderSystem
 
         void UpdateRenderTextures(const std::vector<Texture2DPtr> &_visible_textures);
 
+        void UpdateSkyboxTexture(const std::unique_ptr<TextureCube> &skybox_texture);
+
     private:
 
         void setupCommandBuffer();
@@ -65,7 +67,7 @@ namespace RenderSystem
 
         void updateAfterSwapchainRecreate();
 
-        void setupTextureDescriptorSetLayout();
+        void setupRenderDescriptorSetLayout();
 
     private:
         VkCommandPool                m_command_pool;
@@ -80,14 +82,19 @@ namespace RenderSystem
         // ubo
         RenderModelUBOList           m_render_model_ubo_list;
         RenderPerFrameUBO            m_render_per_frame_ubo;
-        // texture descriptor list
+        // texture info list
         VkDescriptorSetLayout        m_texture_descriptor_set_layout;
         std::vector<VkDescriptorSet> m_texture_descriptor_sets;
+
+        // skybox info
+        VkDescriptorSetLayout        m_skybox_descriptor_set_layout{VK_NULL_HANDLE};
+        VkDescriptorSet              m_skybox_descriptor_set{VK_NULL_HANDLE};
 
         Matrix4x4 m_view_matrix;
         Matrix4x4 m_proj_matrix;
 
         UIOverlayPtr m_p_ui_overlay;
+
     };
 }
 #endif //XEXAMPLE_FORWARD_RENDER_H

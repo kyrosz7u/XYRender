@@ -67,7 +67,7 @@ void CombineUIPass::setupDescriptorSet()
 
     allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool     = *m_p_render_command_info->p_descriptor_pool;
-    // determines the number of descriptor sets to be allocated from the pool.
+    // determines the number of info sets to be allocated from the pool.
     allocInfo.descriptorSetCount = 1;
     // 每个set的布局
     allocInfo.pSetLayouts        = &m_descriptor_set_layouts[0];

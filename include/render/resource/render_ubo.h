@@ -19,8 +19,6 @@ namespace RenderSystem
 {
     extern std::shared_ptr<VulkanContext> g_p_vulkan_context;
 
-
-
     // 保存场景中所有的模型的model_matrix
     class RenderModelUBOList
     {
@@ -111,17 +109,17 @@ namespace RenderSystem
     public:
         enum _preframe_buffer_data_block
         {
-            _scene_block = 0,
-            _light_block,
-            _block_count
+            _scene_info_block = 0,
+            _light_info_block,
+            _info_block_count
         };
         VkDeviceSize                         buffer_size;
         VulkanPerFrameSceneDefine            per_frame_ubo;
         VulkanPerFrameDirectionalLightDefine directional_light_list_ubo[MAX_DIRECTIONAL_LIGHT_COUNT];
         VkBuffer                             per_frame_buffer;
         VkDeviceMemory                       per_frame_buffer_memory;
-        void                                 *mapped_buffer_ptr;
-        std::vector<VkDescriptorBufferInfo>  buffer_descriptors;
+        void                                *mapped_buffer_ptr;
+        std::vector<VkDescriptorBufferInfo> buffer_infos;
 
         RenderPerFrameUBO()
         {
@@ -142,14 +140,14 @@ namespace RenderSystem
             vkMapMemory(g_p_vulkan_context->_device, per_frame_buffer_memory, 0,
                         buffer_size, 0, &mapped_buffer_ptr);
 
-            buffer_descriptors.resize(_block_count);
-            buffer_descriptors[_scene_block].buffer = per_frame_buffer;
-            buffer_descriptors[_scene_block].offset = 0;
-            buffer_descriptors[_scene_block].range  = sizeof(VulkanPerFrameSceneDefine);
+            buffer_infos.resize(_info_block_count);
+            buffer_infos[_scene_info_block].buffer = per_frame_buffer;
+            buffer_infos[_scene_info_block].offset = 0;
+            buffer_infos[_scene_info_block].range  = sizeof(VulkanPerFrameSceneDefine);
 
-            buffer_descriptors[_light_block].buffer = per_frame_buffer;
-            buffer_descriptors[_light_block].offset = sizeof(VulkanPerFrameSceneDefine);
-            buffer_descriptors[_light_block].range  = sizeof(VulkanPerFrameDirectionalLightDefine);
+            buffer_infos[_light_info_block].buffer = per_frame_buffer;
+            buffer_infos[_light_info_block].offset = sizeof(VulkanPerFrameSceneDefine);
+            buffer_infos[_light_info_block].range  = sizeof(VulkanPerFrameDirectionalLightDefine);
         }
 
 

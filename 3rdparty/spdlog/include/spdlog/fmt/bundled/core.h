@@ -1951,9 +1951,9 @@ template <typename Context> class basic_format_args {
   using format_arg = basic_format_arg<Context>;
 
  private:
-  // A descriptor that contains information about formatting arguments.
+  // A info that contains information about formatting arguments.
   // If the number of arguments is less or equal to max_packed_args then
-  // argument types are passed in the descriptor. This reduces binary code size
+  // argument types are passed in the info. This reduces binary code size
   // per formatting function call.
   unsigned long long desc_;
   union {

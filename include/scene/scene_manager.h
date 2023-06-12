@@ -36,6 +36,11 @@ namespace Scene
             m_directional_lights.push_back(light);
         }
 
+        void LoadSkybox(const std::vector<std::string>& pathes)
+        {
+            m_skybox = std::make_unique<TextureCube>(pathes, "skybox");
+        }
+
         void Tick();
 
         void PostInitialize();
@@ -43,18 +48,21 @@ namespace Scene
     private:
         friend class Camera;
 
-        std::vector<Scene::Model>          m_models;
-        std::shared_ptr<Camera>            m_main_camera;
-        std::vector<Scene::DirectionLight> m_directional_lights;
-        UIOverlayPtr                       m_ui_overlay;
-
         std::shared_ptr<ForwardRender> m_render;
 
-        std::vector<RenderSubmesh>           m_visible_meshes;
-        std::vector<Texture2DPtr>            m_visible_textures;
-        std::vector<VulkanModelDefine>       m_visible_model_matrix;
+        // scence ubo
+        std::shared_ptr<Camera>              m_main_camera;
+        std::vector<Scene::DirectionLight>   m_directional_lights;
+        UIOverlayPtr                         m_ui_overlay;
         VulkanPerFrameSceneDefine            m_per_frame_scene_cache;
         VulkanPerFrameDirectionalLightDefine m_per_frame_directional_light_cache[MAX_DIRECTIONAL_LIGHT_COUNT];
+        // models
+        std::vector<Scene::Model>            m_models;
+        std::vector<RenderSubmesh>           m_visible_meshes;
+        std::vector<VulkanModelDefine>       m_visible_model_matrix;
+        // texture
+        std::vector<Texture2DPtr>            m_visible_textures;
+        std::unique_ptr<TextureCube>         m_skybox;
 
         void updateScene();
     };

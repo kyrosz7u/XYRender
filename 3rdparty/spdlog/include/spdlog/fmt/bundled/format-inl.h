@@ -1490,7 +1490,7 @@ FMT_FUNC bool write_console(std::FILE* f, string_view text) {
       return true;
     }
   }
-  // We return false if the file descriptor was not TTY, or it was but
+  // We return false if the file info was not TTY, or it was but
   // SetConsoleW failed which can happen if the output has been redirected to
   // NUL. In both cases when we return false, we should attempt to do regular
   // write via fwrite or std::ostream::write.

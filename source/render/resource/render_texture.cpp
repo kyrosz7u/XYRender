@@ -15,17 +15,18 @@
 using namespace RenderSystem;
 using namespace VulkanAPI;
 
-Texture2D::Texture2D(const std::string& texture_path, const std::string& texture_name, bool gen_mipmap, VkFormat image_format)
+Texture2D::Texture2D(const std::string &texture_path, const std::string &texture_name, bool gen_mipmap,
+                     VkFormat image_format)
 {
     name = texture_name;
     path = texture_path;
 
-    int          image_width, image_height, texChannels;
-    stbi_uc      *pixels                 = stbi_load(path.c_str(),
-                                       &image_width,
-                                       &image_height,
-                                       &texChannels,
-                                       STBI_rgb_alpha);
+    int     image_width, image_height, texChannels;
+    stbi_uc *pixels = stbi_load(path.c_str(),
+                                &image_width,
+                                &image_height,
+                                &texChannels,
+                                STBI_rgb_alpha);
     width      = image_width;
     height     = image_height;
     mip_levels = gen_mipmap ? static_cast<uint32_t>(std::floor(std::log2(std::max(image_width, image_height)))) + 1 : 1;
@@ -81,7 +82,7 @@ Texture2D::Texture2D(const std::string& texture_path, const std::string& texture
                             image_width, image_height,
                             VK_FORMAT_R8G8B8A8_UNORM,
                             VK_IMAGE_TILING_OPTIMAL,
-                            VK_IMAGE_USAGE_SAMPLED_BIT| VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, memory,
                             0, 1, mip_levels);
 
@@ -125,10 +126,9 @@ Texture2D::Texture2D(const std::string& texture_path, const std::string& texture
                                        1, mip_levels);
 
     image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    descriptor.sampler     = sampler;
-    descriptor.imageView   = view;
-    descriptor.imageLayout = image_layout;
+    info.sampler     = sampler;
+    info.imageView   = view;
+    info.imageLayout = image_layout;
 }
 
 Texture2D::~Texture2D()
@@ -140,50 +140,134 @@ Texture2D::~Texture2D()
     LOG_INFO("texture2d destroyed {}", name);
 }
 
-TextureCube::TextureCube(const std::vector<std::string> &path, const std::string &name, bool gen_mipmap, VkFormat image_format)
+TextureCube::TextureCube(const std::vector<std::string> &path, const std::string &name, bool gen_mipmap,
+                         VkFormat image_format)
 {
     assert(path.size() == 6);
+    // TextureCube暂时不支持mipmap
+    assert(gen_mipmap == false);
 
     this->name = name;
     this->path = path[0];
 
-    int          image_width, image_height, texChannels;
-    stbi_uc      *pixels                 = stbi_load(path.c_str(),
-                                                     &image_width,
-                                                     &image_height,
-                                                     &texChannels,
-                                                     STBI_rgb_alpha);
+    int     texture_width, texture_height, texture_channel;
+    stbi_uc *pixels = stbi_load(path[0].c_str(),
+                                &texture_width,
+                                &texture_height,
+                                &texture_channel,
+                                STBI_rgb_alpha);
 
 
+    mip_levels = gen_mipmap ? static_cast<uint32_t>(std::floor(std::log2(std::max(texture_width, texture_height)))) + 1
+                            : 1;
+    width      = texture_width;
+    height     = texture_height;
 
     VkDeviceSize texture_layer_byte_size;
     switch (image_format)
     {
         case VK_FORMAT_R8G8B8_UNORM:
-            texture_layer_byte_size = image_width * image_height * 3;
+            texture_layer_byte_size = texture_width * texture_height * 3;
             break;
         case VK_FORMAT_R8G8B8_SRGB:
-            texture_layer_byte_size = image_width * image_height * 3;
+            texture_layer_byte_size = texture_width * texture_height * 3;
             break;
         case VK_FORMAT_R8G8B8A8_UNORM:
-            texture_layer_byte_size = image_width * image_height * 4;
+            texture_layer_byte_size = texture_width * texture_height * 4;
             break;
         case VK_FORMAT_R8G8B8A8_SRGB:
-            texture_layer_byte_size = image_width * image_height * 4;
+            texture_layer_byte_size = texture_width * texture_height * 4;
             break;
         case VK_FORMAT_R32G32_SFLOAT:
-            texture_layer_byte_size = image_width * image_height * 4 * 2;
+            texture_layer_byte_size = texture_width * texture_height * 4 * 2;
             break;
         case VK_FORMAT_R32G32B32_SFLOAT:
-            texture_layer_byte_size = image_width * image_height * 4 * 3;
+            texture_layer_byte_size = texture_width * texture_height * 4 * 3;
             break;
         case VK_FORMAT_R32G32B32A32_SFLOAT:
-            texture_layer_byte_size = image_width * image_height * 4 * 4;
+            texture_layer_byte_size = texture_width * texture_height * 4 * 4;
             break;
         default:
             texture_layer_byte_size = VkDeviceSize(-1);
             throw std::runtime_error("invalid texture_layer_byte_size");
     }
 
+    VkBuffer       stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    VulkanUtil::createBuffer(g_p_vulkan_context, texture_layer_byte_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                             stagingBuffer, stagingBufferMemory);
+
+    VkDeviceSize cubemap_size = 0;
+
+    for (int i = 0; i < 6; i++)
+    {
+        int image_width, image_height, image_channel;
+        pixels = stbi_load(path[i].c_str(),
+                           &image_width,
+                           &image_height,
+                           &image_channel,
+                           STBI_rgb_alpha);
+        assert(image_width == texture_width);
+        assert(image_height == texture_height);
+        assert(image_channel == texture_channel);
+
+        void *data;
+        vkMapMemory(g_p_vulkan_context->_device, stagingBufferMemory, cubemap_size, texture_layer_byte_size, 0, &data);
+        memcpy(data, pixels, static_cast<size_t>(texture_layer_byte_size));
+        free(pixels);
+        vkUnmapMemory(g_p_vulkan_context->_device, stagingBufferMemory);
+        cubemap_size += texture_layer_byte_size;
+    }
+    VulkanUtil::createCubeMapImage(g_p_vulkan_context,
+                                   texture_width,
+                                   texture_height,
+                                   image_format,
+                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                   image, memory, mip_levels);
+
+    VulkanUtil::transitionImageLayout(g_p_vulkan_context,
+                                      image,
+                                      VK_IMAGE_LAYOUT_UNDEFINED,
+                                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                      1, mip_levels, VK_IMAGE_ASPECT_COLOR_BIT);
+
+
+    VulkanUtil::copyBufferToImage(g_p_vulkan_context,
+                                  stagingBuffer,
+                                  image,
+                                  static_cast<uint32_t>(texture_width),
+                                  static_cast<uint32_t>(texture_height), 6);
+
+    VulkanUtil::transitionImageLayout(g_p_vulkan_context,
+                                      image,
+                                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                      1, mip_levels, VK_IMAGE_ASPECT_COLOR_BIT);
+
+    vkDestroyBuffer(g_p_vulkan_context->_device, stagingBuffer, nullptr);
+    vkFreeMemory(g_p_vulkan_context->_device, stagingBufferMemory, nullptr);
+
+    sampler = VulkanUtil::getOrCreateCubeMapSampler(g_p_vulkan_context, mip_levels);
+    view    = VulkanUtil::createImageView(g_p_vulkan_context,
+                                       image,
+                                       image_format,
+                                       VK_IMAGE_ASPECT_COLOR_BIT,
+                                       VK_IMAGE_VIEW_TYPE_CUBE,
+                                       1, mip_levels);
+
+    image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    info.sampler     = sampler;
+    info.imageView   = view;
+    info.imageLayout = image_layout;
+}
+
+TextureCube::~TextureCube()
+{
+    vkDestroyImageView(g_p_vulkan_context->_device, view, nullptr);
+    vkDestroyImage(g_p_vulkan_context->_device, image, nullptr);
+    vkFreeMemory(g_p_vulkan_context->_device, memory, nullptr);
+    image_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    LOG_INFO("texturecube destroyed {}", name);
 }
 

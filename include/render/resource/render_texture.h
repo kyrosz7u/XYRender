@@ -16,7 +16,10 @@ namespace RenderSystem
 
     class Texture2D;
 
-    typedef std::shared_ptr<Texture2D> Texture2DPtr;
+    class TextureCube;
+
+    typedef std::shared_ptr<Texture2D>   Texture2DPtr;
+    typedef std::shared_ptr<TextureCube> TextureCubePtr;
 
     class Texture2D
     {
@@ -31,9 +34,11 @@ namespace RenderSystem
         VkImageView           view;
         VkSampler             sampler;
         VkImageLayout         image_layout;
-        VkDescriptorImageInfo descriptor;
+        VkDescriptorImageInfo info;
     public:
-        Texture2D(const std::string &path, const std::string &name, bool gen_mipmap = false, VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM);
+        Texture2D(const std::string &path, const std::string &name, bool gen_mipmap = false,
+                  VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM);
+
         ~Texture2D();
     };
 
@@ -50,9 +55,11 @@ namespace RenderSystem
         VkImageView           view;
         VkSampler             sampler;
         VkImageLayout         image_layout;
-        VkDescriptorImageInfo descriptor;
+        VkDescriptorImageInfo info;
     public:
-        TextureCube(const std::vector<std::string> &path, const std::string &name, bool gen_mipmap, VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM);
+        TextureCube(const std::vector<std::string> &path, const std::string &name, bool gen_mipmap = false,
+                    VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM);
+
         ~TextureCube();
     };
 }

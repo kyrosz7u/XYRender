@@ -39,6 +39,17 @@ int main()
     model.ToGPU();
     scene_manager->AddModel(model);
 
+    // +X，-X，+Y，-Y，+Z，-Z
+    std::vector<std::string> skybox_faces = {
+            "assets/textures/skybox/right.jpg",
+            "assets/textures/skybox/left.jpg",
+            "assets/textures/skybox/top.jpg",
+            "assets/textures/skybox/bottom.jpg",
+            "assets/textures/skybox/front.jpg",
+            "assets/textures/skybox/back.jpg"
+    };
+    scene_manager->LoadSkybox(skybox_faces);
+
     Scene::DirectionLight light;
     light.intensity = 1.0f;
     light.transform = Transform(Math::Vector3(0, 15, -15), Math::EulerAngle(50, -30, 0), Math::Vector3(1, 1, 1));
@@ -46,7 +57,6 @@ int main()
     scene_manager->AddLight(light);
 
     scene_manager->PostInitialize();
-
     while (!window->shouldClose())
     {
         InputSystem.Tick();

@@ -30,7 +30,7 @@ void ForwardRender::initialize()
     setViewport();
     setupRenderpass();
 
-    setupTextureDescriptorSetLayout();
+    setupRenderDescriptorSetLayout();
 
 }
 
@@ -240,7 +240,7 @@ void ForwardRender::UpdateRenderPerFrameScenceUBO(VulkanPerFrameSceneDefine &per
     m_render_per_frame_ubo.ToGPU();
 }
 
-void ForwardRender::setupTextureDescriptorSetLayout()
+void ForwardRender::setupRenderDescriptorSetLayout()
 {
     std::vector<VkDescriptorSetLayoutBinding> texture_layout_bindings;
     texture_layout_bindings.resize(1);
@@ -262,6 +262,34 @@ void ForwardRender::setupTextureDescriptorSetLayout()
                                                 &texture_descriptorSetLayoutCreateInfo,
                                                 nullptr,
                                                 &m_texture_descriptor_set_layout));
+
+    std::vector<VkDescriptorSetLayoutBinding> skybox_layout_bindings;
+    skybox_layout_bindings.resize(2);
+
+    VkDescriptorSetLayoutBinding &skybox_ubodata_binding = skybox_layout_bindings[0];
+    skybox_ubodata_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    skybox_ubodata_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
+    skybox_ubodata_binding.binding         = 0;
+    skybox_ubodata_binding.descriptorCount = 1;
+
+    VkDescriptorSetLayoutBinding &skybox_cubemap_binding = skybox_layout_bindings[1];
+    skybox_cubemap_binding.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    skybox_cubemap_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+    skybox_cubemap_binding.binding         = 1;
+    skybox_cubemap_binding.descriptorCount = 1;
+
+    VkDescriptorSetLayoutCreateInfo skybox_descriptorSetLayoutCreateInfo;
+    skybox_descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    skybox_descriptorSetLayoutCreateInfo.flags        = 0;
+    skybox_descriptorSetLayoutCreateInfo.pNext        = nullptr;
+    skybox_descriptorSetLayoutCreateInfo.bindingCount = skybox_layout_bindings.size();
+    skybox_descriptorSetLayoutCreateInfo.pBindings    = skybox_layout_bindings.data();
+
+    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
+                                                &skybox_descriptorSetLayoutCreateInfo,
+                                                nullptr,
+                                                &m_skybox_descriptor_set_layout));
+
 }
 
 void ForwardRender::UpdateRenderTextures(const std::vector<Texture2DPtr> &_visible_textures)
@@ -285,7 +313,7 @@ void ForwardRender::UpdateRenderTextures(const std::vector<Texture2DPtr> &_visib
 
         allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool     = m_descriptor_pool;
-        // determines the number of descriptor sets to be allocated from the pool.
+        // determines the number of info sets to be allocated from the pool.
         allocInfo.descriptorSetCount = 1;
         // 每个set的布局
         allocInfo.pSetLayouts        = &m_texture_descriptor_set_layout;
@@ -294,7 +322,7 @@ void ForwardRender::UpdateRenderTextures(const std::vector<Texture2DPtr> &_visib
                                      &allocInfo,
                                      &m_texture_descriptor_sets[i]) != VK_SUCCESS)
         {
-            throw std::runtime_error("failed to allocate descriptor sets!");
+            throw std::runtime_error("failed to allocate info sets!");
         }
     }
 
@@ -322,7 +350,66 @@ void ForwardRender::UpdateRenderTextures(const std::vector<Texture2DPtr> &_visib
                                0,
                                nullptr);
     }
+}
 
+void ForwardRender::UpdateSkyboxTexture(const std::unique_ptr<TextureCube> &skybox_texture)
+{
+    // wait for device idle
+    // 很慢的，禁止频繁使用
+    vkDeviceWaitIdle(g_p_vulkan_context->_device);
+    if (m_skybox_descriptor_set!= VK_NULL_HANDLE)
+    {
+        g_p_vulkan_context->_vkFreeDescriptorSets(g_p_vulkan_context->_device,
+                                                  m_descriptor_pool,
+                                                  1,
+                                                  &m_skybox_descriptor_set);
+    }
+    VkDescriptorSetAllocateInfo allocInfo{};
+
+    allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool     = m_descriptor_pool;
+    // determines the number of info sets to be allocated from the pool.
+    allocInfo.descriptorSetCount = 1;
+    // 每个set的布局
+    allocInfo.pSetLayouts        = &m_skybox_descriptor_set_layout;
+
+    if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
+                                 &allocInfo,
+                                 &m_skybox_descriptor_set) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to allocate info sets!");
+    }
+
+    VkDescriptorImageInfo cubemap_image_info{};
+    cubemap_image_info.imageLayout        = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    cubemap_image_info.imageView          = skybox_texture->view;
+    cubemap_image_info.sampler            = skybox_texture->sampler;
+
+    VkWriteDescriptorSet descriptor_set_writes[2];
+
+    VkWriteDescriptorSet &ubo_descriptor_write = descriptor_set_writes[0];
+    ubo_descriptor_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    ubo_descriptor_write.dstSet          = m_skybox_descriptor_set;
+    ubo_descriptor_write.dstBinding      = 0;
+    ubo_descriptor_write.dstArrayElement = 0;
+    ubo_descriptor_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    ubo_descriptor_write.descriptorCount = 1;
+    ubo_descriptor_write.pBufferInfo     = &m_render_per_frame_ubo.buffer_infos[RenderPerFrameUBO::_scene_info_block];
+
+    VkWriteDescriptorSet &cube_descriptor_write = descriptor_set_writes[1];
+    cube_descriptor_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    cube_descriptor_write.dstSet          = m_skybox_descriptor_set;
+    cube_descriptor_write.dstBinding      = 1;
+    cube_descriptor_write.dstArrayElement = 0;
+    cube_descriptor_write.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    cube_descriptor_write.descriptorCount = 1;
+    cube_descriptor_write.pImageInfo      = &skybox_texture->info;
+
+    vkUpdateDescriptorSets(g_p_vulkan_context->_device,
+                           2,
+                           descriptor_set_writes,
+                           0,
+                           nullptr);
 }
 
 void ForwardRender::updateAfterSwapchainRecreate()

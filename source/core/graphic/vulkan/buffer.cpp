@@ -58,9 +58,9 @@ VkResult Buffer::bind(VkDeviceSize offset)
 }
 
 /**
-* Setup the default descriptor for this buffer
+* Setup the default info for this buffer
 *
-* @param size (Optional) Size of the memory range of the descriptor
+* @param size (Optional) Size of the memory range of the info
 * @param offset (Optional) Byte offset from beginning
 *
 */

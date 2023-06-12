@@ -51,11 +51,26 @@ namespace VulkanAPI
                                VkDeviceSize dstOffset,
                                VkDeviceSize size);
 
-        static void createImage(std::shared_ptr<VulkanContext> p_context, uint32_t image_width, uint32_t image_height,
-                         VkFormat format,
-                         VkImageTiling image_tiling, VkImageUsageFlags image_usage_flags,
-                         VkMemoryPropertyFlags memory_property_flags, VkImage &image, VkDeviceMemory &memory,
-                         VkImageCreateFlags image_create_flags, uint32_t array_layers, uint32_t miplevels);
+        static void createImage(std::shared_ptr<VulkanContext> p_context,
+                                uint32_t image_width,
+                                uint32_t image_height,
+                                VkFormat format,
+                                VkImageTiling image_tiling,
+                                VkImageUsageFlags image_usage_flags,
+                                VkMemoryPropertyFlags memory_property_flags,
+                                VkImage &image, VkDeviceMemory &memory,
+                                VkImageCreateFlags image_create_flags,
+                                uint32_t array_layers,
+                                uint32_t miplevels);
+
+        static void createCubeMapImage(std::shared_ptr<VulkanContext> p_context,
+                                        uint32_t image_width,
+                                        uint32_t image_height,
+                                        VkFormat image_format,
+                                        VkMemoryPropertyFlags memory_property_flags,
+                                        VkImage &image,
+                                        VkDeviceMemory &memory,
+                                        uint32_t mip_levels);
 
         static VkImageView createImageView(std::shared_ptr<VulkanContext> p_context,
                                            VkImage &image,
@@ -101,6 +116,8 @@ namespace VulkanAPI
 
         static VkSampler getOrCreateLinearSampler(std::shared_ptr<VulkanContext> p_context);
 
+        static VkSampler getOrCreateCubeMapSampler(std::shared_ptr<VulkanContext> p_context, uint32_t mip_levels);
+
         static void destroyMipmappedSampler(VkDevice device);
 
         static void destroyNearestSampler(VkDevice device);
@@ -108,9 +125,10 @@ namespace VulkanAPI
         static void destroyLinearSampler(VkDevice device);
 
     private:
-        static std::unordered_map<uint32_t, VkSampler> m_mipmap_sampler_map;
+        static std::unordered_map<uint32_t, VkSampler> m_mipmap_sampler_texture;
         static VkSampler                               m_nearest_sampler;
         static VkSampler                               m_linear_sampler;
+        static VkSampler                               m_cubemap_sampler;
 
     };
 } // namespace Pilot

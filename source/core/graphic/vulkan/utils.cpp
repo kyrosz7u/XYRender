@@ -6,9 +6,10 @@
 #include "core/graphic/vulkan/vulkan_context.h"
 
 using namespace VulkanAPI;
-std::unordered_map<uint32_t, VkSampler> VulkanUtil::m_mipmap_sampler_map;
+std::unordered_map<uint32_t, VkSampler> VulkanUtil::m_mipmap_sampler_texture;
 VkSampler                               VulkanUtil::m_nearest_sampler = VK_NULL_HANDLE;
 VkSampler                               VulkanUtil::m_linear_sampler  = VK_NULL_HANDLE;
+VkSampler                               VulkanUtil::m_cubemap_sampler = VK_NULL_HANDLE;
 
 std::string VulkanUtil::errorString(VkResult errorCode)
 {
@@ -208,40 +209,6 @@ void VulkanUtil::createCubeMapImage(std::shared_ptr<VulkanContext> p_context,
                                     VkDeviceMemory &memory,
                                     uint32_t mip_levels)
 {
-    VkDeviceSize texture_layer_byte_size;
-    VkDeviceSize cube_byte_size;
-
-    switch (image_format)
-    {
-        case VK_FORMAT_R8G8B8_UNORM:
-            texture_layer_byte_size = image_width * image_height * 3;
-            break;
-        case VK_FORMAT_R8G8B8_SRGB:
-            texture_layer_byte_size = image_width * image_height * 3;
-            break;
-        case VK_FORMAT_R8G8B8A8_UNORM:
-            texture_layer_byte_size = image_width * image_height * 4;
-            break;
-        case VK_FORMAT_R8G8B8A8_SRGB:
-            texture_layer_byte_size = image_width * image_height * 4;
-            break;
-        case VK_FORMAT_R32G32_SFLOAT:
-            texture_layer_byte_size = image_width * image_height * 4 * 2;
-            break;
-        case VK_FORMAT_R32G32B32_SFLOAT:
-            texture_layer_byte_size = image_width * image_height * 4 * 3;
-            break;
-        case VK_FORMAT_R32G32B32A32_SFLOAT:
-            texture_layer_byte_size = image_width * image_height * 4 * 4;
-            break;
-        default:
-            texture_layer_byte_size = VkDeviceSize(-1);
-            throw std::runtime_error("invalid texture_layer_byte_size");
-            break;
-    }
-
-    cube_byte_size = texture_layer_byte_size * 6;
-
     // create cubemap texture image
     // use the vmaAllocator to allocate asset texture image
     VkImageCreateInfo image_create_info{};
@@ -567,26 +534,11 @@ void VulkanUtil::genMipmappedImage(std::shared_ptr<VulkanContext> p_context,
     p_context->endSingleTimeCommands(commandBuffer);
 }
 
-void VulkanUtil::createImage(std::shared_ptr<VulkanContext> p_context,
-                             uint32_t image_width,
-                             uint32_t image_height,
-                             VkFormat format,
-                             VkImageTiling image_tiling,
-                             VkImageUsageFlags image_usage_flags,
-                             VkMemoryPropertyFlags memory_property_flags,
-                             VkImage &image,
-                             VkDeviceMemory &memory,
-                             VkImageCreateFlags image_create_flags,
-                             uint32_t array_layers,
-                             uint32_t miplevels);
-
-
-
 VkSampler VulkanUtil::getOrCreateMipmapSampler(std::shared_ptr<VulkanContext> p_context, uint32_t mip_levels)
 {
     VkSampler sampler;
-    auto      find_sampler = m_mipmap_sampler_map.find(mip_levels);
-    if (find_sampler != m_mipmap_sampler_map.end())
+    auto      find_sampler = m_mipmap_sampler_texture.find(mip_levels);
+    if (find_sampler != m_mipmap_sampler_texture.end())
     {
         return find_sampler->second;
     } else
@@ -619,7 +571,7 @@ VkSampler VulkanUtil::getOrCreateMipmapSampler(std::shared_ptr<VulkanContext> p_
         }
     }
 
-    m_mipmap_sampler_map.insert(std::make_pair(mip_levels, sampler));
+    m_mipmap_sampler_texture.insert(std::make_pair(mip_levels, sampler));
 
     return sampler;
 }
@@ -694,13 +646,48 @@ VkSampler VulkanUtil::getOrCreateLinearSampler(std::shared_ptr<VulkanContext> p_
     return m_linear_sampler;
 }
 
+VkSampler VulkanUtil::getOrCreateCubeMapSampler(std::shared_ptr<VulkanContext> p_context, uint32_t mip_levels)
+{
+    if (m_cubemap_sampler==VK_NULL_HANDLE)
+    {
+        VkPhysicalDeviceProperties physical_device_properties{};
+        vkGetPhysicalDeviceProperties(p_context->_physical_device, &physical_device_properties);
+
+        VkSamplerCreateInfo samplerInfo{};
+        samplerInfo.sType        = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter    = VK_FILTER_LINEAR;
+        samplerInfo.minFilter    = VK_FILTER_LINEAR;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+        samplerInfo.anisotropyEnable = VK_TRUE;
+        samplerInfo.maxAnisotropy    = physical_device_properties.limits.maxSamplerAnisotropy;
+
+        samplerInfo.borderColor             = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+        samplerInfo.compareEnable           = VK_FALSE;
+        samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
+        samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+
+        samplerInfo.minLod                  = 0.0f;
+        samplerInfo.maxLod                  = 8.0f; // todo: why??
+
+        if (vkCreateSampler(p_context->_device, &samplerInfo, nullptr, &m_cubemap_sampler) != VK_SUCCESS)
+        {
+            throw std::runtime_error("vk can not create cubemap sampler");
+        }
+    }
+    return m_cubemap_sampler;
+}
+
 void VulkanUtil::destroyMipmappedSampler(VkDevice device)
 {
-    for (auto sampler: m_mipmap_sampler_map)
+    for (auto sampler: m_mipmap_sampler_texture)
     {
         vkDestroySampler(device, sampler.second, nullptr);
     }
-    m_mipmap_sampler_map.clear();
+    m_mipmap_sampler_texture.clear();
 }
 
 void VulkanUtil::destroyNearestSampler(VkDevice device)
