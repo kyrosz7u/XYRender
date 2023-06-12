@@ -232,41 +232,49 @@ TextureCube::TextureCube(const std::vector<std::string> &path, const std::string
                                       image,
                                       VK_IMAGE_LAYOUT_UNDEFINED,
                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                      1, mip_levels, VK_IMAGE_ASPECT_COLOR_BIT);
+                                      6, mip_levels, VK_IMAGE_ASPECT_COLOR_BIT);
+//
+//    cubemap_offset = 0;
+//    std::vector<VkBufferImageCopy> bufferCopyRegions;
+//
+//    VkCommandBuffer commandBuffer = g_p_vulkan_context->beginSingleTimeCommands();
+//    for (uint32_t   face          = 0; face < 6; face++)
+//    {
+//        VkBufferImageCopy region{};
+//        region.bufferOffset                    = cubemap_offset;
+//        region.bufferRowLength                 = 0;
+//        region.bufferImageHeight               = 0;
+//        region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+//        region.imageSubresource.mipLevel       = 0;
+//        region.imageSubresource.baseArrayLayer = face;
+//        region.imageSubresource.layerCount     = 1;
+//        region.imageOffset                     = {0, 0, 0};
+//        region.imageExtent                     = {width, height, 1};
+//        bufferCopyRegions.push_back(region);
+//        cubemap_offset += texture_layer_byte_size;
+//    }
+//    vkCmdCopyBufferToImage(commandBuffer,
+//                           stagingBuffer,
+//                           image,
+//                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+//                           bufferCopyRegions.size(),
+//                           bufferCopyRegions.data());
+//
+//    g_p_vulkan_context->endSingleTimeCommands(commandBuffer);
+//
 
-    cubemap_offset = 0;
-    std::vector<VkBufferImageCopy> bufferCopyRegions;
-
-    VkCommandBuffer commandBuffer = g_p_vulkan_context->beginSingleTimeCommands();
-    for (uint32_t   face          = 0; face < 6; face++)
-    {
-        VkBufferImageCopy region{};
-        region.bufferOffset                    = cubemap_offset;
-        region.bufferRowLength                 = 0;
-        region.bufferImageHeight               = 0;
-        region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel       = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount     = 1;
-        region.imageOffset                     = {0, 0, 0};
-        region.imageExtent                     = {width, height, 1};
-        bufferCopyRegions.push_back(region);
-        cubemap_offset += texture_layer_byte_size;
-    }
-    vkCmdCopyBufferToImage(commandBuffer,
-                           stagingBuffer,
-                           image,
-                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                           bufferCopyRegions.size(),
-                           bufferCopyRegions.data());
-
-    g_p_vulkan_context->endSingleTimeCommands(commandBuffer);
+    VulkanUtil::copyBufferToImage(g_p_vulkan_context,
+                                  stagingBuffer,
+                                  image,
+                                  texture_width,
+                                  texture_height,
+                                  6);
 
     VulkanUtil::transitionImageLayout(g_p_vulkan_context,
                                       image,
                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                      1, mip_levels, VK_IMAGE_ASPECT_COLOR_BIT);
+                                      6, mip_levels, VK_IMAGE_ASPECT_COLOR_BIT);
 
     vkDestroyBuffer(g_p_vulkan_context->_device, stagingBuffer, nullptr);
     vkFreeMemory(g_p_vulkan_context->_device, stagingBufferMemory, nullptr);
