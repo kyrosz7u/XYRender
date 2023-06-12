@@ -65,7 +65,7 @@ endforeach()
 #message(${RENDER_INCLUDES})
 
 include_directories(include)
-add_executable(${TARGET_NAME} main.cpp include/core/singleton_decorator.h include/input/input_system.h include/render/subpass/skybox.h)
+add_executable(${TARGET_NAME} main.cpp include/core/singleton_decorator.h include/input/input_system.h include/render/subpass/skybox_pass.h)
 add_dependencies(${RENDER_TARGET_NAME} ${SHADER_COMPILE_TARGET})
 target_link_libraries(${TARGET_NAME} PUBLIC ${RENDER_TARGET_NAME})
 

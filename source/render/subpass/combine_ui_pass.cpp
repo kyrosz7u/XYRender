@@ -71,8 +71,8 @@ void CombineUIPass::setupDescriptorSet()
     allocInfo.pSetLayouts        = &m_descriptor_set_layouts[0];
 
     VK_CHECK_RESULT(vkAllocateDescriptorSets(g_p_vulkan_context->_device,
-                                 &allocInfo,
-                                 &m_combine_ui_descriptor_set))
+                                             &allocInfo,
+                                             &m_combine_ui_descriptor_set))
 
 }
 
@@ -107,7 +107,7 @@ void CombineUIPass::updateDescriptorSets()
     uipass_image_write.dstArrayElement = 0;
     uipass_image_write.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
     uipass_image_write.descriptorCount = 1;
-    uipass_image_write.pImageInfo     = &uipass_image_attachment_info;
+    uipass_image_write.pImageInfo      = &uipass_image_attachment_info;
 
     vkUpdateDescriptorSets(g_p_vulkan_context->_device,
                            write_descriptor_sets.size(),
@@ -287,20 +287,20 @@ void CombineUIPass::draw()
                                          m_p_render_command_info->p_scissor);
 
 
-    vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
-                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipeline_layout,
-                            0,
-                            1,
-                            &m_combine_ui_descriptor_set,
-                            0,
-                            nullptr);
-    vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,
-                     3,
-                     1,
-                     0,
-                     0,
-                     0);
+    g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
+                                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                 pipeline_layout,
+                                                 0,
+                                                 1,
+                                                 &m_combine_ui_descriptor_set,
+                                                 0,
+                                                 nullptr);
+    g_p_vulkan_context->_vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,
+                                          3,
+                                          1,
+                                          0,
+                                          0,
+                                          0);
     g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
 }
 

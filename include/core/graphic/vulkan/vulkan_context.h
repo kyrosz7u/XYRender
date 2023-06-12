@@ -91,6 +91,7 @@ namespace VulkanAPI
         PFN_vkCmdBindVertexBuffers       _vkCmdBindVertexBuffers;
         PFN_vkCmdBindIndexBuffer         _vkCmdBindIndexBuffer;
         PFN_vkCmdBindDescriptorSets      _vkCmdBindDescriptorSets;
+        PFN_vkCmdDraw                    _vkCmdDraw;
         PFN_vkCmdDrawIndexed             _vkCmdDrawIndexed;
         PFN_vkCmdClearAttachments        _vkCmdClearAttachments;
         PFN_vkAllocateDescriptorSets     _vkAllocateDescriptorSets;

@@ -351,7 +351,7 @@ void ForwardRender::UpdateRenderTextures(const std::vector<Texture2DPtr> &_visib
     }
 }
 
-void ForwardRender::UpdateSkyboxTexture(const std::shared_ptr<TextureCube> skybox_texture)
+void ForwardRender::UpdateSkyboxTexture(const std::shared_ptr<TextureCube>& skybox_texture)
 {
     // wait for device idle
     // 很慢的，禁止频繁使用
@@ -401,7 +401,7 @@ void ForwardRender::UpdateSkyboxTexture(const std::shared_ptr<TextureCube> skybo
     cube_descriptor_write.pImageInfo      = &skybox_texture->info;
 
     vkUpdateDescriptorSets(g_p_vulkan_context->_device,
-                           1,
+                           sizeof(descriptor_set_writes) / sizeof(descriptor_set_writes[0]),
                            descriptor_set_writes,
                            0,
                            nullptr);
@@ -423,7 +423,7 @@ void ForwardRender::updateAfterSwapchainRecreate()
     }
 }
 
-ForwardRender::~ForwardRender()
+void ForwardRender::destroy()
 {
     g_p_vulkan_context->waitForFrameInFlightFence();
     vkDeviceWaitIdle(g_p_vulkan_context->_device);

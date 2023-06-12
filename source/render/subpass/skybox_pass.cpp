@@ -2,7 +2,7 @@
 // Created by kyros on 2023/6/11.
 //
 
-#include "render/subpass/skybox.h"
+#include "render/subpass/skybox_pass.h"
 #include "core/logger/logger_macros.h"
 
 using namespace RenderSystem::SubPass;
@@ -10,10 +10,10 @@ using namespace RenderSystem::SubPass;
 void SkyBoxPass::initialize(SubPassInitInfo *subpass_init_info)
 {
     auto skybox_pass_init_info = static_cast<SkyboxPassInitInfo *>(subpass_init_info);
-    m_p_render_command_info     = skybox_pass_init_info->p_render_command_info;
-    m_p_render_resource_info    = skybox_pass_init_info->p_render_resource_info;
-    m_subpass_index             = skybox_pass_init_info->subpass_index;
-    m_renderpass                = skybox_pass_init_info->renderpass;
+    m_p_render_command_info  = skybox_pass_init_info->p_render_command_info;
+    m_p_render_resource_info = skybox_pass_init_info->p_render_resource_info;
+    m_subpass_index          = skybox_pass_init_info->subpass_index;
+    m_renderpass             = skybox_pass_init_info->renderpass;
 
     setupDescriptorSetLayout();
     setupDescriptorSet();
@@ -30,18 +30,18 @@ void SkyBoxPass::setupDescriptorSetLayout()
     layout_bindings.resize(2);
 
     VkDescriptorSetLayoutBinding &ubo_layout_binding = layout_bindings[0];
-    ubo_layout_binding.binding                       = _skybox_pass_ubo_data_binding;
-    ubo_layout_binding.descriptorType                = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    ubo_layout_binding.descriptorCount               = 1;
-    ubo_layout_binding.stageFlags                    = VK_SHADER_STAGE_VERTEX_BIT;
-    ubo_layout_binding.pImmutableSamplers            = nullptr;
+    ubo_layout_binding.binding            = _skybox_pass_ubo_data_binding;
+    ubo_layout_binding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    ubo_layout_binding.descriptorCount    = 1;
+    ubo_layout_binding.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT;
+    ubo_layout_binding.pImmutableSamplers = nullptr;
 
     VkDescriptorSetLayoutBinding &cubemap_layout_binding = layout_bindings[1];
-    cubemap_layout_binding.binding                       = _skybox_pass_cubemap_binding;
-    cubemap_layout_binding.descriptorType                = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    cubemap_layout_binding.descriptorCount               = 1;
-    cubemap_layout_binding.stageFlags                    = VK_SHADER_STAGE_FRAGMENT_BIT;
-    cubemap_layout_binding.pImmutableSamplers            = nullptr;
+    cubemap_layout_binding.binding            = _skybox_pass_cubemap_binding;
+    cubemap_layout_binding.descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    cubemap_layout_binding.descriptorCount    = 1;
+    cubemap_layout_binding.stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
+    cubemap_layout_binding.pImmutableSamplers = nullptr;
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
     descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -87,7 +87,7 @@ void SkyBoxPass::setupPipelines()
     }
 
     std::map<int, VkShaderModule> shader_modules;
-    for (int i = 0; i < m_shader_list.size(); i++)
+    for (int                      i = 0; i < m_shader_list.size(); i++)
     {
         auto &shader = m_shader_list[i];
         if (shader.size() == 0)
@@ -135,7 +135,7 @@ void SkyBoxPass::setupPipelines()
     rasterization_state_create_info.polygonMode             = VK_POLYGON_MODE_FILL;
     rasterization_state_create_info.lineWidth               = 1.0f;
     rasterization_state_create_info.cullMode                = VK_CULL_MODE_BACK_BIT;
-    rasterization_state_create_info.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterization_state_create_info.frontFace               = VK_FRONT_FACE_CLOCKWISE;
     rasterization_state_create_info.depthBiasEnable         = VK_FALSE;
     rasterization_state_create_info.depthBiasConstantFactor = 0.0f;
     rasterization_state_create_info.depthBiasClamp          = 0.0f;
@@ -173,7 +173,7 @@ void SkyBoxPass::setupPipelines()
     depth_stencil_create_info.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depth_stencil_create_info.depthTestEnable       = VK_TRUE;
     depth_stencil_create_info.depthWriteEnable      = VK_FALSE;
-    depth_stencil_create_info.depthCompareOp        = VK_COMPARE_OP_LESS;
+    depth_stencil_create_info.depthCompareOp        = VK_COMPARE_OP_LESS_OR_EQUAL;
     depth_stencil_create_info.depthBoundsTestEnable = VK_FALSE;
     depth_stencil_create_info.stencilTestEnable     = VK_FALSE;
 
@@ -184,10 +184,10 @@ void SkyBoxPass::setupPipelines()
     dynamic_state_create_info.pDynamicStates    = dynamic_states;
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
+
     pipelineInfo.sType      = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = shader_stage_create_infos.size();
     pipelineInfo.pStages    = shader_stage_create_infos.data();
-
     pipelineInfo.pVertexInputState   = &vertex_input_state_create_info;
     pipelineInfo.pInputAssemblyState = &input_assembly_create_info;
     pipelineInfo.pViewportState      = &viewport_state_create_info;
@@ -220,7 +220,7 @@ void SkyBoxPass::setupPipelines()
 void SkyBoxPass::draw()
 {
     VkDebugUtilsLabelEXT label_info = {
-            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Combine UI", {1.0f, 1.0f, 1.0f, 1.0f}};
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Skybox", {1.0f, 1.0f, 1.0f, 1.0f}};
     g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
 
     g_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->p_current_command_buffer,
@@ -231,20 +231,24 @@ void SkyBoxPass::draw()
                                          m_p_render_command_info->p_scissor);
 
 
-    vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
-                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            pipeline_layout,
-                            0,
-                            1,
-                            m_p_render_resource_info->p_skybox_descriptor_set,
-                            0,
-                            nullptr);
-    vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,
-                     3,
-                     1,
-                     0,
-                     0,
-                     0);
+    g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
+                                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                 pipeline_layout,
+                                                 0,
+                                                 1,
+                                                 m_p_render_resource_info->p_skybox_descriptor_set,
+                                                 0,
+                                                 nullptr);
+
+    g_p_vulkan_context->_vkCmdDraw(*m_p_render_command_info->p_current_command_buffer,
+                                          36,
+                                          1,
+                                          0,
+                                          0);
     g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
+}
+
+void SkyBoxPass::updateAfterSwapchainRecreate()
+{
 }
 

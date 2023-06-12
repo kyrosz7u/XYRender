@@ -316,6 +316,7 @@ void VulkanContext::createLogicalDevice()
     _vkCmdBindVertexBuffers   = (PFN_vkCmdBindVertexBuffers) vkGetDeviceProcAddr(_device, "vkCmdBindVertexBuffers");
     _vkCmdBindIndexBuffer     = (PFN_vkCmdBindIndexBuffer) vkGetDeviceProcAddr(_device, "vkCmdBindIndexBuffer");
     _vkCmdBindDescriptorSets  = (PFN_vkCmdBindDescriptorSets) vkGetDeviceProcAddr(_device, "vkCmdBindDescriptorSets");
+    _vkCmdDraw                = (PFN_vkCmdDraw) vkGetDeviceProcAddr(_device, "vkCmdDraw");
     _vkCmdDrawIndexed         = (PFN_vkCmdDrawIndexed) vkGetDeviceProcAddr(_device, "vkCmdDrawIndexed");
     _vkCmdClearAttachments    = (PFN_vkCmdClearAttachments) vkGetDeviceProcAddr(_device, "vkCmdClearAttachments");
     _vkAllocateDescriptorSets = (PFN_vkAllocateDescriptorSets) vkGetDeviceProcAddr(_device, "vkAllocateDescriptorSets");

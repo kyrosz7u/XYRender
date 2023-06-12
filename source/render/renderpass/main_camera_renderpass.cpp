@@ -5,10 +5,12 @@
 
 #include "core/graphic/vulkan/vulkan_utils.h"
 #include "render/subpass/mesh_pass.h"
-#include "render/subpass/skybox.h"
+#include "render/subpass/skybox_pass.h"
 #include "render/renderpass/main_camera_renderpass.h"
 #include "mesh_vert.h"
 #include "mesh_frag.h"
+#include "skybox_vert.h"
+#include "skybox_frag.h"
 
 using namespace RenderSystem;
 
@@ -88,11 +90,11 @@ void MainCameraRenderPass::setupRenderPass()
 
     VkSubpassDescription subpasses[_main_camera_subpass_count] = {};
 
-    VkAttachmentReference color_attachments_reference[_main_camera_subpass_count] = {};
-    color_attachments_reference[_main_camera_subpass_mesh].attachment =
+    VkAttachmentReference color_attachments_reference[1] = {};
+    color_attachments_reference[0].attachment =
             &framebuffer_image_attachment_description - attachments;
     // 指定在subpass执行时，管线访问图像的布局
-    color_attachments_reference[_main_camera_subpass_mesh].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachments_reference[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkAttachmentReference depth_attachment_reference{};
     depth_attachment_reference.attachment = &depth_attachment_description - attachments;
@@ -123,8 +125,7 @@ void MainCameraRenderPass::setupRenderPass()
     base_pass_dependency.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     base_pass_dependency.dstStageMask  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     base_pass_dependency.srcAccessMask = 0;
-    base_pass_dependency.dstAccessMask =
-            VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    base_pass_dependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
     base_pass_dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
     VkSubpassDependency &skybox_pass_dependency = dependencies[1];
@@ -206,7 +207,15 @@ void MainCameraRenderPass::setupSubpass()
     m_subpass_list[_main_camera_subpass_mesh]->initialize(&mesh_pass_init_info);
 
     SubPass::SubPassInitInfo skybox_pass_init_info{};
+    skybox_pass_init_info.p_render_command_info  = m_p_render_command_info;
+    skybox_pass_init_info.p_render_resource_info = m_p_render_resource_info;
+    skybox_pass_init_info.renderpass             = m_renderpass;
+    skybox_pass_init_info.subpass_index          = _main_camera_subpass_skybox;
+
     m_subpass_list[_main_camera_subpass_skybox] = std::make_shared<SubPass::SkyBoxPass>();
+    m_subpass_list[_main_camera_subpass_skybox]->setShader(SubPass::VERTEX_SHADER, SKYBOX_VERT);
+    m_subpass_list[_main_camera_subpass_skybox]->setShader(SubPass::FRAGMENT_SHADER, SKYBOX_FRAG);
+    m_subpass_list[_main_camera_subpass_skybox]->initialize(&skybox_pass_init_info);
 }
 
 void MainCameraRenderPass::draw(int render_target_index)
@@ -229,6 +238,8 @@ void MainCameraRenderPass::draw(int render_target_index)
                                               VK_SUBPASS_CONTENTS_INLINE);
 
     m_subpass_list[_main_camera_subpass_mesh]->draw();
+    g_p_vulkan_context->_vkCmdNextSubpass(*m_p_render_command_info->p_current_command_buffer,
+                                          VK_SUBPASS_CONTENTS_INLINE);
     m_subpass_list[_main_camera_subpass_skybox]->draw();
 
     g_p_vulkan_context->_vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);

@@ -22,9 +22,9 @@ namespace RenderSystem
             _renderpass_count
         };
 
-        ~ForwardRender() override;
-
         void initialize() override;
+
+        void destroy();
 
         void setupRenderTargets();
 
@@ -55,7 +55,7 @@ namespace RenderSystem
 
         void UpdateRenderTextures(const std::vector<Texture2DPtr> &_visible_textures);
 
-        void UpdateSkyboxTexture(const std::shared_ptr<TextureCube> skybox_texture);
+        void UpdateSkyboxTexture(const std::shared_ptr<TextureCube>& skybox_texture);
 
     private:
 

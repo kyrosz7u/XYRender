@@ -1,6 +1,7 @@
 #include "scene/model.h"
 #include "scene/camera.h"
 #include "scene/direction_light.h"
+#include "render/forward_render.h"
 #include "camera.h"
 #include <memory>
 
@@ -24,6 +25,13 @@ namespace Scene
             m_render = std::make_shared<ForwardRender>();
             m_render->setUIOverlay(m_ui_overlay);
             m_render->initialize();
+        }
+        ~SceneManager()
+        {
+            // 必须显式调用render->destroy释放commandbuffer，
+            // 否则会导致command还在执行的同时，destroy了资源
+            // 因为成员变量的析构会晚于对象析构函数的调用
+            m_render->destroy();
         }
 
         void AddModel(Model model)
