@@ -239,6 +239,12 @@ void ForwardRender::UpdateRenderPerFrameScenceUBO(VulkanPerFrameSceneDefine &per
     m_render_per_frame_ubo.ToGPU();
 }
 
+void ForwardRender::UpdateDirectionalLightList(VulkanDirectionalLight &directional_light)
+{
+    m_render_per_frame_ubo.per_frame_ubo.directional_light = directional_light;
+    m_render_per_frame_ubo.ToGPU();
+}
+
 void ForwardRender::setupRenderDescriptorSetLayout()
 {
     std::vector<VkDescriptorSetLayoutBinding> texture_layout_bindings;

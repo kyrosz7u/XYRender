@@ -15,8 +15,8 @@ void SceneManager::PostInitialize()
 
     for (int i = 0; i < m_models.size(); ++i)
     {
-        auto       &model           = m_models[i];
-        const auto &model_textures  = model.getTextures();
+        auto            &model          = m_models[i];
+        const auto      &model_textures = model.getTextures();
         for (const auto &texture: model_textures)
         {
             m_visible_textures.push_back(texture);
@@ -43,7 +43,7 @@ void SceneManager::updateScene()
     {
         auto &light = m_directional_lights[i];
         m_per_frame_directional_light_cache[i].intensity = light.intensity;
-        m_per_frame_directional_light_cache[i].direction = light.transform.GetForward();
+        m_per_frame_directional_light_cache[i].direction = -light.transform.GetForward();
         m_per_frame_directional_light_cache[i].color     = light.color;
     }
 
