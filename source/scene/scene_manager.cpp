@@ -62,7 +62,7 @@ void SceneManager::Tick()
     }
 
     updateScene();
-    m_render->UpdateRenderModel(m_models);
+    m_render->UpdateRenderModel(m_models, m_visible_submeshes);
     m_render->UpdateRenderPerFrameScenceUBO(m_main_camera->getProjViewMatrix(),
                                             m_main_camera->position,
                                             m_directional_lights);

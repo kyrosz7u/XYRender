@@ -11,11 +11,10 @@ void Camera::PostInitialize()
 {
     auto scene_ptr = m_p_parent_scene.lock();
 
-    if(scene_ptr)
+    if (scene_ptr)
     {
         render_in_scene = scene_ptr->m_render;
-    }
-    else
+    } else
     {
         throw std::runtime_error("Camera::PostInitialize() failed to get scene_ptr");
     }
@@ -24,7 +23,7 @@ void Camera::PostInitialize()
 void Camera::Tick()
 {
     const auto render_ptr = render_in_scene.lock();
-    if(render_ptr == nullptr) return ;
+    if (render_ptr == nullptr) return;
 
     auto rotMat = getRotationMatrix(rotation);
     Right   = rotMat * Vector3(1, 0, 0);
@@ -33,16 +32,16 @@ void Camera::Tick()
 
     if (InputSystem.Focused)
     {
-        float speed = InputSystem.SpeedUp ? 10.0f : 5.0f;
-        auto moveDir  = rotMat * InputSystem.Move;
+        float speed   = InputSystem.SpeedUp ? 10.0f : 5.0f;
+        auto  moveDir = rotMat * InputSystem.Move;
         position = position + moveDir * speed * render_ptr->getFrameTime();
 
-        rotation.x+= InputSystem.Look.y * render_ptr->getFrameTime()*speed*2;
-        rotation.y+= InputSystem.Look.x * render_ptr->getFrameTime()*speed*2;
+        rotation.x -= InputSystem.Look.y * render_ptr->getFrameTime() * speed * 2;
+        rotation.y -= InputSystem.Look.x * render_ptr->getFrameTime() * speed * 2;
 
-        if(rotation.x > 89.0f)
+        if (rotation.x > 89.0f)
             rotation.x = 89.0f;
-        if(rotation.x < -89.0f)
+        if (rotation.x < -89.0f)
             rotation.x = -89.0f;
         if (rotation.y > 360.0f)
             rotation.y -= 360.0f;

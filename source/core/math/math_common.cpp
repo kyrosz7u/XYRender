@@ -37,11 +37,9 @@ namespace Math
         return std::fabs(b - a) <= tolerance;
     }
 
-    // write by Copilot
+    // 旋转顺序：ZXY  坐标系：左手坐标系  与unity相同
     Matrix4x4 getRotationMatrix(const EulerAngle &eulerAngle)
     {
-        Matrix4x4 r;
-
         float cx = cos(eulerAngle.x * Math_PI / 180.0f);
         float sx = sin(eulerAngle.x * Math_PI / 180.0f);
         float cy = cos(eulerAngle.y * Math_PI / 180.0f);
@@ -49,24 +47,24 @@ namespace Math
         float cz = cos(eulerAngle.z * Math_PI / 180.0f);
         float sz = sin(eulerAngle.z * Math_PI / 180.0f);
 
-        r.m_mat[0][0] = cy * cz;
-        r.m_mat[0][1] = cy * sz;
-        r.m_mat[0][2] = -sy;
-        r.m_mat[0][3] = 0.0;
-        r.m_mat[1][0] = sx * sy * cz - cx * sz;
-        r.m_mat[1][1] = sx * sy * sz + cx * cz;
-        r.m_mat[1][2] = sx * cy;
-        r.m_mat[1][3] = 0.0;
-        r.m_mat[2][0] = cx * sy * cz + sx * sz;
-        r.m_mat[2][1] = cx * sy * sz - sx * cz;
-        r.m_mat[2][2] = cx * cy;
-        r.m_mat[2][3] = 0.0;
-        r.m_mat[3][0] = 0.0;
-        r.m_mat[3][1] = 0.0;
-        r.m_mat[3][2] = 0.0;
-        r.m_mat[3][3] = 1.0;
+        Matrix3x3 rx(1, 0, 0,
+                     0, cx, -sx,
+                     0, sx, cx);
 
-        return r;
+        Matrix3x3 ry(cy, 0, sy,
+                     0, 1, 0,
+                     -sy, 0, cy);
+
+        Matrix3x3 rz(cz, -sz, 0,
+                     sz, cz, 0,
+                     0, 0, 1);
+
+        Matrix3x3 r = rz * rx * ry;
+
+        Matrix4x4 result;
+        result.setMatrix3x3(r);
+
+        return result;
     }
 
     inline std::ostream &operator<<(std::ostream &os, const Vector3 &v)

@@ -218,9 +218,9 @@ void ForwardRender::draw()
                                               std::bind(&ForwardRender::updateAfterSwapchainRecreate, this));
 }
 
-void ForwardRender::UpdateRenderModel(const std::vector<Scene::Model> &_visible_models)
+void ForwardRender::UpdateRenderModel(const std::vector<Scene::Model> &_visible_models,
+                                      const std::vector<RenderSubmesh> &_visible_submeshes)
 {
-    m_render_submeshes.clear();
     if(m_render_model_ubo_list.ubo_data_list.size() != _visible_models.size())
     {
         m_render_model_ubo_list.ubo_data_list.resize(_visible_models.size());
@@ -229,12 +229,14 @@ void ForwardRender::UpdateRenderModel(const std::vector<Scene::Model> &_visible_
     for (int i = 0; i < _visible_models.size(); ++i)
     {
         m_render_model_ubo_list.ubo_data_list[i].model = _visible_models[i].GetModelMatrix();
-        auto &submeshes = _visible_models[i].GetSubmeshes();
-        m_render_submeshes.insert(m_render_submeshes.end(), submeshes.begin(), submeshes.end());
     }
     m_render_model_ubo_list.ToGPU();
 
-
+    m_render_submeshes.clear();
+    for (int i = 0; i < _visible_submeshes.size(); ++i)
+    {
+        m_render_submeshes.push_back(_visible_submeshes[i]);
+    }
 }
 
 void ForwardRender::UpdateRenderPerFrameScenceUBO(
@@ -251,7 +253,7 @@ void ForwardRender::UpdateRenderPerFrameScenceUBO(
         m_render_per_frame_ubo.directional_lights_ubo[i].intensity = directional_light_list[i].intensity;
         m_render_per_frame_ubo.directional_lights_ubo[i].color     = directional_light_list[i].color;
         // TODO: 换成-1之后，光照方向就不对了
-        m_render_per_frame_ubo.directional_lights_ubo[i].direction = directional_light_list[i].transform.GetForward();
+        m_render_per_frame_ubo.directional_lights_ubo[i].direction = -directional_light_list[i].transform.GetForward();
     }
     m_render_per_frame_ubo.ToGPU();
 }

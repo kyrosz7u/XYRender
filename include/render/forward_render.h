@@ -48,7 +48,8 @@ namespace RenderSystem
             m_p_ui_overlay = ui_overlay;
         }
 
-        void UpdateRenderModel(const std::vector<Scene::Model> &_visible_models);
+        void UpdateRenderModel(const std::vector<Scene::Model> &_visible_models,
+                               const std::vector<RenderSubmesh> &_visible_submeshes);
 
         void UpdateRenderPerFrameScenceUBO(Matrix4x4 proj_view, Vector3 camera_pos,
                                            std::vector<Scene::DirectionLight> &directional_light_list);
