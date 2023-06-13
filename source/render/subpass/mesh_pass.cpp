@@ -29,12 +29,12 @@ void MeshPass::setupPipeLineLayout()
     auto &ubo_data_layout = m_descriptor_set_layouts[_mesh_pass_ubo_data_layout];
 
     std::vector<VkDescriptorSetLayoutBinding> ubo_layout_bindings;
-    ubo_layout_bindings.resize(2);
+    ubo_layout_bindings.resize(3);
 
     VkDescriptorSetLayoutBinding &perframe_buffer_binding = ubo_layout_bindings[0];
 
     perframe_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    perframe_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
+    perframe_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     perframe_buffer_binding.binding         = 0;
     perframe_buffer_binding.descriptorCount = 1;
 
@@ -44,6 +44,13 @@ void MeshPass::setupPipeLineLayout()
     perobject_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
     perobject_buffer_binding.binding         = 1;
     perobject_buffer_binding.descriptorCount = 1;
+
+    VkDescriptorSetLayoutBinding &direction_buffer_binding = ubo_layout_bindings[2];
+
+    direction_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    direction_buffer_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+    direction_buffer_binding.binding         = 2;
+    direction_buffer_binding.descriptorCount = 1;
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
     descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -104,7 +111,7 @@ void MeshPass::setupDescriptorSet()
 void MeshPass::updateGlobalRenderDescriptorSet()
 {
     std::vector<VkWriteDescriptorSet> write_descriptor_sets;
-    write_descriptor_sets.resize(2);
+    write_descriptor_sets.resize(3);
 
     VkWriteDescriptorSet &perframe_buffer_write = write_descriptor_sets[0];
     perframe_buffer_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -113,7 +120,8 @@ void MeshPass::updateGlobalRenderDescriptorSet()
     perframe_buffer_write.dstArrayElement = 0;
     perframe_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     perframe_buffer_write.descriptorCount = 1;
-    perframe_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_per_frame_ubo->buffer_infos[0];
+    perframe_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_per_frame_ubo
+            ->buffer_infos[RenderPerFrameUBO::_scene_info_block];
 
     VkWriteDescriptorSet &perobject_buffer_write = write_descriptor_sets[1];
     perobject_buffer_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -123,6 +131,16 @@ void MeshPass::updateGlobalRenderDescriptorSet()
     perobject_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     perobject_buffer_write.descriptorCount = 1;
     perobject_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_model_ubo_list->buffer_descriptor;
+
+    VkWriteDescriptorSet &direction_buffer_write = write_descriptor_sets[2];
+    direction_buffer_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    direction_buffer_write.dstSet          = m_mesh_global_descriptor_set;
+    direction_buffer_write.dstBinding      = 2;
+    direction_buffer_write.dstArrayElement = 0;
+    direction_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    direction_buffer_write.descriptorCount = 1;
+    direction_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_per_frame_ubo
+            ->buffer_infos[RenderPerFrameUBO::_light_info_block];
 
     vkUpdateDescriptorSets(g_p_vulkan_context->_device,
                            write_descriptor_sets.size(),

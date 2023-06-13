@@ -11,7 +11,6 @@
 #include "render_common.h"
 
 #define MAX_MODEL_COUNT 128*1024
-#define MAX_DIRECTIONAL_LIGHT_COUNT 16
 
 using namespace VulkanAPI;
 
@@ -114,21 +113,37 @@ namespace RenderSystem
             _info_block_count
         };
         VkDeviceSize                         buffer_size;
-        VulkanPerFrameSceneDefine            per_frame_ubo;
-        VulkanPerFrameDirectionalLightDefine directional_light_list_ubo[MAX_DIRECTIONAL_LIGHT_COUNT];
+        VulkanPerFrameSceneDefine            scene_data_ubo;
+        VkDeviceSize                         per_frame_ubo_offset[_info_block_count];
+        VulkanPerFrameDirectionalLightDefine directional_lights_ubo[MAX_DIRECTIONAL_LIGHT_COUNT];
         VkBuffer                             per_frame_buffer;
         VkDeviceMemory                       per_frame_buffer_memory;
-        void                                *mapped_buffer_ptr;
-        std::vector<VkDescriptorBufferInfo> buffer_infos;
+        void                                 *mapped_buffer_ptr;
+        std::vector<VkDescriptorBufferInfo>  buffer_infos;
 
         RenderPerFrameUBO()
         {
-            buffer_size                        =
-                    sizeof(VulkanPerFrameSceneDefine) +
-                    sizeof(VulkanPerFrameDirectionalLightDefine) * MAX_DIRECTIONAL_LIGHT_COUNT;
+            // VUID-VkWriteDescriptorSet-descriptorType-00327
+            // 描述符中的offset必须按照minUniformBufferOffsetAlignment对齐
+            VkDeviceSize min_ubo_offset_align = g_p_vulkan_context->_physical_device_properties.limits.minUniformBufferOffsetAlignment;
+
+            per_frame_ubo_offset[_scene_info_block] = sizeof(VulkanPerFrameSceneDefine);
+            if (min_ubo_offset_align > 0)
+            {
+                per_frame_ubo_offset[_scene_info_block] = (per_frame_ubo_offset[_scene_info_block] + min_ubo_offset_align - 1) & ~(min_ubo_offset_align - 1);
+            }
+
+            per_frame_ubo_offset[_light_info_block] = sizeof(VulkanPerFrameDirectionalLightDefine) * MAX_DIRECTIONAL_LIGHT_COUNT;
+            if (min_ubo_offset_align > 0)
+            {
+                per_frame_ubo_offset[_light_info_block] = (per_frame_ubo_offset[_light_info_block] + min_ubo_offset_align - 1) & ~(min_ubo_offset_align - 1);
+            }
+
+            buffer_size = per_frame_ubo_offset[_scene_info_block] + per_frame_ubo_offset[_light_info_block];
+
             VkDeviceSize no_coherent_atom_size = g_p_vulkan_context->_physical_device_properties.limits.nonCoherentAtomSize;
             buffer_size = (buffer_size + no_coherent_atom_size - 1) & ~(no_coherent_atom_size - 1);
-//            dynamic_alignment = (dynamic_alignment + min_ubo_alignment - 1) & ~(min_ubo_alignment - 1);
+//            dynamic_alignment = (dynamic_alignment + min_ubo_offset_align - 1) & ~(min_ubo_offset_align - 1);
 
 
             VulkanUtil::createBuffer(g_p_vulkan_context,
@@ -146,7 +161,7 @@ namespace RenderSystem
             buffer_infos[_scene_info_block].range  = sizeof(VulkanPerFrameSceneDefine);
 
             buffer_infos[_light_info_block].buffer = per_frame_buffer;
-            buffer_infos[_light_info_block].offset = sizeof(VulkanPerFrameSceneDefine);
+            buffer_infos[_light_info_block].offset = per_frame_ubo_offset[_scene_info_block];
             buffer_infos[_light_info_block].range  = sizeof(VulkanPerFrameDirectionalLightDefine);
         }
 
@@ -164,12 +179,12 @@ namespace RenderSystem
 
         void ToGPU()
         {
-            assert(per_frame_ubo.directional_light_number > 0 &&
-                   per_frame_ubo.directional_light_number <= MAX_DIRECTIONAL_LIGHT_COUNT);
-            memcpy(mapped_buffer_ptr, &per_frame_ubo, sizeof(VulkanPerFrameSceneDefine));
+            assert(scene_data_ubo.directional_light_number > 0 &&
+                   scene_data_ubo.directional_light_number <= MAX_DIRECTIONAL_LIGHT_COUNT);
+            memcpy(mapped_buffer_ptr, &scene_data_ubo, sizeof(VulkanPerFrameSceneDefine));
             memcpy((void *) ((uint64_t) mapped_buffer_ptr + sizeof(VulkanPerFrameSceneDefine)),
-                   &directional_light_list_ubo,
-                   per_frame_ubo.directional_light_number * sizeof(VulkanPerFrameDirectionalLightDefine));
+                   &directional_lights_ubo,
+                   scene_data_ubo.directional_light_number * sizeof(VulkanPerFrameDirectionalLightDefine));
 
             VkMappedMemoryRange mappedMemoryRange{};
             mappedMemoryRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;

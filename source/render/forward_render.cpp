@@ -2,10 +2,10 @@
 // Created by kyrosz7u on 2023/5/19.
 //
 
+#include "core/logger/logger_macros.h"
 #include "render/forward_render.h"
 #include "render/renderpass/main_camera_renderpass.h"
 #include "render/renderpass/ui_overlay_renderpass.h"
-#include "core/logger/logger_macros.h"
 
 using namespace RenderSystem;
 
@@ -90,7 +90,7 @@ void ForwardRender::setupDescriptorPool()
 {
     std::vector<VkDescriptorPoolSize> descriptorTypes =
                                               {
-                                                      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         2},
+                                                      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         3},
                                                       {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1},
                                                       {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       2},
                                                       {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 11}
@@ -221,27 +221,37 @@ void ForwardRender::draw()
 void ForwardRender::UpdateRenderSubMesh(const std::vector<RenderSubmesh> &_visible_submesh)
 {
     m_render_submeshes = _visible_submesh;
-}
-
-void ForwardRender::UpdateRenderModelUBOList(std::vector<VulkanModelDefine> &model_matrix)
-{
-    m_render_model_ubo_list.ubo_data_list.resize(model_matrix.size());
-    for (int i = 0; i < model_matrix.size(); ++i)
+    m_render_model_ubo_list.ubo_data_list.resize(m_render_submeshes.size());
+    for (int i = 0; i < m_render_submeshes.size(); ++i)
     {
-        m_render_model_ubo_list.ubo_data_list[i].model = model_matrix[i].model;
+        auto &submesh = m_render_submeshes[i];
+#ifdef _DEBUG
+        auto parent = submesh.parent_mesh.lock();
+        m_render_model_ubo_list.ubo_data_list[i].model = parent->model_matrix;
+#elif _RELEASE
+        m_render_model_ubo_list.ubo_data_list[i].model = submesh.parent_mesh.lock()->model_matrix;
+#else
+        LOG_ERROR("unknown build type");
+#endif
     }
     m_render_model_ubo_list.ToGPU();
 }
 
-void ForwardRender::UpdateRenderPerFrameScenceUBO(VulkanPerFrameSceneDefine &per_frame_scene_define)
+void ForwardRender::UpdateRenderPerFrameScenceUBO(
+        Math::Matrix4x4 proj_view,
+        Math::Vector3 camera_pos,
+        std::vector<Scene::DirectionLight> &directional_light_list)
 {
-    m_render_per_frame_ubo.per_frame_ubo = per_frame_scene_define;
-    m_render_per_frame_ubo.ToGPU();
-}
-
-void ForwardRender::UpdateDirectionalLightList(VulkanDirectionalLight &directional_light)
-{
-    m_render_per_frame_ubo.per_frame_ubo.directional_light = directional_light;
+    m_render_per_frame_ubo.scene_data_ubo.proj_view                = proj_view;
+    m_render_per_frame_ubo.scene_data_ubo.camera_pos               = camera_pos;
+    m_render_per_frame_ubo.scene_data_ubo.directional_light_number = directional_light_list.size();
+    assert(directional_light_list.size() <= MAX_DIRECTIONAL_LIGHT_COUNT);
+    for (int i = 0; i < directional_light_list.size(); ++i)
+    {
+        m_render_per_frame_ubo.directional_lights_ubo[i].intensity = directional_light_list[i].intensity;
+        m_render_per_frame_ubo.directional_lights_ubo[i].color     = directional_light_list[i].color;
+        m_render_per_frame_ubo.directional_lights_ubo[i].direction = -directional_light_list[i].transform.GetForward();
+    }
     m_render_per_frame_ubo.ToGPU();
 }
 
@@ -335,11 +345,6 @@ void ForwardRender::UpdateRenderTextures(const std::vector<Texture2DPtr> &_visib
 
     for (int i = 0; i < _visible_textures.size(); ++i)
     {
-//        VkDescriptorImageInfo imageInfo{};
-//        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-//        imageInfo.imageView   = _visible_textures[i]->view;
-//        imageInfo.sampler     = _visible_textures[i]->sampler;
-
         VkWriteDescriptorSet descriptorWrite{};
         descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descriptorWrite.dstSet          = m_texture_descriptor_sets[i];
@@ -357,7 +362,7 @@ void ForwardRender::UpdateRenderTextures(const std::vector<Texture2DPtr> &_visib
     }
 }
 
-void ForwardRender::UpdateSkyboxTexture(const std::shared_ptr<TextureCube>& skybox_texture)
+void ForwardRender::UpdateSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture)
 {
     // wait for device idle
     // 很慢的，禁止频繁使用
@@ -422,7 +427,6 @@ void ForwardRender::updateAfterSwapchainRecreate()
     setupBackupBuffer();
     setupRenderTargets();
     setViewport();
-//    renderPass.updateAfterSwapchainRecreate();
     for (int i = 0; i < m_render_passes.size(); ++i)
     {
         m_render_passes[i]->updateAfterSwapchainRecreate();
@@ -439,5 +443,3 @@ void ForwardRender::destroy()
     vkDestroyCommandPool(g_p_vulkan_context->_device, m_command_pool, nullptr);
     vkDestroyDescriptorPool(g_p_vulkan_context->_device, m_descriptor_pool, nullptr);
 }
-
-

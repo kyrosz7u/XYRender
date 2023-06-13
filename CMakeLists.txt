@@ -18,6 +18,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-D_DEBUG)
 endif()
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_definitions(-D_RELEASE)
+endif()
+
 if(APPLE)
     set(vulkan_lib ${THIRD_PARTY_DIR}/VulkanSDK/lib/MacOS/libvulkan.1.dylib)
     set(assimp_lib ${THIRD_PARTY_DIR}/assimp/lib/MacOS/arm64/libassimp.5.dylib)

@@ -8,6 +8,7 @@
 #include "render_base.h"
 #include "renderpass/main_camera_renderpass.h"
 #include "render/resource/render_ubo.h"
+#include "scene/direction_light.h"
 
 
 namespace RenderSystem
@@ -47,9 +48,10 @@ namespace RenderSystem
             m_p_ui_overlay = ui_overlay;
         }
 
-        void UpdateRenderModelUBOList(std::vector<VulkanModelDefine> &model_matrix);
+//        void UpdateRenderModelUBOList(std::vector<VulkanModelDefine> &model_matrix);
 
-        void UpdateRenderPerFrameScenceUBO(VulkanPerFrameSceneDefine &per_frame_scene_define);
+        void UpdateRenderPerFrameScenceUBO(Matrix4x4 proj_view, Vector3 camera_pos,
+                                           std::vector<Scene::DirectionLight> &directional_light_list);
 
         void UpdateRenderSubMesh(const std::vector<RenderSubmesh> &_visible_submesh);
 
@@ -94,6 +96,7 @@ namespace RenderSystem
         Matrix4x4 m_proj_matrix;
 
         UIOverlayPtr m_p_ui_overlay;
+
     };
 }
 #endif //XEXAMPLE_FORWARD_RENDER_H

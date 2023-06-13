@@ -10,6 +10,8 @@
 #include <cstdlib>
 #include <memory>
 
+#define MAX_DIRECTIONAL_LIGHT_COUNT 16
+
 using namespace Math;
 
 namespace RenderSystem

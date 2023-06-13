@@ -27,8 +27,17 @@ layout(location=3) out vec2 texcoord;
 void main()
 {
     world_pos = (model * vec4(in_position,1.0)).xyz;
-    normal = in_normal;
-    tangent = in_tangent;
+    float model_a = length(model[0].xyz);
+    float model_b = length(model[1].xyz);
+    float model_c = length(model[2].xyz);
+    vec3 model_x = model[0].xyz/model_a/model_a;
+    vec3 model_y = model[1].xyz/model_b/model_b;
+    vec3 model_z = model[2].xyz/model_c/model_c;
+
+    mat3x3 normal_matrix = mat3x3(model_x,model_y,model_z);
+
+    normal = normal_matrix*in_normal;
+    tangent = model*in_tangent;
     texcoord = in_texCoord;
 
     gl_Position =  viewProj*model * vec4(in_position,1.0);

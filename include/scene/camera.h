@@ -63,6 +63,11 @@ namespace Scene
             m_p_parent_scene = parent_scene;
         }
 
+        Matrix4x4 getProjViewMatrix()
+        {
+            return calculatePerspectiveMatrix() * calculateViewMatrix();
+        }
+
         Matrix4x4 calculateViewMatrix()
         {
             auto r_inverse = getRotationMatrix(rotation);

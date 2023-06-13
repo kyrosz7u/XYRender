@@ -33,9 +33,9 @@ public:
     Matrix4x4 GetTransformMatrix()
     {
         Matrix4x4 model_matrix = Matrix4x4::IDENTITY;
-        model_matrix = Matrix4x4::getTrans(position)*model_matrix;
-        model_matrix = Math::getRotationMatrix(rotation) * model_matrix;
         model_matrix = Matrix4x4::getScale(scale)*model_matrix;
+        model_matrix = Math::getRotationMatrix(rotation) * model_matrix;
+        model_matrix = Matrix4x4::getTrans(position)*model_matrix;
         return model_matrix;
     }
 

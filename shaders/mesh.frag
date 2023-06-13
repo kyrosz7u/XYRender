@@ -1,18 +1,55 @@
 #version 310 es
 
-#extension GL_GOOGLE_include_directive : enable
+#extension GL_GOOGLE_include_directive: enable
 
-layout(set=1, binding=0) uniform sampler2D base_color_texture_sampler;
+#define m_max_direction_light_count 16
 
-layout(location=0) in highp vec3 world_pos;
-layout(location=1) in highp vec3 normal;
-layout(location=2) in highp vec4 tangent;
-layout(location=3) in highp vec2 texcoord;
+struct DirectionalLight
+{
+    highp float intensity;
+    highp vec3 direction;
+    highp vec4 color;
+};
 
-layout(location = 0) out highp vec4 out_color;
+layout (set = 0, binding = 0, row_major) uniform _per_frame_ubo_data
+{
+    highp mat4 proj_view;
+    highp vec3 camera_pos;
+    highp int directional_light_number;
+};
+
+layout (set = 0, binding = 2, row_major) uniform _directional_light
+{
+    DirectionalLight directional_light[m_max_direction_light_count];
+};
+
+
+layout (set = 1, binding = 0) uniform sampler2D base_color_texture_sampler;
+
+layout (location = 0) in highp vec3 world_pos;
+layout (location = 1) in highp vec3 normal;
+layout (location = 2) in highp vec4 tangent;
+layout (location = 3) in highp vec2 texcoord;
+
+layout (location = 0) out highp vec4 out_color;
 
 void main()
 {
-    out_color = texture(base_color_texture_sampler, texcoord);
-//    out_color = vec4(1.0, 0.0, 0.0, 1.0);
+    highp vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
+
+    highp vec4 diffuse = texture(base_color_texture_sampler, texcoord);
+
+    for (highp int i = 0; i < directional_light_number; ++i)
+    {
+        DirectionalLight light = directional_light[i];
+        highp vec3 light_dir = normalize(light.direction);
+        highp vec3 view_dir = normalize(camera_pos - world_pos);
+        highp vec3 half_dir = normalize(light_dir + view_dir);
+        highp float NdotL = max(dot(normal, light_dir), 0.0);
+
+        color += 0.3*diffuse * light.color * light.intensity * NdotL;
+        color += 0.1*light.color * light.intensity * pow(max(dot(normal, half_dir), 0.0), 32.0);
+    }
+
+    out_color = color/float(directional_light_number);
 }

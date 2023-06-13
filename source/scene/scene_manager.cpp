@@ -28,27 +28,11 @@ void SceneManager::PostInitialize()
 
 void SceneManager::updateScene()
 {
+    m_main_camera->Tick();
+
     m_visible_meshes.clear();
     m_visible_model_matrix.clear();
 
-    // update scene cache
-    m_per_frame_scene_cache.camera_pos = m_main_camera->position;
-    m_per_frame_scene_cache.proj_view =
-            m_main_camera->calculatePerspectiveMatrix() * m_main_camera->calculateViewMatrix();
-    assert(m_directional_lights.size() <= MAX_DIRECTIONAL_LIGHT_COUNT);
-    m_per_frame_scene_cache.directional_light_number = m_directional_lights.size();
-
-    // update direction lighting cache
-    for (int i = 0; i < m_directional_lights.size(); ++i)
-    {
-        auto &light = m_directional_lights[i];
-        m_per_frame_directional_light_cache[i].intensity = light.intensity;
-        m_per_frame_directional_light_cache[i].direction = -light.transform.GetForward();
-        m_per_frame_directional_light_cache[i].color     = light.color;
-    }
-
-    // update model and texture cache
-    m_visible_model_matrix.resize(m_models.size());
     int texture_offset = 0;
 
     for (int i = 0; i < m_models.size(); ++i)
@@ -58,12 +42,7 @@ void SceneManager::updateScene()
         const auto &model_submeshes = model.getSubmeshes();
 
         model.SetMeshIndex(i);
-        m_visible_model_matrix[i].model = model.transform.GetTransformMatrix();
 
-        for (const auto &texture: model_textures)
-        {
-//            m_visible_textures.push_back(texture);
-        }
         for (auto       submesh: model_submeshes)
         {
             if (submesh.material_index >= 0)
@@ -81,13 +60,11 @@ void SceneManager::Tick()
         model.Tick();
     }
 
-    m_main_camera->Tick();
-
     updateScene();
     m_render->UpdateRenderSubMesh(m_visible_meshes);
-    m_render->UpdateRenderModelUBOList(m_visible_model_matrix);
-    m_render->UpdateRenderPerFrameScenceUBO(m_per_frame_scene_cache);
-
+    m_render->UpdateRenderPerFrameScenceUBO(m_main_camera->getProjViewMatrix(),
+                                            m_main_camera->position,
+                                            m_directional_lights);
     m_render->Tick();
 }
 
