@@ -22,7 +22,6 @@ namespace Scene
         std::string name;
         std::string path;
         Transform   transform;
-
     public:
         Model()
         {}
@@ -44,12 +43,17 @@ namespace Scene
             mesh_loaded->m_index_in_dynamic_buffer = index;
         }
 
-        std::vector<RenderSystem::RenderSubmesh> getSubmeshes()
+        [[nodiscard]] const Matrix4x4& GetModelMatrix() const
+        {
+            return model_matrix;
+        }
+
+        [[nodiscard]] const std::vector<RenderSystem::RenderSubmesh>& GetSubmeshes() const
         {
             return m_submeshes;
         }
 
-        std::vector<Texture2DPtr> getTextures()
+        [[nodiscard]] const std::vector<Texture2DPtr>& GetTextures() const
         {
             return textures_loaded;
         }
@@ -60,6 +64,7 @@ namespace Scene
         void processMesh(aiMesh *mesh, const aiScene *scene);
 
         uint32_t                                 m_index_count{0};
+        Matrix4x4                                model_matrix = Matrix4x4::IDENTITY;
         std::vector<RenderSystem::RenderSubmesh> m_submeshes;
         RenderMeshPtr                            mesh_loaded;
         std::vector<Texture2DPtr>                textures_loaded;

@@ -354,7 +354,6 @@ void MeshPass::draw()
                                                          &render_texture_desc_sets[submesh.material_index],
                                                          0,
                                                          NULL);
-//            LOG_INFO("bind texture {}\t index:{}",visible_texture[submesh.material_index]->name, submesh.material_index);
         }
 
         VkBuffer     vertex_buffers[] = {parent_mesh->mesh_vertex_position_buffer,

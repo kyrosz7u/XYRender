@@ -114,7 +114,6 @@ namespace RenderSystem
         std::vector<uint16_t>                  m_indices;
         std::vector<RenderSubmesh>             m_submeshes;
 
-        Matrix4x4 model_matrix=Matrix4x4::IDENTITY;
         uint16_t m_index_in_dynamic_buffer = 0;
 
         // TODO: 按层级加载，并赋上不同的材质

@@ -11,7 +11,7 @@ using namespace Scene;
 
 void Model::Tick()
 {
-    mesh_loaded->model_matrix = transform.GetTransformMatrix();
+    model_matrix = transform.GetTransformMatrix();
 }
 
 void Model::clearInternalState()

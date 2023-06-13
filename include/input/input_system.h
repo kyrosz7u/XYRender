@@ -58,7 +58,7 @@ private:
 
     void onCursorPos(double current_cursor_x, double current_cursor_y);
 
-    void onCursorButton(int button, int action, int mods);
+    void onMouseButton(int button, int action, int mods);
 
     void clearState();
 };

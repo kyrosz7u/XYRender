@@ -6,9 +6,9 @@
 
 struct DirectionalLight
 {
-    highp float intensity;
-    highp vec3 direction;
     highp vec4 color;
+    highp vec3 direction;
+    highp float intensity;
 };
 
 layout (set = 0, binding = 0, row_major) uniform _per_frame_ubo_data
@@ -18,7 +18,7 @@ layout (set = 0, binding = 0, row_major) uniform _per_frame_ubo_data
     highp int directional_light_number;
 };
 
-layout (set = 0, binding = 2, row_major) uniform _directional_light
+layout (set = 0, binding = 2) uniform _directional_light
 {
     DirectionalLight directional_light[m_max_direction_light_count];
 };
@@ -35,9 +35,11 @@ layout (location = 0) out highp vec4 out_color;
 
 void main()
 {
-    highp vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
+    highp vec4 ambient_color = 0.1*vec4(0.3, 0.2, 0.1, 1.0);
+    highp vec4 diffuse_color = vec4(0.0, 0.0, 0.0, 1.0);
+    highp vec4 specular_color = vec4(0.0, 0.0, 0.0, 1.0);
 
-    highp vec4 diffuse = texture(base_color_texture_sampler, texcoord);
+    highp vec4 diffuse_texture = texture(base_color_texture_sampler, texcoord);
 
     for (highp int i = 0; i < directional_light_number; ++i)
     {
@@ -47,9 +49,12 @@ void main()
         highp vec3 half_dir = normalize(light_dir + view_dir);
         highp float NdotL = max(dot(normal, light_dir), 0.0);
 
-        color += 0.3*diffuse * light.color * light.intensity * NdotL;
-        color += 0.1*light.color * light.intensity * pow(max(dot(normal, half_dir), 0.0), 32.0);
+        diffuse_color += diffuse_texture * light.color * light.intensity * NdotL;
+        specular_color += 0.5*light.color * light.intensity * pow(max(dot(normal, half_dir), 0.0), 8.0);
     }
 
-    out_color = color/float(directional_light_number);
+    diffuse_color/=float(directional_light_number);
+    specular_color/=float(directional_light_number);
+
+    out_color = vec4((ambient_color+diffuse_color+specular_color).xyz, 1.0);
 }

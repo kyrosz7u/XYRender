@@ -4,9 +4,9 @@
 
 layout(set=0,binding = 0,row_major) uniform _per_frame_ubo_data
 {
-    mat4 viewProj;
-    vec3 cameraPos;
-    vec3 dirLightDir;
+    mat4 proj_view;
+    vec3 camera_pos;
+    highp int directional_light_number;
 };
 
 layout(set=0,binding=1,row_major) uniform _per_object_ubo_data
@@ -27,18 +27,19 @@ layout(location=3) out vec2 texcoord;
 void main()
 {
     world_pos = (model * vec4(in_position,1.0)).xyz;
-    float model_a = length(model[0].xyz);
-    float model_b = length(model[1].xyz);
-    float model_c = length(model[2].xyz);
-    vec3 model_x = model[0].xyz/model_a/model_a;
-    vec3 model_y = model[1].xyz/model_b/model_b;
-    vec3 model_z = model[2].xyz/model_c/model_c;
 
-    mat3x3 normal_matrix = mat3x3(model_x,model_y,model_z);
+//    float model_a = length(model[0].xyz);
+//    float model_b = length(model[1].xyz);
+//    float model_c = length(model[2].xyz);
+//    vec3 model_x = model[0].xyz/model_a/model_a;
+//    vec3 model_y = model[1].xyz/model_b/model_b;
+//    vec3 model_z = model[2].xyz/model_c/model_c;
+//    mat3x3 normal_matrix = mat3x3(model_x,model_y,model_z);
+//    normal = normal_matrix*in_normal;
 
-    normal = normal_matrix*in_normal;
+    normal = (model*vec4(in_normal,0.0)).xyz;
     tangent = model*in_tangent;
     texcoord = in_texCoord;
 
-    gl_Position =  viewProj*model * vec4(in_position,1.0);
+    gl_Position =  proj_view*model * vec4(in_position,1.0);
 }

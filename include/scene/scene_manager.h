@@ -26,6 +26,7 @@ namespace Scene
             m_render->setUIOverlay(m_ui_overlay);
             m_render->initialize();
         }
+
         ~SceneManager()
         {
             // 必须显式调用render->destroy释放commandbuffer，
@@ -44,7 +45,7 @@ namespace Scene
             m_directional_lights.push_back(light);
         }
 
-        void LoadSkybox(const std::vector<std::string>& pathes)
+        void LoadSkybox(const std::vector<std::string> &pathes)
         {
             m_skybox = std::make_shared<TextureCube>(pathes, "skybox");
         }
@@ -56,21 +57,18 @@ namespace Scene
     private:
         friend class Camera;
 
-        std::shared_ptr<ForwardRender> m_render;
-
-        // scence ubo
-        std::shared_ptr<Camera>              m_main_camera;
-        std::vector<Scene::DirectionLight>   m_directional_lights;
-        UIOverlayPtr                         m_ui_overlay;
-        VulkanPerFrameSceneDefine            m_per_frame_scene_cache;
-        VulkanPerFrameDirectionalLightDefine m_per_frame_directional_light_cache[MAX_DIRECTIONAL_LIGHT_COUNT];
+        std::shared_ptr<ForwardRender>     m_render;
+        UIOverlayPtr                       m_ui_overlay;
         // models
-        std::vector<Scene::Model>            m_models;
-        std::vector<RenderSubmesh>           m_visible_meshes;
-        std::vector<VulkanModelDefine>       m_visible_model_matrix;
+        std::vector<Scene::Model>          m_models;
+        // mesh
+        std::vector<RenderSubmesh>         m_visible_submeshes;
         // texture
-        std::vector<Texture2DPtr>            m_visible_textures;
-        std::shared_ptr<TextureCube>         m_skybox;
+        std::vector<Texture2DPtr>          m_visible_textures;
+        std::shared_ptr<TextureCube>       m_skybox;
+        // scence ubo
+        std::shared_ptr<Camera>            m_main_camera;
+        std::vector<Scene::DirectionLight> m_directional_lights;
 
         void updateScene();
     };

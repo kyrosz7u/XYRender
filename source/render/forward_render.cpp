@@ -218,23 +218,23 @@ void ForwardRender::draw()
                                               std::bind(&ForwardRender::updateAfterSwapchainRecreate, this));
 }
 
-void ForwardRender::UpdateRenderSubMesh(const std::vector<RenderSubmesh> &_visible_submesh)
+void ForwardRender::UpdateRenderModel(const std::vector<Scene::Model> &_visible_models)
 {
-    m_render_submeshes = _visible_submesh;
-    m_render_model_ubo_list.ubo_data_list.resize(m_render_submeshes.size());
-    for (int i = 0; i < m_render_submeshes.size(); ++i)
+    m_render_submeshes.clear();
+    if(m_render_model_ubo_list.ubo_data_list.size() != _visible_models.size())
     {
-        auto &submesh = m_render_submeshes[i];
-#ifdef _DEBUG
-        auto parent = submesh.parent_mesh.lock();
-        m_render_model_ubo_list.ubo_data_list[i].model = parent->model_matrix;
-#elif _RELEASE
-        m_render_model_ubo_list.ubo_data_list[i].model = submesh.parent_mesh.lock()->model_matrix;
-#else
-        LOG_ERROR("unknown build type");
-#endif
+        m_render_model_ubo_list.ubo_data_list.resize(_visible_models.size());
+    }
+
+    for (int i = 0; i < _visible_models.size(); ++i)
+    {
+        m_render_model_ubo_list.ubo_data_list[i].model = _visible_models[i].GetModelMatrix();
+        auto &submeshes = _visible_models[i].GetSubmeshes();
+        m_render_submeshes.insert(m_render_submeshes.end(), submeshes.begin(), submeshes.end());
     }
     m_render_model_ubo_list.ToGPU();
+
+
 }
 
 void ForwardRender::UpdateRenderPerFrameScenceUBO(
@@ -250,7 +250,8 @@ void ForwardRender::UpdateRenderPerFrameScenceUBO(
     {
         m_render_per_frame_ubo.directional_lights_ubo[i].intensity = directional_light_list[i].intensity;
         m_render_per_frame_ubo.directional_lights_ubo[i].color     = directional_light_list[i].color;
-        m_render_per_frame_ubo.directional_lights_ubo[i].direction = -directional_light_list[i].transform.GetForward();
+        // TODO: 换成-1之后，光照方向就不对了
+        m_render_per_frame_ubo.directional_lights_ubo[i].direction = directional_light_list[i].transform.GetForward();
     }
     m_render_per_frame_ubo.ToGPU();
 }
@@ -307,7 +308,7 @@ void ForwardRender::setupRenderDescriptorSetLayout()
 
 }
 
-void ForwardRender::UpdateRenderTextures(const std::vector<Texture2DPtr> &_visible_textures)
+void ForwardRender::UpdateModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures)
 {
     // wait for device idle
     // 很慢的，慎用

@@ -94,6 +94,40 @@ void _InputSystem::onCursorPos(double current_cursor_x, double current_cursor_y)
     m_last_cursor_y = current_cursor_y;
 }
 
+void _InputSystem::onMouseButton(int button, int action, int mods)
+{
+    if (action == GLFW_PRESS)
+    {
+        switch (button)
+        {
+            case GLFW_MOUSE_BUTTON_LEFT:
+            {
+                if (!m_is_focus_mode)
+                {
+                    m_is_focus_mode = true;
+                    m_window->setCursorFocus(m_is_focus_mode);
+                }
+                break;
+            }
+            case GLFW_MOUSE_BUTTON_RIGHT:
+                break;
+            case GLFW_MOUSE_BUTTON_MIDDLE:
+                break;
+        }
+    } else if (action == GLFW_RELEASE)
+    {
+        switch (button)
+        {
+            case GLFW_MOUSE_BUTTON_LEFT:
+                break;
+            case GLFW_MOUSE_BUTTON_RIGHT:
+                break;
+            case GLFW_MOUSE_BUTTON_MIDDLE:
+                break;
+        }
+    }
+}
+
 void _InputSystem::initialize(std::shared_ptr<GLFWWindow> window)
 {
     m_window = window;
@@ -102,6 +136,8 @@ void _InputSystem::initialize(std::shared_ptr<GLFWWindow> window)
                                         std::placeholders::_3, std::placeholders::_4));
     window->registerOnCursorPosFunc(std::bind(&_InputSystem::onCursorPos, this, std::placeholders::_1,
                                               std::placeholders::_2));
+    window->resgisterOnMouseButtonFunc(std::bind(&_InputSystem::onMouseButton, this, std::placeholders::_1,
+                                                 std::placeholders::_2, std::placeholders::_3));
 }
 
 void _InputSystem::Tick()

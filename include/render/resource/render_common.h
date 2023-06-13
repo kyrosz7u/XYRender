@@ -30,9 +30,9 @@ namespace RenderSystem
 
     struct VulkanPerFrameDirectionalLightDefine
     {
-        float         intensity;
-        Math::Vector3 direction;
         Math::Color   color;
+        Math::Vector3 direction;
+        float         intensity;
     };
 
     struct VulkanSkyboxCameraDefine

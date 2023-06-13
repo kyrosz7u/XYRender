@@ -65,18 +65,6 @@ namespace RenderSystem
         RenderModelUBOList(const RenderModelUBOList &other) = delete;
 
         RenderModelUBOList &operator=(const RenderModelUBOList &other) = delete;
-//        RenderModelUBOList(RenderModelUBOList&& other) noexcept
-//        {
-//            ubo_data_list = std::move(other.ubo_data_list);
-//            model_ubo_dynamic_buffer = std::move(other.model_ubo_dynamic_buffer);
-//        }
-
-//        void setupDescriptor(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0)
-//        {
-//            buffer_descriptor.buffer = model_ubo_dynamic_buffer;
-//            buffer_descriptor.offset = offset;
-//            buffer_descriptor.range = size;
-//        }
 
         void ToGPU()
         {
@@ -182,7 +170,7 @@ namespace RenderSystem
             assert(scene_data_ubo.directional_light_number > 0 &&
                    scene_data_ubo.directional_light_number <= MAX_DIRECTIONAL_LIGHT_COUNT);
             memcpy(mapped_buffer_ptr, &scene_data_ubo, sizeof(VulkanPerFrameSceneDefine));
-            memcpy((void *) ((uint64_t) mapped_buffer_ptr + sizeof(VulkanPerFrameSceneDefine)),
+            memcpy((void *) ((uint64_t) mapped_buffer_ptr + per_frame_ubo_offset[_scene_info_block]),
                    &directional_lights_ubo,
                    scene_data_ubo.directional_light_number * sizeof(VulkanPerFrameDirectionalLightDefine));
 
