@@ -12,7 +12,7 @@ layout(set=0,binding = 0,row_major) uniform _per_frame_ubo_data
 layout(set=0,binding=1,row_major) uniform _per_object_ubo_data
 {
     mat4 model_matrix;
-    mat4 normal_matrix;
+    mat3 normal_matrix;
 };
 
 layout(location=0) in vec3 in_position;
@@ -29,15 +29,14 @@ void main()
 {
     world_pos = (model_matrix * vec4(in_position, 1.0)).xyz;
 
-//    float model_x1 = length(model[0].xyz);
-//    float model_x2 = length(model[1].xyz);
-//    float model_x3 = length(model[2].xyz);
-//    vec3 normal_1 = model[0].xyz/pow(model_x1,2.0);
-//    vec3 normal_2 = model[1].xyz/pow(model_x2,2.0);
-//    vec3 normal_3 = model[2].xyz/pow(model_x3,2.0);
-//    mat3x3 normal_matrix = mat3x3(normal_1,normal_2,normal_3);
-
-    normal = (normal_matrix*vec4(in_normal,0.0)).xyz;
+    float model_x1 = length(model_matrix[0].xyz);
+    float model_x2 = length(model_matrix[1].xyz);
+    float model_x3 = length(model_matrix[2].xyz);
+    vec3 normal_1 = model_matrix[0].xyz/pow(model_x1, 2.0);
+    vec3 normal_2 = model_matrix[1].xyz/pow(model_x2, 2.0);
+    vec3 normal_3 = model_matrix[2].xyz/pow(model_x3, 2.0);
+    mat3x3 normal_matrix = mat3x3(normal_1,normal_2,normal_3);
+    normal = normal_matrix*in_normal;
 
 //    normal = (model*vec4(in_normal,0.0)).xyz;
     tangent = model_matrix *in_tangent;

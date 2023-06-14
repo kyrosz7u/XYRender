@@ -18,7 +18,7 @@ namespace RenderSystem
 {
     extern std::shared_ptr<VulkanContext> g_p_vulkan_context;
 
-    // 保存场景中所有的模型的model_matrix
+    // 保存场景中所有的模型的model_matrix、normal_matrix
     class RenderModelUBOList
     {
     public:
@@ -75,9 +75,10 @@ namespace RenderSystem
             // Aligned offset
             for (int i = 0; i < ubo_data_list.size(); ++i)
             {
-                Math::Matrix4x4 *model_matrix = (Math::Matrix4x4 *) ((uint64_t) mapped_buffer_ptr +
+                auto *data_ptr = (VulkanModelDefine *) ((uint64_t) mapped_buffer_ptr +
                                                                      (i * dynamic_alignment));
-                *model_matrix = ubo_data_list[i].model;
+                data_ptr->model = ubo_data_list[i].model;
+                data_ptr->normal = ubo_data_list[i].normal;
             }
 
             VkMappedMemoryRange mappedMemoryRange{};

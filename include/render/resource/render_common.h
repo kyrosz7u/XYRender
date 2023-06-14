@@ -19,6 +19,7 @@ namespace RenderSystem
     struct VulkanModelDefine
     {
         Math::Matrix4x4 model;
+        Math::Matrix4x4 normal;
     };
 
     struct VulkanPerFrameSceneDefine

@@ -112,7 +112,13 @@ namespace Math
             return Vector3(m_mat[0][col_index], m_mat[1][col_index], m_mat[2][col_index]);
         }
 
-        void setColumn(size_t iCol, const Vector3 &vec);
+        void setColumn(size_t iCol, const Vector3 &vec)
+        {
+            assert(0 <= iCol && iCol < 3);
+            m_mat[0][iCol] = vec.x;
+            m_mat[1][iCol] = vec.y;
+            m_mat[2][iCol] = vec.z;
+        }
 
         void fromAxes(const Vector3 &x_axis, const Vector3 &y_axis, const Vector3 &z_axis);
 

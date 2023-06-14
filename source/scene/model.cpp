@@ -12,6 +12,26 @@ using namespace Scene;
 void Model::Tick()
 {
     model_matrix = transform.GetTransformMatrix();
+    // 快速计算法线矩阵
+    Matrix3x3 _normal = Matrix3x3::IDENTITY;
+    model_matrix.extract3x3Matrix(_normal);
+    Vector3 n0 = _normal.getColumn(0);
+    Vector3 n1 = _normal.getColumn(1);
+    Vector3 n2 = _normal.getColumn(2);
+
+    float n0_length = n0.length();
+    float n1_length = n1.length();
+    float n2_length = n2.length();
+
+    n0 /= (n0_length*n0_length);
+    n1 /= (n1_length*n1_length);
+    n2 /= (n2_length*n2_length);
+
+    _normal.setColumn(0, n0);
+    _normal.setColumn(1, n1);
+    _normal.setColumn(2, n2);
+
+    normal_matrix.setMatrix3x3(_normal);
 }
 
 void Model::clearInternalState()

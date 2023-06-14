@@ -28,7 +28,7 @@ int main()
 //    mainCamera.m_render->loadSingleMesh(model.mesh_loaded);
     model.LoadModelFile("assets/models/capsule.obj", "capsule");
     model.transform.position = Math::Vector3(10, 10, 0);
-//    model.transform.scale= Math::Vector3(3.0f, 3.0f, 3.0f);
+    model.transform.scale= Math::Vector3(8.0f, 10.0f, 12.0f);
 //    model.transform.rotation = Math::Vector3(90, 0, 0);
     model.ToGPU();
     scene_manager->AddModel(model);

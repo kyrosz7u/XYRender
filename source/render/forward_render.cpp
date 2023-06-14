@@ -229,6 +229,7 @@ void ForwardRender::UpdateRenderModel(const std::vector<Scene::Model> &_visible_
     for (int i = 0; i < _visible_models.size(); ++i)
     {
         m_render_model_ubo_list.ubo_data_list[i].model = _visible_models[i].GetModelMatrix();
+        m_render_model_ubo_list.ubo_data_list[i].normal = _visible_models[i].GetNormalMatrix();
     }
     m_render_model_ubo_list.ToGPU();
 

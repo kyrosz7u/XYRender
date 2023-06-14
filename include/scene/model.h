@@ -43,17 +43,22 @@ namespace Scene
             mesh_loaded->m_index_in_dynamic_buffer = index;
         }
 
-        [[nodiscard]] const Matrix4x4& GetModelMatrix() const
+        [[nodiscard]]inline const Matrix4x4 &GetModelMatrix() const
         {
             return model_matrix;
         }
 
-        [[nodiscard]] const std::vector<RenderSystem::RenderSubmesh>& GetSubmeshes() const
+        [[nodiscard]]inline const Matrix4x4 &GetNormalMatrix() const
+        {
+            return normal_matrix;
+        }
+
+        [[nodiscard]]inline const std::vector<RenderSystem::RenderSubmesh> &GetSubmeshes() const
         {
             return m_submeshes;
         }
 
-        [[nodiscard]] const std::vector<Texture2DPtr>& GetTextures() const
+        [[nodiscard]]inline const std::vector<Texture2DPtr> &GetTextures() const
         {
             return textures_loaded;
         }
@@ -64,7 +69,8 @@ namespace Scene
         void processMesh(aiMesh *mesh, const aiScene *scene);
 
         uint32_t                                 m_index_count{0};
-        Matrix4x4                                model_matrix = Matrix4x4::IDENTITY;
+        Matrix4x4                                model_matrix  = Matrix4x4::IDENTITY;
+        Matrix4x4                                normal_matrix = Matrix4x4::IDENTITY;
         std::vector<RenderSystem::RenderSubmesh> m_submeshes;
         RenderMeshPtr                            mesh_loaded;
         std::vector<Texture2DPtr>                textures_loaded;
