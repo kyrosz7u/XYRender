@@ -2,8 +2,8 @@
 // Created by kyros on 2023/6/11.
 //
 
-#ifndef XEXAMPLE_SKYBOX_PASS_H
-#define XEXAMPLE_SKYBOX_PASS_H
+#ifndef XEXAMPLE_SKYBOX_H
+#define XEXAMPLE_SKYBOX_H
 
 #include "subpass_base.h"
 
@@ -49,4 +49,4 @@ namespace RenderSystem
     }
 }
 
-#endif //XEXAMPLE_SKYBOX_PASS_H
+#endif //XEXAMPLE_SKYBOX_H

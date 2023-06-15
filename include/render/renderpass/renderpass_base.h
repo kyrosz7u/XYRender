@@ -39,8 +39,6 @@ namespace RenderSystem
         std::vector<std::shared_ptr<SubPass::SubPassBase>> m_subpass_list;
     };
 
-
-
     struct Framebuffer
     {
         int           width;

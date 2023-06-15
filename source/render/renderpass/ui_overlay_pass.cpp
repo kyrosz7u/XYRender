@@ -3,9 +3,9 @@
 //
 
 #include "core/graphic/vulkan/vulkan_utils.h"
-#include "render/renderpass/ui_overlay_renderpass.h"
-#include "render/subpass/ui_pass.h"
-#include "render/subpass/combine_ui_pass.h"
+#include "render/renderpass/ui_overlay_pass.h"
+#include "render/subpass/ui.h"
+#include "render/subpass/combine_ui.h"
 #include "full_screen_vert.h"
 #include "combine_ui_frag.h"
 

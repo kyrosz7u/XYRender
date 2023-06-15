@@ -2,8 +2,8 @@
 // Created by kyros on 5/21/23.
 //
 
-#ifndef XEXAMPLE_MESH_PASS_H
-#define XEXAMPLE_MESH_PASS_H
+#ifndef XEXAMPLE_MESH_FORWARD_H
+#define XEXAMPLE_MESH_FORWARD_H
 
 #include "subpass_base.h"
 #include "render/resource/render_mesh.h"
@@ -49,4 +49,4 @@ namespace RenderSystem
         };
     }
 }
-#endif //XEXAMPLE_MESH_PASS_H
+#endif //XEXAMPLE_MESH_FORWARD_H

@@ -23,8 +23,8 @@ void SceneManager::PostInitialize()
             m_visible_textures.push_back(texture);
         }
     }
-    m_render->UpdateModelRenderTextures(m_visible_textures);
-    m_render->UpdateSkyboxTexture(m_skybox);
+    m_render->SetupModelRenderTextures(m_visible_textures);
+    m_render->SetupSkyboxTexture(m_skybox);
 }
 
 void SceneManager::updateScene()
@@ -62,7 +62,7 @@ void SceneManager::Tick()
     }
 
     updateScene();
-    m_render->UpdateRenderModel(m_models, m_visible_submeshes);
+    m_render->UpdateRenderModelList(m_models, m_visible_submeshes);
     m_render->UpdateRenderPerFrameScenceUBO(m_main_camera->getProjViewMatrix(),
                                             m_main_camera->position,
                                             m_directional_lights);

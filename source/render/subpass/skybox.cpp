@@ -1,122 +1,68 @@
 //
-// Created by kyrosz7u on 2023/6/1.
+// Created by kyros on 2023/6/11.
 //
 
-#include "render/subpass/combine_ui_pass.h"
+#include "render/subpass/skybox.h"
 #include "core/logger/logger_macros.h"
 
 using namespace RenderSystem::SubPass;
 
-void CombineUIPass::initialize(SubPassInitInfo *subpass_init_info)
+void SkyBoxPass::initialize(SubPassInitInfo *subpass_init_info)
 {
-    auto combine_ui_pass_init_info = static_cast<CombineUIPassInitInfo *>(subpass_init_info);
-    m_p_render_command_info     = combine_ui_pass_init_info->p_render_command_info;
-    m_p_render_resource_info    = combine_ui_pass_init_info->p_render_resource_info;
-    m_subpass_index             = combine_ui_pass_init_info->subpass_index;
-    m_renderpass                = combine_ui_pass_init_info->renderpass;
-    m_p_input_color_attachment  = combine_ui_pass_init_info->p_input_color_attachment;
-    m_p_uipass_color_attachment = combine_ui_pass_init_info->p_uipass_color_attachment;
+    auto skybox_pass_init_info = static_cast<SkyboxPassInitInfo *>(subpass_init_info);
+    m_p_render_command_info  = skybox_pass_init_info->p_render_command_info;
+    m_p_render_resource_info = skybox_pass_init_info->p_render_resource_info;
+    m_subpass_index          = skybox_pass_init_info->subpass_index;
+    m_renderpass             = skybox_pass_init_info->renderpass;
 
     setupDescriptorSetLayout();
     setupDescriptorSet();
     setupPipelines();
-    updateDescriptorSets();
 }
 
-void CombineUIPass::setupDescriptorSetLayout()
+void SkyBoxPass::setupDescriptorSetLayout()
 {
     m_descriptor_set_layouts.resize(1);
 
     auto &descriptor_set_layout = m_descriptor_set_layouts[0];
 
-    std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings;
-    setLayoutBindings.resize(2);
+    std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
+    layout_bindings.resize(2);
 
-    VkDescriptorSetLayoutBinding &input_color_binding = setLayoutBindings[0];
+    VkDescriptorSetLayoutBinding &ubo_layout_binding = layout_bindings[0];
+    ubo_layout_binding.binding            = _skybox_pass_ubo_data_binding;
+    ubo_layout_binding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    ubo_layout_binding.descriptorCount    = 1;
+    ubo_layout_binding.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT;
+    ubo_layout_binding.pImmutableSamplers = nullptr;
 
-    input_color_binding.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    input_color_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
-    input_color_binding.binding         = 0;
-    input_color_binding.descriptorCount = 1;
-
-    VkDescriptorSetLayoutBinding &uipass_output_color_binding = setLayoutBindings[1];
-
-    uipass_output_color_binding.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    uipass_output_color_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
-    uipass_output_color_binding.binding         = 1;
-    uipass_output_color_binding.descriptorCount = 1;
+    VkDescriptorSetLayoutBinding &cubemap_layout_binding = layout_bindings[1];
+    cubemap_layout_binding.binding            = _skybox_pass_cubemap_binding;
+    cubemap_layout_binding.descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    cubemap_layout_binding.descriptorCount    = 1;
+    cubemap_layout_binding.stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT;
+    cubemap_layout_binding.pImmutableSamplers = nullptr;
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
     descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     descriptorSetLayoutCreateInfo.flags        = 0;
     descriptorSetLayoutCreateInfo.pNext        = nullptr;
-    descriptorSetLayoutCreateInfo.bindingCount = setLayoutBindings.size();
-    descriptorSetLayoutCreateInfo.pBindings    = setLayoutBindings.data();
+    descriptorSetLayoutCreateInfo.bindingCount = layout_bindings.size();
+    descriptorSetLayoutCreateInfo.pBindings    = layout_bindings.data();
 
     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
                                                 &descriptorSetLayoutCreateInfo,
                                                 nullptr,
                                                 &descriptor_set_layout));
+
 }
 
-void CombineUIPass::setupDescriptorSet()
+void SkyBoxPass::setupDescriptorSet()
 {
-    VkDescriptorSetAllocateInfo allocInfo{};
-
-    allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool     = *m_p_render_command_info->p_descriptor_pool;
-    // determines the number of info sets to be allocated from the pool.
-    allocInfo.descriptorSetCount = 1;
-    // 每个set的布局
-    allocInfo.pSetLayouts        = &m_descriptor_set_layouts[0];
-
-    VK_CHECK_RESULT(vkAllocateDescriptorSets(g_p_vulkan_context->_device,
-                                             &allocInfo,
-                                             &m_combine_ui_descriptor_set))
 
 }
 
-void CombineUIPass::updateDescriptorSets()
-{
-    std::vector<VkWriteDescriptorSet> write_descriptor_sets;
-    write_descriptor_sets.resize(2);
-
-    VkDescriptorImageInfo input_image_attachment_info{};
-    input_image_attachment_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    input_image_attachment_info.imageView   = m_p_input_color_attachment->view;
-    input_image_attachment_info.sampler     = VulkanUtil::getOrCreateNearestSampler(g_p_vulkan_context);
-
-    VkDescriptorImageInfo uipass_image_attachment_info{};
-    uipass_image_attachment_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    uipass_image_attachment_info.imageView   = m_p_uipass_color_attachment->view;
-    uipass_image_attachment_info.sampler     = VulkanUtil::getOrCreateNearestSampler(g_p_vulkan_context);
-
-    VkWriteDescriptorSet &input_image_write = write_descriptor_sets[0];
-    input_image_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    input_image_write.dstSet          = m_combine_ui_descriptor_set;
-    input_image_write.dstBinding      = 0;
-    input_image_write.dstArrayElement = 0;
-    input_image_write.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    input_image_write.descriptorCount = 1;
-    input_image_write.pImageInfo      = &input_image_attachment_info;
-
-    VkWriteDescriptorSet &uipass_image_write = write_descriptor_sets[1];
-    uipass_image_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    uipass_image_write.dstSet          = m_combine_ui_descriptor_set;
-    uipass_image_write.dstBinding      = 1;
-    uipass_image_write.dstArrayElement = 0;
-    uipass_image_write.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    uipass_image_write.descriptorCount = 1;
-    uipass_image_write.pImageInfo      = &uipass_image_attachment_info;
-
-    vkUpdateDescriptorSets(g_p_vulkan_context->_device,
-                           write_descriptor_sets.size(),
-                           write_descriptor_sets.data(),
-                           0,
-                           nullptr);
-}
-
-void CombineUIPass::setupPipelines()
+void SkyBoxPass::setupPipelines()
 {
     std::vector<VkDescriptorSetLayout> descriptorset_layouts;
 
@@ -141,8 +87,7 @@ void CombineUIPass::setupPipelines()
     }
 
     std::map<int, VkShaderModule> shader_modules;
-
-    for (int i = 0; i < m_shader_list.size(); i++)
+    for (int                      i = 0; i < m_shader_list.size(); i++)
     {
         auto &shader = m_shader_list[i];
         if (shader.size() == 0)
@@ -190,7 +135,7 @@ void CombineUIPass::setupPipelines()
     rasterization_state_create_info.polygonMode             = VK_POLYGON_MODE_FILL;
     rasterization_state_create_info.lineWidth               = 1.0f;
     rasterization_state_create_info.cullMode                = VK_CULL_MODE_BACK_BIT;
-    rasterization_state_create_info.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterization_state_create_info.frontFace               = VK_FRONT_FACE_CLOCKWISE;
     rasterization_state_create_info.depthBiasEnable         = VK_FALSE;
     rasterization_state_create_info.depthBiasConstantFactor = 0.0f;
     rasterization_state_create_info.depthBiasClamp          = 0.0f;
@@ -227,8 +172,8 @@ void CombineUIPass::setupPipelines()
     VkPipelineDepthStencilStateCreateInfo depth_stencil_create_info{};
     depth_stencil_create_info.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depth_stencil_create_info.depthTestEnable       = VK_TRUE;
-    depth_stencil_create_info.depthWriteEnable      = VK_TRUE;
-    depth_stencil_create_info.depthCompareOp        = VK_COMPARE_OP_LESS;
+    depth_stencil_create_info.depthWriteEnable      = VK_FALSE;
+    depth_stencil_create_info.depthCompareOp        = VK_COMPARE_OP_LESS_OR_EQUAL;
     depth_stencil_create_info.depthBoundsTestEnable = VK_FALSE;
     depth_stencil_create_info.stencilTestEnable     = VK_FALSE;
 
@@ -239,10 +184,10 @@ void CombineUIPass::setupPipelines()
     dynamic_state_create_info.pDynamicStates    = dynamic_states;
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
+
     pipelineInfo.sType      = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = shader_stage_create_infos.size();
     pipelineInfo.pStages    = shader_stage_create_infos.data();
-
     pipelineInfo.pVertexInputState   = &vertex_input_state_create_info;
     pipelineInfo.pInputAssemblyState = &input_assembly_create_info;
     pipelineInfo.pViewportState      = &viewport_state_create_info;
@@ -261,8 +206,7 @@ void CombineUIPass::setupPipelines()
                                   1,
                                   &pipelineInfo,
                                   nullptr,
-                                  &pipeline) !=
-        VK_SUCCESS)
+                                  &pipeline) != VK_SUCCESS)
     {
         throw std::runtime_error("create " + name + " graphics pipeline");
     }
@@ -273,10 +217,10 @@ void CombineUIPass::setupPipelines()
     }
 }
 
-void CombineUIPass::draw()
+void SkyBoxPass::draw()
 {
     VkDebugUtilsLabelEXT label_info = {
-            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Combine UI", {1.0f, 1.0f, 1.0f, 1.0f}};
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Skybox", {1.0f, 1.0f, 1.0f, 1.0f}};
     g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
 
     g_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->p_current_command_buffer,
@@ -292,20 +236,19 @@ void CombineUIPass::draw()
                                                  pipeline_layout,
                                                  0,
                                                  1,
-                                                 &m_combine_ui_descriptor_set,
+                                                 m_p_render_resource_info->p_skybox_descriptor_set,
                                                  0,
                                                  nullptr);
-    g_p_vulkan_context->_vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,
-                                          3,
+
+    g_p_vulkan_context->_vkCmdDraw(*m_p_render_command_info->p_current_command_buffer,
+                                          36,
                                           1,
-                                          0,
                                           0,
                                           0);
     g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
 }
 
-void CombineUIPass::updateAfterSwapchainRecreate()
+void SkyBoxPass::updateAfterSwapchainRecreate()
 {
-    updateDescriptorSets();
 }
 

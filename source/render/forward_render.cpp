@@ -4,8 +4,8 @@
 
 #include "core/logger/logger_macros.h"
 #include "render/forward_render.h"
-#include "render/renderpass/main_camera_renderpass.h"
-#include "render/renderpass/ui_overlay_renderpass.h"
+#include "render/renderpass/main_camera_pass.h"
+#include "render/renderpass/ui_overlay_pass.h"
 
 using namespace RenderSystem;
 
@@ -218,8 +218,8 @@ void ForwardRender::draw()
                                               std::bind(&ForwardRender::updateAfterSwapchainRecreate, this));
 }
 
-void ForwardRender::UpdateRenderModel(const std::vector<Scene::Model> &_visible_models,
-                                      const std::vector<RenderSubmesh> &_visible_submeshes)
+void ForwardRender::UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
+                                          const std::vector<RenderSubmesh> &_visible_submeshes)
 {
     if(m_render_model_ubo_list.ubo_data_list.size() != _visible_models.size())
     {
@@ -231,7 +231,6 @@ void ForwardRender::UpdateRenderModel(const std::vector<Scene::Model> &_visible_
         m_render_model_ubo_list.ubo_data_list[i].model = _visible_models[i].GetModelMatrix();
         m_render_model_ubo_list.ubo_data_list[i].normal = _visible_models[i].GetNormalMatrix();
     }
-    m_render_model_ubo_list.ToGPU();
 
     m_render_submeshes.clear();
     for (int i = 0; i < _visible_submeshes.size(); ++i)
@@ -253,10 +252,14 @@ void ForwardRender::UpdateRenderPerFrameScenceUBO(
     {
         m_render_per_frame_ubo.directional_lights_ubo[i].intensity = directional_light_list[i].intensity;
         m_render_per_frame_ubo.directional_lights_ubo[i].color     = directional_light_list[i].color;
-        // TODO: 换成-1之后，光照方向就不对了
         m_render_per_frame_ubo.directional_lights_ubo[i].direction = -directional_light_list[i].transform.GetForward();
     }
+}
+
+void ForwardRender::FlushRenderbuffer()
+{
     m_render_per_frame_ubo.ToGPU();
+    m_render_model_ubo_list.ToGPU();
 }
 
 void ForwardRender::setupRenderDescriptorSetLayout()
@@ -311,7 +314,7 @@ void ForwardRender::setupRenderDescriptorSetLayout()
 
 }
 
-void ForwardRender::UpdateModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures)
+void ForwardRender::SetupModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures)
 {
     // wait for device idle
     // 很慢的，慎用
@@ -366,7 +369,7 @@ void ForwardRender::UpdateModelRenderTextures(const std::vector<Texture2DPtr> &_
     }
 }
 
-void ForwardRender::UpdateSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture)
+void ForwardRender::SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture)
 {
     // wait for device idle
     // 很慢的，禁止频繁使用

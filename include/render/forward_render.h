@@ -6,7 +6,7 @@
 #define XEXAMPLE_FORWARD_RENDER_H
 
 #include "render_base.h"
-#include "renderpass/main_camera_renderpass.h"
+#include "renderpass/main_camera_pass.h"
 #include "render/resource/render_ubo.h"
 #include "scene/model.h"
 #include "scene/direction_light.h"
@@ -48,15 +48,15 @@ namespace RenderSystem
             m_p_ui_overlay = ui_overlay;
         }
 
-        void UpdateRenderModel(const std::vector<Scene::Model> &_visible_models,
-                               const std::vector<RenderSubmesh> &_visible_submeshes);
+        void UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
+                                   const std::vector<RenderSubmesh> &_visible_submeshes);
 
         void UpdateRenderPerFrameScenceUBO(Matrix4x4 proj_view, Vector3 camera_pos,
                                            std::vector<Scene::DirectionLight> &directional_light_list);
 
-        void UpdateModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures);
+        void SetupModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures);
 
-        void UpdateSkyboxTexture(const std::shared_ptr<TextureCube>& skybox_texture);
+        void SetupSkyboxTexture(const std::shared_ptr<TextureCube>& skybox_texture);
 
     private:
 
@@ -95,6 +95,8 @@ namespace RenderSystem
         Matrix4x4 m_proj_matrix;
 
         UIOverlayPtr m_p_ui_overlay;
+
+        void FlushRenderbuffer();
     };
 }
 #endif //XEXAMPLE_FORWARD_RENDER_H
