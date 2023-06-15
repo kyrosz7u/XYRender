@@ -8,23 +8,28 @@
 #include "render_base.h"
 #include "renderpass/main_camera_pass.h"
 #include "render/resource/render_ubo.h"
+#include "render/resource/render_resource.h"
 #include "scene/model.h"
 #include "scene/direction_light.h"
 
 namespace RenderSystem
 {
-    typedef RenderDynamicBuffer<VulkanModelDefine> RenderModelUBOList;
-    typedef RenderDynamicBuffer<VulkanLightProjectDefine> RenderLightProjectUBOList;
 
     class ForwardRender : public RenderBase
     {
     public:
+        const VkDeviceSize kDirectionalLightShadowMapWidth = 1024;
+        const VkDeviceSize kDirectionalLightShadowMapHeight = 1024;
         enum _renderpasses
         {
             _main_camera_renderpass = 0,
             _ui_overlay_renderpass,
             _renderpass_count
         };
+
+        ForwardRender()
+        :m_render_light_project_ubo_list(MAX_DIRECTIONAL_LIGHT_COUNT*sizeof(VulkanLightProjectDefine))
+        {}
 
         void initialize() override;
 
@@ -61,7 +66,7 @@ namespace RenderSystem
 
         void SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture);
 
-        void SetupLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list);
+        void UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list);
 
         void FlushRenderbuffer();
 
@@ -78,9 +83,9 @@ namespace RenderSystem
         void setupRenderDescriptorSetLayout();
 
     private:
-        VkCommandPool                m_command_pool;
+        VkCommandPool                m_command_pool{VK_NULL_HANDLE};
         std::vector<VkCommandBuffer> m_command_buffers;
-        VkDescriptorPool             m_descriptor_pool;
+        VkDescriptorPool             m_descriptor_pool{VK_NULL_HANDLE};
         std::vector<RenderPassPtr>   m_render_passes;
         // render target
         std::vector<ImageAttachment> m_render_targets;
@@ -92,7 +97,7 @@ namespace RenderSystem
         RenderModelUBOList           m_render_model_ubo_list;
         RenderLightProjectUBOList    m_render_light_project_ubo_list;
         // texture info list
-        VkDescriptorSetLayout        m_texture_descriptor_set_layout;
+        VkDescriptorSetLayout        m_texture_descriptor_set_layout{};
         std::vector<VkDescriptorSet> m_texture_descriptor_sets;
 
         // skybox info
@@ -103,7 +108,6 @@ namespace RenderSystem
         Matrix4x4 m_proj_matrix;
 
         UIOverlayPtr m_p_ui_overlay;
-
     };
 }
 #endif //XEXAMPLE_FORWARD_RENDER_H

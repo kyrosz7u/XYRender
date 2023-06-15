@@ -92,7 +92,6 @@ namespace Scene
             aspect = (float) width / height;
         }
 
-
     private:
         std::weak_ptr<SceneManager>  m_p_parent_scene;
         std::weak_ptr<ForwardRender> render_in_scene;

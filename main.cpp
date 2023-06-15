@@ -46,8 +46,7 @@ int main()
             "assets/textures/skybox/top.jpg",
             "assets/textures/skybox/bottom.jpg",
             "assets/textures/skybox/front.jpg",
-            "assets/textures/skybox/back.jpg"
-    };
+            "assets/textures/skybox/back.jpg"};
     scene_manager->LoadSkybox(skybox_faces);
 
     Scene::DirectionLight light;

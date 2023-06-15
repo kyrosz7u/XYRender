@@ -36,7 +36,8 @@ void ForwardRender::initialize()
 
 void ForwardRender::setupRenderTargets()
 {
-    int                          renderTarget_nums = g_p_vulkan_context->_swapchain_images.size();
+    uint32_t renderTarget_nums = g_p_vulkan_context->_swapchain_images.size();
+
     std::vector<ImageAttachment> targets_tmp;
     targets_tmp.resize(renderTarget_nums);
 
@@ -56,12 +57,12 @@ void ForwardRender::setupCommandBuffer()
 {
     VkCommandPoolCreateInfo command_pool_create_info;
     command_pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    command_pool_create_info.pNext = NULL;
+    command_pool_create_info.pNext = nullptr;
     command_pool_create_info.flags =
             VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     command_pool_create_info.queueFamilyIndex = g_p_vulkan_context->_queue_indices.graphicsFamily.value();
 
-    if (vkCreateCommandPool(g_p_vulkan_context->_device, &command_pool_create_info, NULL, &m_command_pool) !=
+    if (vkCreateCommandPool(g_p_vulkan_context->_device, &command_pool_create_info, nullptr, &m_command_pool) !=
         VK_SUCCESS)
     {
         throw std::runtime_error("vk create command pool");
@@ -73,7 +74,7 @@ void ForwardRender::setupCommandBuffer()
     command_buffer_allocate_info.commandBufferCount = 1U;
     command_buffer_allocate_info.commandPool        = m_command_pool;
 
-    int renderTarget_nums = g_p_vulkan_context->_swapchain_images.size();
+    uint32_t renderTarget_nums = g_p_vulkan_context->_swapchain_images.size();
     m_command_buffers.resize(renderTarget_nums);
     for (uint32_t i = 0; i < renderTarget_nums; ++i)
     {
@@ -221,14 +222,14 @@ void ForwardRender::draw()
 void ForwardRender::UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
                                           const std::vector<RenderSubmesh> &_visible_submeshes)
 {
-    if(m_render_model_ubo_list.ubo_data_list.size() != _visible_models.size())
+    if (m_render_model_ubo_list.ubo_data_list.size() != _visible_models.size())
     {
         m_render_model_ubo_list.ubo_data_list.resize(_visible_models.size());
     }
 
     for (int i = 0; i < _visible_models.size(); ++i)
     {
-        m_render_model_ubo_list.ubo_data_list[i].model = _visible_models[i].GetModelMatrix();
+        m_render_model_ubo_list.ubo_data_list[i].model  = _visible_models[i].GetModelMatrix();
         m_render_model_ubo_list.ubo_data_list[i].normal = _visible_models[i].GetNormalMatrix();
     }
 
@@ -256,10 +257,24 @@ void ForwardRender::UpdateRenderPerFrameScenceUBO(
     }
 }
 
+void ForwardRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list)
+{
+    if (m_render_light_project_ubo_list.ubo_data_list.size() != directional_light_list.size())
+    {
+        m_render_light_project_ubo_list.ubo_data_list.resize(directional_light_list.size());
+    }
+
+    for (int i = 0; i < directional_light_list.size(); ++i)
+    {
+        m_render_light_project_ubo_list.ubo_data_list[i].light_proj= directional_light_list[i].GetLightProjectionMatrix();
+    }
+}
+
 void ForwardRender::FlushRenderbuffer()
 {
     m_render_per_frame_ubo.ToGPU();
     m_render_model_ubo_list.ToGPU();
+    m_render_light_project_ubo_list.ToGPU();
 }
 
 void ForwardRender::setupRenderDescriptorSetLayout()
@@ -423,11 +438,6 @@ void ForwardRender::SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybo
                            descriptor_set_writes,
                            0,
                            nullptr);
-}
-
-void ForwardRender::SetupLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list)
-{
-
 }
 
 void ForwardRender::updateAfterSwapchainRecreate()

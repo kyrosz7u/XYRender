@@ -17,13 +17,17 @@ using namespace VulkanAPI;
 
 namespace RenderSystem
 {
+    typedef RenderDynamicBuffer<VulkanModelDefine>        RenderModelUBOList;
+    typedef RenderDynamicBuffer<VulkanLightProjectDefine> RenderLightProjectUBOList;
+
     struct RenderGlobalResourceInfo
     {
         std::vector<RenderSubmesh>   *p_render_submeshes;
         std::vector<VkDescriptorSet> *p_texture_descriptor_sets;
-        VkDescriptorSet     *p_skybox_descriptor_set;
-        RenderDynamicBuffer *p_render_model_ubo_list;
-        RenderPerFrameUBO   *p_render_per_frame_ubo;
+        VkDescriptorSet              *p_skybox_descriptor_set;
+        RenderModelUBOList           *p_render_model_ubo_list;
+        RenderLightProjectUBOList    *p_render_light_project_ubo_list;
+        RenderPerFrameUBO            *p_render_per_frame_ubo;
         std::weak_ptr<UIOverlay>     p_ui_overlay;
     };
 }
