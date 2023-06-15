@@ -19,25 +19,28 @@ namespace RenderSystem
     extern std::shared_ptr<VulkanContext> g_p_vulkan_context;
 
     // 保存场景中所有的模型的model_matrix、normal_matrix
-    class RenderModelUBOList
+    template<typename T>
+    class RenderDynamicBuffer
     {
     public:
-        VkDeviceSize                   dynamic_alignment;
-        VkDeviceSize                   buffer_size;
-        std::vector<VulkanModelDefine> ubo_data_list;
-        VkBuffer                       model_ubo_dynamic_buffer;
-        VkDeviceMemory                 model_ubo_dynamic_buffer_memory;
-        void                           *mapped_buffer_ptr;
-        VkDescriptorBufferInfo         buffer_descriptor;
+        VkDeviceSize           dynamic_alignment;
+        VkDeviceSize           buffer_size;
+        std::vector<T>         ubo_data_list;
+        VkBuffer               dynamic_buffer;
+        VkDeviceMemory         dynamic_buffer_memory;
+        void                   *mapped_buffer_ptr;
+        VkDescriptorBufferInfo buffer_info;
 
     public:
-        RenderModelUBOList()
+        RenderDynamicBuffer(VkDeviceSize buffer_size = -1)
         {
             // Calculate required alignment based on minimum device offset alignment
             VkDeviceSize min_ubo_alignment        = g_p_vulkan_context->_physical_device_properties.limits.minUniformBufferOffsetAlignment;
             VkDeviceSize max_uniform_buffer_range = g_p_vulkan_context->_physical_device_properties.limits.maxUniformBufferRange;
 
-            dynamic_alignment = sizeof(VulkanModelDefine);
+            max_uniform_buffer_range = std::min(max_uniform_buffer_range, buffer_size);
+
+            dynamic_alignment = sizeof(T);
             if (min_ubo_alignment > 0)
             {
                 dynamic_alignment = (dynamic_alignment + min_ubo_alignment - 1) & ~(min_ubo_alignment - 1);
@@ -48,46 +51,46 @@ namespace RenderSystem
                                      buffer_size,
                                      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                     model_ubo_dynamic_buffer, model_ubo_dynamic_buffer_memory);
+                                     dynamic_buffer, dynamic_buffer_memory);
 
-            buffer_descriptor.buffer = model_ubo_dynamic_buffer;
-            buffer_descriptor.offset = 0;
+            buffer_info.buffer = dynamic_buffer;
+            // dynamic buffer的offset必须是dynamic_alignment的整数倍
+            // 所谓dynamic buffer，就是可以在cpu端动态修改offset的buffer
+            buffer_info.offset = 0;
             // dynamic buffer的range必须是dynamic_alignment，而非buffer_size
-            buffer_descriptor.range  = dynamic_alignment;
+            buffer_info.range  = dynamic_alignment;
         }
 
-        ~RenderModelUBOList()
+        ~RenderDynamicBuffer()
         {
-            vkDestroyBuffer(g_p_vulkan_context->_device, model_ubo_dynamic_buffer, nullptr);
-            vkFreeMemory(g_p_vulkan_context->_device, model_ubo_dynamic_buffer_memory, nullptr);
+            vkDestroyBuffer(g_p_vulkan_context->_device, dynamic_buffer, nullptr);
+            vkFreeMemory(g_p_vulkan_context->_device, dynamic_buffer_memory, nullptr);
         }
 
-        RenderModelUBOList(const RenderModelUBOList &other) = delete;
+        RenderDynamicBuffer(const RenderDynamicBuffer &other) = delete;
 
-        RenderModelUBOList &operator=(const RenderModelUBOList &other) = delete;
+        RenderDynamicBuffer &operator=(const RenderDynamicBuffer &other) = delete;
 
         void ToGPU()
         {
             uint32_t mapped_size = ubo_data_list.size() * dynamic_alignment;
-            vkMapMemory(g_p_vulkan_context->_device, model_ubo_dynamic_buffer_memory, 0,
+            vkMapMemory(g_p_vulkan_context->_device, dynamic_buffer_memory, 0,
                         mapped_size, 0, &mapped_buffer_ptr);
 
             // Aligned offset
             for (int i = 0; i < ubo_data_list.size(); ++i)
             {
-                auto *data_ptr = (VulkanModelDefine *) ((uint64_t) mapped_buffer_ptr +
-                                                                     (i * dynamic_alignment));
-                data_ptr->model = ubo_data_list[i].model;
-                data_ptr->normal = ubo_data_list[i].normal;
+                auto *data_ptr = (T *) ((uint64_t) mapped_buffer_ptr + (i * dynamic_alignment));
+                *data_ptr = ubo_data_list[i];
             }
 
             VkMappedMemoryRange mappedMemoryRange{};
             mappedMemoryRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-            mappedMemoryRange.memory = model_ubo_dynamic_buffer_memory;
+            mappedMemoryRange.memory = dynamic_buffer_memory;
             mappedMemoryRange.size   = mapped_size;
 
             vkFlushMappedMemoryRanges(g_p_vulkan_context->_device, 1, &mappedMemoryRange);
-            vkUnmapMemory(g_p_vulkan_context->_device, model_ubo_dynamic_buffer_memory);
+            vkUnmapMemory(g_p_vulkan_context->_device, dynamic_buffer_memory);
         }
     };
 
@@ -119,13 +122,18 @@ namespace RenderSystem
             per_frame_ubo_offset[_scene_info_block] = sizeof(VulkanPerFrameSceneDefine);
             if (min_ubo_offset_align > 0)
             {
-                per_frame_ubo_offset[_scene_info_block] = (per_frame_ubo_offset[_scene_info_block] + min_ubo_offset_align - 1) & ~(min_ubo_offset_align - 1);
+                per_frame_ubo_offset[_scene_info_block] =
+                        (per_frame_ubo_offset[_scene_info_block] + min_ubo_offset_align - 1) &
+                        ~(min_ubo_offset_align - 1);
             }
 
-            per_frame_ubo_offset[_light_info_block] = sizeof(VulkanPerFrameDirectionalLightDefine) * MAX_DIRECTIONAL_LIGHT_COUNT;
+            per_frame_ubo_offset[_light_info_block] =
+                    sizeof(VulkanPerFrameDirectionalLightDefine) * MAX_DIRECTIONAL_LIGHT_COUNT;
             if (min_ubo_offset_align > 0)
             {
-                per_frame_ubo_offset[_light_info_block] = (per_frame_ubo_offset[_light_info_block] + min_ubo_offset_align - 1) & ~(min_ubo_offset_align - 1);
+                per_frame_ubo_offset[_light_info_block] =
+                        (per_frame_ubo_offset[_light_info_block] + min_ubo_offset_align - 1) &
+                        ~(min_ubo_offset_align - 1);
             }
 
             buffer_size = per_frame_ubo_offset[_scene_info_block] + per_frame_ubo_offset[_light_info_block];

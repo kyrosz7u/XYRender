@@ -38,6 +38,11 @@ namespace RenderSystem
             m_renderpass_attachments.resize(_ui_overlay_framebuffer_attachment_count);
         }
 
+        ~UIOverlayRenderPass()
+        {
+            vkDestroyRenderPass(g_p_vulkan_context->_device, m_renderpass, nullptr);
+        }
+
         void initialize(RenderPassInitInfo *renderpass_init_info) override;
 
         void draw(int render_target_index) override;
@@ -54,8 +59,6 @@ namespace RenderSystem
         void setupSubpass() override;
 
     private:
-        std::vector<ImageAttachment> m_renderpass_attachments;
-        std::vector<VkFramebuffer>   m_framebuffer_per_rendertarget;
         ImageAttachment *m_p_in_color_attachment = nullptr;
     };
 }

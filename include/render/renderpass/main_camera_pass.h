@@ -63,9 +63,6 @@ namespace RenderSystem
 
         void setupSubpass() override;
 
-    private:
-        std::vector<ImageAttachment> m_renderpass_attachments;
-        std::vector<VkFramebuffer>   m_framebuffer_per_rendertarget;
     };
 }
 

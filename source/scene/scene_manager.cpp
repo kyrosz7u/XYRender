@@ -25,6 +25,7 @@ void SceneManager::PostInitialize()
     }
     m_render->SetupModelRenderTextures(m_visible_textures);
     m_render->SetupSkyboxTexture(m_skybox);
+    m_render->FlushRenderbuffer();
 }
 
 void SceneManager::updateScene()

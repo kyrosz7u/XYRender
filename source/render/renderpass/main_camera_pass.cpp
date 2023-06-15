@@ -4,7 +4,7 @@
 
 
 #include "core/graphic/vulkan/vulkan_utils.h"
-#include "render/subpass/mesh_forward.h"
+#include "render/subpass/mesh_forward_light.h"
 #include "render/subpass/skybox.h"
 #include "render/renderpass/main_camera_pass.h"
 #include "mesh_vert.h"

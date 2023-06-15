@@ -13,6 +13,9 @@
 
 namespace RenderSystem
 {
+    typedef RenderDynamicBuffer<VulkanModelDefine> RenderModelUBOList;
+    typedef RenderDynamicBuffer<VulkanLightProjectDefine> RenderLightProjectUBOList;
+
     class ForwardRender : public RenderBase
     {
     public:
@@ -56,7 +59,11 @@ namespace RenderSystem
 
         void SetupModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures);
 
-        void SetupSkyboxTexture(const std::shared_ptr<TextureCube>& skybox_texture);
+        void SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture);
+
+        void SetupLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list);
+
+        void FlushRenderbuffer();
 
     private:
 
@@ -81,22 +88,22 @@ namespace RenderSystem
         // render submesh cache
         std::vector<RenderSubmesh>   m_render_submeshes;
         // ubo
-        RenderModelUBOList           m_render_model_ubo_list;
         RenderPerFrameUBO            m_render_per_frame_ubo;
+        RenderModelUBOList           m_render_model_ubo_list;
+        RenderLightProjectUBOList    m_render_light_project_ubo_list;
         // texture info list
         VkDescriptorSetLayout        m_texture_descriptor_set_layout;
         std::vector<VkDescriptorSet> m_texture_descriptor_sets;
 
         // skybox info
-        VkDescriptorSetLayout        m_skybox_descriptor_set_layout{VK_NULL_HANDLE};
-        VkDescriptorSet              m_skybox_descriptor_set{VK_NULL_HANDLE};
+        VkDescriptorSetLayout m_skybox_descriptor_set_layout{VK_NULL_HANDLE};
+        VkDescriptorSet       m_skybox_descriptor_set{VK_NULL_HANDLE};
 
         Matrix4x4 m_view_matrix;
         Matrix4x4 m_proj_matrix;
 
         UIOverlayPtr m_p_ui_overlay;
 
-        void FlushRenderbuffer();
     };
 }
 #endif //XEXAMPLE_FORWARD_RENDER_H

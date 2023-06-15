@@ -23,6 +23,8 @@ namespace RenderSystem
         VkImageView    view;
         VkFormat       format;
         VkImageLayout  layout; // 使用图像之前，需要将其转换为适当的布局
+        VkDeviceSize   width, height;
+
         void destroy()
         {
             assert(g_p_vulkan_context != nullptr);
@@ -34,13 +36,13 @@ namespace RenderSystem
 
     struct RenderPassInitInfo
     {
-        VulkanAPI::RenderCommandInfo* render_command_info = nullptr;
+        VulkanAPI::RenderCommandInfo *render_command_info = nullptr;
 
-        RenderGlobalResourceInfo* render_resource_info;
+        RenderGlobalResourceInfo *render_resource_info;
 
-        std::vector<ImageAttachment>* render_targets = nullptr;
+        std::vector<ImageAttachment> *render_targets = nullptr;
 
-        VkDescriptorPool* descriptor_pool = nullptr;
+        VkDescriptorPool *descriptor_pool = nullptr;
 
         std::vector<VkClearValue> clearValues;
 //        std::vector<VkSubpassDependency> subpassDependencies;

@@ -2,8 +2,8 @@
 // Created by kyros on 5/21/23.
 //
 
-#ifndef XEXAMPLE_MESH_FORWARD_H
-#define XEXAMPLE_MESH_FORWARD_H
+#ifndef XEXAMPLE_MESH_FORWARD_LIGHT_H
+#define XEXAMPLE_MESH_FORWARD_LIGHT_H
 
 #include "subpass_base.h"
 #include "render/resource/render_mesh.h"
@@ -14,7 +14,7 @@ namespace RenderSystem
 {
     namespace SubPass
     {
-        struct MeshPassInitInfo : public SubPassInitInfo
+        struct DirectionalLightShadowPassInitInfo : public SubPassInitInfo
         {
             std::vector<RenderMeshPtr> *render_mesh_list = nullptr;
         };
@@ -31,7 +31,6 @@ namespace RenderSystem
             MeshPass()
             {
                 name = "mesh_subpass";
-                m_descriptor_set_layouts.resize(_mesh_pass_pipeline_layout_count, VK_NULL_HANDLE);
             }
 
             void draw() override;
@@ -45,8 +44,8 @@ namespace RenderSystem
             void setupPipeLineLayout();
             void setupDescriptorSet() override;
             void setupPipelines() override;
-            VkDescriptorSet m_mesh_global_descriptor_set = VK_NULL_HANDLE;
+            VkDescriptorSet m_mesh_light_ubo_descriptor_set = VK_NULL_HANDLE;
         };
     }
 }
-#endif //XEXAMPLE_MESH_FORWARD_H
+#endif //XEXAMPLE_MESH_FORWARD_LIGHT_H

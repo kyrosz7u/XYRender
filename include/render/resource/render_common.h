@@ -36,9 +36,9 @@ namespace RenderSystem
         float         intensity;
     };
 
-    struct VulkanSkyboxCameraDefine
+    struct VulkanLightProjectDefine
     {
-        Math::Matrix4x4 model;
+        Math::Matrix4x4 light_proj;
     };
 }
 #endif  //XEXAMPLE_RENDER_COMMON_H

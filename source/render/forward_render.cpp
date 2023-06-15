@@ -425,6 +425,11 @@ void ForwardRender::SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybo
                            nullptr);
 }
 
+void ForwardRender::SetupLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list)
+{
+
+}
+
 void ForwardRender::updateAfterSwapchainRecreate()
 {
     vkDestroyImage(g_p_vulkan_context->_device, m_backup_targets[0].image, nullptr);

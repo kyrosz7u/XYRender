@@ -32,10 +32,14 @@ namespace RenderSystem
     protected:
         friend struct ImageAttachment;
         virtual void setupSubpass() = 0;
+
         RenderCommandInfo* m_p_render_command_info;
         RenderGlobalResourceInfo* m_p_render_resource_info;
-        VkRenderPass m_renderpass;
         std::vector<ImageAttachment>* m_p_render_targets; // [target_index][render_image_index]
+
+        VkRenderPass m_renderpass;
+        std::vector<ImageAttachment> m_renderpass_attachments;
+        std::vector<VkFramebuffer>   m_framebuffer_per_rendertarget;
         std::vector<std::shared_ptr<SubPass::SubPassBase>> m_subpass_list;
     };
 
