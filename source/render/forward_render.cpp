@@ -346,8 +346,26 @@ void ForwardRender::setupRenderDescriptorSetLayout()
                                                 nullptr,
                                                 &m_skybox_descriptor_set_layout));
 
-}
+    std::vector<VkDescriptorSetLayoutBinding> light_project_layout_bindings;
+    light_project_layout_bindings.resize(1);
 
+    VkDescriptorSetLayoutBinding &light_project_binding = light_project_layout_bindings[0];
+    light_project_binding.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    light_project_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+    light_project_binding.binding         = 0;
+    light_project_binding.descriptorCount = 1;
+
+    VkDescriptorSetLayoutCreateInfo light_project_desc_set_layout_create_info;
+    light_project_desc_set_layout_create_info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    light_project_desc_set_layout_create_info.flags        = 0;
+    light_project_desc_set_layout_create_info.pNext        = nullptr;
+    light_project_desc_set_layout_create_info.bindingCount = light_project_layout_bindings.size();
+    light_project_desc_set_layout_create_info.pBindings    = light_project_layout_bindings.data();
+
+    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
+                                                &light_project_desc_set_layout_create_info,
+                                                nullptr,
+                                                &m_directional_light_shadow_set_layout));
 void ForwardRender::SetupModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures)
 {
     // wait for device idle
@@ -366,12 +384,15 @@ void ForwardRender::SetupModelRenderTextures(const std::vector<Texture2DPtr> &_v
         m_texture_descriptor_sets.resize(_visible_textures.size());
         if (m_texture_descriptor_sets.size() != 0)
         {
+            std::vector<VkDescriptorSetLayout> layouts(m_texture_descriptor_sets.size(),
+                                                       m_texture_descriptor_set_layout);
+
             VkDescriptorSetAllocateInfo texture_descriptor_set_allocate_info;
             texture_descriptor_set_allocate_info.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
             texture_descriptor_set_allocate_info.pNext              = nullptr;
             texture_descriptor_set_allocate_info.descriptorPool     = m_descriptor_pool;
-            texture_descriptor_set_allocate_info.descriptorSetCount = m_texture_descriptor_sets.size();
-            texture_descriptor_set_allocate_info.pSetLayouts        = &m_texture_descriptor_set_layout;
+            texture_descriptor_set_allocate_info.descriptorSetCount = layouts.size();
+            texture_descriptor_set_allocate_info.pSetLayouts        = layouts.data();
 
             VK_CHECK_RESULT(vkAllocateDescriptorSets(g_p_vulkan_context->_device,
                                                      &texture_descriptor_set_allocate_info,
@@ -411,22 +432,21 @@ void ForwardRender::SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybo
                                                   m_descriptor_pool,
                                                   1,
                                                   &m_skybox_descriptor_set);
+    }
 
-        VkDescriptorSetAllocateInfo allocInfo{};
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool     = m_descriptor_pool;
+    // determines the number of info sets to be allocated from the pool.
+    allocInfo.descriptorSetCount = 1;
+    // 每个set的布局
+    allocInfo.pSetLayouts        = &m_skybox_descriptor_set_layout;
 
-        allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool     = m_descriptor_pool;
-        // determines the number of info sets to be allocated from the pool.
-        allocInfo.descriptorSetCount = 1;
-        // 每个set的布局
-        allocInfo.pSetLayouts        = &m_skybox_descriptor_set_layout;
-
-        if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
-                                     &allocInfo,
-                                     &m_skybox_descriptor_set) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to allocate info sets!");
-        }
+    if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
+                                 &allocInfo,
+                                 &m_skybox_descriptor_set) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to allocate info sets!");
     }
 
     VkWriteDescriptorSet descriptor_set_writes[2];

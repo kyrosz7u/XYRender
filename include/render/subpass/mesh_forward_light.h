@@ -31,6 +31,7 @@ namespace RenderSystem
             MeshPass()
             {
                 name = "mesh_subpass";
+                m_descriptor_set_layouts.resize(_mesh_pass_pipeline_layout_count);
             }
 
             void draw() override;

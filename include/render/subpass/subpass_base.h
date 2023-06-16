@@ -97,7 +97,6 @@ namespace RenderSystem
             uint32_t                                m_subpass_index      = VK_SUBPASS_EXTERNAL;
             VkPipelineLayout                        pipeline_layout      = VK_NULL_HANDLE;
             VkPipeline                              pipeline             = VK_NULL_HANDLE;
-            VkDescriptorSetLayout                   descriptorset_layout = VK_NULL_HANDLE;
 //            std::vector<DescriptorSet>              m_descriptorset_list;
             std::vector<VkDescriptorSetLayout>      m_descriptor_set_layouts;
             std::vector<std::vector<unsigned char>> m_shader_list;
