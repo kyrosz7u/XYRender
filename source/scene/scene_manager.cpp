@@ -25,7 +25,6 @@ void SceneManager::PostInitialize()
     }
     m_render->SetupModelRenderTextures(m_visible_textures);
     m_render->SetupSkyboxTexture(m_skybox);
-    m_render->FlushRenderbuffer();
 }
 
 void SceneManager::updateScene()
@@ -67,6 +66,8 @@ void SceneManager::Tick()
     m_render->UpdateRenderPerFrameScenceUBO(m_main_camera->getProjViewMatrix(),
                                             m_main_camera->position,
                                             m_directional_lights);
+    m_render->UpdateLightProjectionList(m_directional_lights);
+    m_render->FlushRenderbuffer();
     m_render->Tick();
 }
 

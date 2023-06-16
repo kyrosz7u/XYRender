@@ -8,12 +8,12 @@
 #define XEXAMPLE_DIRECTION_LIGHT_SHADOW_RENDERPASS_H
 namespace RenderSystem
 {
-    struct DirectionLightShadowRenderPassInitInfo : public RenderPassInitInfo
+    struct DirectionalLightShadowRenderPassInitInfo : public RenderPassInitInfo
     {
 
     };
 
-    class DirectionLightShadowRenderPass : public RenderPassBase
+    class DirectionalLightShadowRenderPass : public RenderPassBase
     {
     public:
         enum _direction_light_shadow_subpass : unsigned int
@@ -28,12 +28,12 @@ namespace RenderSystem
             _direction_light_attachment_count
         };
 
-        DirectionLightShadowRenderPass()
+        DirectionalLightShadowRenderPass()
         {
             m_subpass_list.resize(_direction_light_shadow_subpass_count, VK_NULL_HANDLE);
         }
 
-        ~DirectionLightShadowRenderPass()
+        ~DirectionalLightShadowRenderPass()
         {
             for(int i = 0; i < m_framebuffer_per_rendertarget.size(); i++)
                 vkDestroyFramebuffer(g_p_vulkan_context->_device, m_framebuffer_per_rendertarget[i], nullptr);

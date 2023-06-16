@@ -80,7 +80,7 @@ namespace Scene
         Matrix4x4 calculatePerspectiveMatrix()
         {
             if (mode == orthogonal)
-                return Matrix4x4::makeOrthogonalMatrix(width, height, znear, zfar, znear, zfar);
+                return Matrix4x4::makeOrthogonalMatrix(width, height, znear, zfar);
             else
                 return Matrix4x4::makePerspectiveMatrix(fov, aspect, znear, zfar);
         }

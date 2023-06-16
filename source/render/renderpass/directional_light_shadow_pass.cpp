@@ -2,16 +2,16 @@
 // Created by kyrosz7u on 2023/6/14.
 //
 
-#include "render/renderpass/direction_light_shadow_pass.h"
+#include "render/renderpass/directional_light_shadow_pass.h"
 #include "render/subpass/directional_light_shadow.h"
 #include "mesh_point_light_shadow_vert.h"
 #include "mesh_point_light_shadow_frag.h"
 
 using namespace RenderSystem;
 
-void DirectionLightShadowRenderPass::initialize(RenderPassInitInfo *renderpass_init_info)
+void DirectionalLightShadowRenderPass::initialize(RenderPassInitInfo *renderpass_init_info)
 {
-    auto direction_light_shadow_renderpass_init_info = static_cast<DirectionLightShadowRenderPassInitInfo *>(renderpass_init_info);
+    auto direction_light_shadow_renderpass_init_info = static_cast<DirectionalLightShadowRenderPassInitInfo *>(renderpass_init_info);
     m_p_render_command_info  = direction_light_shadow_renderpass_init_info->render_command_info;
     m_p_render_resource_info = direction_light_shadow_renderpass_init_info->render_resource_info;
     m_p_render_targets       = direction_light_shadow_renderpass_init_info->render_targets;
@@ -22,7 +22,7 @@ void DirectionLightShadowRenderPass::initialize(RenderPassInitInfo *renderpass_i
     setupSubpass();
 }
 
-void DirectionLightShadowRenderPass::setupRenderpassAttachments()
+void DirectionalLightShadowRenderPass::setupRenderpassAttachments()
 {
     assert(m_p_render_targets != nullptr);
     assert(m_p_render_targets->size() > 0);
@@ -33,15 +33,12 @@ void DirectionLightShadowRenderPass::setupRenderpassAttachments()
 
     for (int i = 0; i < direction_light_nums; ++i)
     {
-        m_renderpass_attachments[i].format = (*m_p_render_targets)[0].format;
-        m_renderpass_attachments[i].layout = (*m_p_render_targets)[0].layout;
-        m_renderpass_attachments[i].image  = (*m_p_render_targets)[0].image;
-        m_renderpass_attachments[i].view   = (*m_p_render_targets)[0].view;
+        m_renderpass_attachments[i] = (*m_p_render_targets)[i];
     }
 
 }
 
-void DirectionLightShadowRenderPass::setupRenderPass()
+void DirectionalLightShadowRenderPass::setupRenderPass()
 {
     std::vector<VkAttachmentDescription> attachments;
     attachments.resize(_direction_light_attachment_count);
@@ -112,7 +109,7 @@ void DirectionLightShadowRenderPass::setupRenderPass()
     }
 }
 
-void DirectionLightShadowRenderPass::setupFrameBuffer()
+void DirectionalLightShadowRenderPass::setupFrameBuffer()
 {
     int direction_light_nums = m_p_render_targets->size();
 
@@ -141,7 +138,7 @@ void DirectionLightShadowRenderPass::setupFrameBuffer()
     }
 }
 
-void DirectionLightShadowRenderPass::setupSubpass()
+void DirectionalLightShadowRenderPass::setupSubpass()
 {
     SubPass::DirectionalLightShadowPassInitInfo directinal_light_shadow_pass_init_info{};
     directinal_light_shadow_pass_init_info.p_render_command_info  = m_p_render_command_info;
@@ -158,7 +155,7 @@ void DirectionLightShadowRenderPass::setupSubpass()
 
 }
 
-void DirectionLightShadowRenderPass::draw(int render_target_index)
+void DirectionalLightShadowRenderPass::draw(int render_target_index)
 {
     VkClearValue clear_values[_direction_light_attachment_count] = {};
     clear_values[_direction_light_attachment_depth].depthStencil = {1.0f, 0};
@@ -180,7 +177,7 @@ void DirectionLightShadowRenderPass::draw(int render_target_index)
     g_p_vulkan_context->_vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
 }
 
-void DirectionLightShadowRenderPass::updateAfterSwapchainRecreate()
+void DirectionalLightShadowRenderPass::updateAfterSwapchainRecreate()
 {
 
 }

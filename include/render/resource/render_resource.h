@@ -20,6 +20,17 @@ namespace RenderSystem
     typedef RenderDynamicBuffer<VulkanModelDefine>        RenderModelUBOList;
     typedef RenderDynamicBuffer<VulkanLightProjectDefine> RenderLightProjectUBOList;
 
+    struct DirectionLightInfo
+    {
+        VkDeviceSize shadowmap_width = 1024;
+        VkDeviceSize shadowmap_height = 1024;
+        float camera_width = 100;
+        float camera_height = 100;
+        float camera_near = 0.1f;
+        float camera_far = 100.0f;
+        VkFormat depth_format = VK_FORMAT_D32_SFLOAT;
+    };
+
     struct RenderGlobalResourceInfo
     {
         std::vector<RenderSubmesh>   *p_render_submeshes;

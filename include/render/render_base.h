@@ -21,6 +21,8 @@ namespace RenderSystem
         VkViewport m_viewport = {0, 0, 1280, 768, 0, 1};
         VkRect2D   m_scissor  = {{0,    0},
                                  {1280, 768}};
+
+
     public:
         RenderBase()
         {

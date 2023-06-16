@@ -902,16 +902,15 @@ public:
         return ret;
     }
 
-    static Matrix4x4 makeOrthogonalMatrix(float left, float right, float bottom, float top, float znear, float zfar)
+    static Matrix4x4 makeOrthogonalMatrix(float width,float height, float znear, float zfar)
     {
         Matrix4x4 ret = Matrix4x4::ZERO;
-        ret[0][0] = 2.0f / (right - left);
-        ret[1][1] = 2.0f / (top - bottom);
-        ret[2][2] = -2.0f / (zfar - znear);
-        ret[3][0] = -(right + left) / (right - left);
-        ret[3][1] = -(top + bottom) / (top - bottom);
-        ret[3][2] = -(zfar + znear) / (zfar - znear);
+        ret[0][0] = 2.0f / width;
+        ret[1][1] = 2.0f / height;
+        ret[2][2] = 1.0f / (zfar - znear);
+        ret[2][3] = -znear / (zfar - znear);
         ret[3][3] = 1.0f;
+
         return ret;
     }
 

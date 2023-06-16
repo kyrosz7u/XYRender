@@ -18,17 +18,18 @@ namespace RenderSystem
     class ForwardRender : public RenderBase
     {
     public:
-        const VkDeviceSize kDirectionalLightShadowMapWidth = 1024;
-        const VkDeviceSize kDirectionalLightShadowMapHeight = 1024;
         enum _renderpasses
         {
-            _main_camera_renderpass = 0,
+            _directional_light_shadowmap_renderpass = 0,
+            _main_camera_renderpass,
             _ui_overlay_renderpass,
             _renderpass_count
         };
 
+        const DirectionLightInfo kDirectionalLightInfo;
+
         ForwardRender()
-        :m_render_light_project_ubo_list(MAX_DIRECTIONAL_LIGHT_COUNT*sizeof(VulkanLightProjectDefine))
+                : m_render_light_project_ubo_list(MAX_DIRECTIONAL_LIGHT_COUNT * sizeof(VulkanLightProjectDefine))
         {}
 
         void initialize() override;
@@ -90,6 +91,7 @@ namespace RenderSystem
         // render target
         std::vector<ImageAttachment> m_render_targets;
         std::vector<ImageAttachment> m_backup_targets;
+        std::vector<ImageAttachment>   m_directional_light_shadows;
         // render submesh cache
         std::vector<RenderSubmesh>   m_render_submeshes;
         // ubo
@@ -99,6 +101,9 @@ namespace RenderSystem
         // texture info list
         VkDescriptorSetLayout        m_texture_descriptor_set_layout{};
         std::vector<VkDescriptorSet> m_texture_descriptor_sets;
+        // directional light info list
+        VkDescriptorSetLayout        m_directional_light_shadow_set_layout{};
+        std::vector<VkDescriptorSet> m_directional_light_shadow_sets;
 
         // skybox info
         VkDescriptorSetLayout m_skybox_descriptor_set_layout{VK_NULL_HANDLE};
@@ -108,6 +113,8 @@ namespace RenderSystem
         Matrix4x4 m_proj_matrix;
 
         UIOverlayPtr m_p_ui_overlay;
+
+        void SetupShadowMapTexture(std::vector<Scene::DirectionLight> &directional_light_list);
     };
 }
 #endif //XEXAMPLE_FORWARD_RENDER_H

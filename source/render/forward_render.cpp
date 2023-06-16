@@ -4,6 +4,7 @@
 
 #include "core/logger/logger_macros.h"
 #include "render/forward_render.h"
+#include "render/renderpass/directional_light_shadow_pass.h"
 #include "render/renderpass/main_camera_pass.h"
 #include "render/renderpass/ui_overlay_pass.h"
 
@@ -156,20 +157,27 @@ void ForwardRender::setupRenderpass()
 {
     m_render_passes.resize(_renderpass_count);
 
-    m_render_passes[_main_camera_renderpass] = std::make_shared<MainCameraRenderPass>();
-    m_render_passes[_ui_overlay_renderpass]  = std::make_shared<UIOverlayRenderPass>();
+    m_render_passes[_directional_light_shadowmap_renderpass] = std::make_shared<DirectionalLightShadowRenderPass>();
+    m_render_passes[_main_camera_renderpass]                 = std::make_shared<MainCameraRenderPass>();
+    m_render_passes[_ui_overlay_renderpass]                  = std::make_shared<UIOverlayRenderPass>();
+
+    DirectionalLightShadowRenderPassInitInfo directional_light_shadowmap_renderpass_init_info;
+    directional_light_shadowmap_renderpass_init_info.render_command_info  = &m_render_command_info;
+    directional_light_shadowmap_renderpass_init_info.render_resource_info = &m_render_resource_info;
+    directional_light_shadowmap_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
+    directional_light_shadowmap_renderpass_init_info.render_targets       = &m_directional_light_shadows;
 
     MainCameraRenderPassInitInfo maincamera_renderpass_init_info;
     maincamera_renderpass_init_info.render_command_info  = &m_render_command_info;
     maincamera_renderpass_init_info.render_resource_info = &m_render_resource_info;
-    maincamera_renderpass_init_info.render_targets       = &m_backup_targets;
     maincamera_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
+    maincamera_renderpass_init_info.render_targets       = &m_backup_targets;
 
     UIOverlayRenderPassInitInfo ui_overlay_renderpass_init_info;
     ui_overlay_renderpass_init_info.render_command_info  = &m_render_command_info;
     ui_overlay_renderpass_init_info.render_resource_info = &m_render_resource_info;
-    ui_overlay_renderpass_init_info.render_targets       = &m_render_targets;
     ui_overlay_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
+    ui_overlay_renderpass_init_info.render_targets       = &m_render_targets;
     ui_overlay_renderpass_init_info.in_color_attachment  = &m_backup_targets[0];
 
     m_render_passes[_main_camera_renderpass]->initialize(&maincamera_renderpass_init_info);
@@ -206,7 +214,10 @@ void ForwardRender::draw()
 
     // record command buffer
     m_render_command_info.p_current_command_buffer = &m_command_buffers[next_image_index];
-
+    for (int i = 0; i < m_directional_light_shadows.size(); i++)
+    {
+        m_render_passes[_directional_light_shadowmap_renderpass]->draw(i);
+    }
     m_render_passes[_main_camera_renderpass]->draw(0);
     m_render_passes[_ui_overlay_renderpass]->draw(next_image_index);
 
@@ -266,7 +277,15 @@ void ForwardRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight>
 
     for (int i = 0; i < directional_light_list.size(); ++i)
     {
-        m_render_light_project_ubo_list.ubo_data_list[i].light_proj= directional_light_list[i].GetLightProjectionMatrix();
+        auto dummy_transform = directional_light_list[i].transform;
+        auto forward         = dummy_transform.GetForward();
+        auto projection      = Math::Matrix4x4::makeOrthogonalMatrix(kDirectionalLightInfo.camera_width,
+                                                                     kDirectionalLightInfo.camera_height,
+                                                                     kDirectionalLightInfo.camera_near,
+                                                                     kDirectionalLightInfo.camera_far);
+        forward.normalise();
+        dummy_transform.position                                    = Math::Vector3(0, 0, 0) + forward * 30;
+        m_render_light_project_ubo_list.ubo_data_list[i].light_proj = projection * dummy_transform.GetTransformMatrix();
     }
 }
 
@@ -334,32 +353,29 @@ void ForwardRender::SetupModelRenderTextures(const std::vector<Texture2DPtr> &_v
     // wait for device idle
     // 很慢的，慎用
     vkDeviceWaitIdle(g_p_vulkan_context->_device);
-    if (m_texture_descriptor_sets.size() > 0)
+    if (m_texture_descriptor_sets.size() != _visible_textures.size())
     {
-        g_p_vulkan_context->_vkFreeDescriptorSets(g_p_vulkan_context->_device,
-                                                  m_descriptor_pool,
-                                                  m_texture_descriptor_sets.size(),
-                                                  m_texture_descriptor_sets.data());
-    }
-
-    m_texture_descriptor_sets.resize(_visible_textures.size());
-
-    for (int i = 0; i < m_texture_descriptor_sets.size(); ++i)
-    {
-        VkDescriptorSetAllocateInfo allocInfo{};
-
-        allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool     = m_descriptor_pool;
-        // determines the number of info sets to be allocated from the pool.
-        allocInfo.descriptorSetCount = 1;
-        // 每个set的布局
-        allocInfo.pSetLayouts        = &m_texture_descriptor_set_layout;
-
-        if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
-                                     &allocInfo,
-                                     &m_texture_descriptor_sets[i]) != VK_SUCCESS)
+        if (m_texture_descriptor_sets.size() > 0)
         {
-            throw std::runtime_error("failed to allocate info sets!");
+            g_p_vulkan_context->_vkFreeDescriptorSets(g_p_vulkan_context->_device,
+                                                      m_descriptor_pool,
+                                                      m_texture_descriptor_sets.size(),
+                                                      m_texture_descriptor_sets.data());
+        }
+
+        m_texture_descriptor_sets.resize(_visible_textures.size());
+        if (m_texture_descriptor_sets.size() != 0)
+        {
+            VkDescriptorSetAllocateInfo texture_descriptor_set_allocate_info;
+            texture_descriptor_set_allocate_info.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            texture_descriptor_set_allocate_info.pNext              = nullptr;
+            texture_descriptor_set_allocate_info.descriptorPool     = m_descriptor_pool;
+            texture_descriptor_set_allocate_info.descriptorSetCount = m_texture_descriptor_sets.size();
+            texture_descriptor_set_allocate_info.pSetLayouts        = &m_texture_descriptor_set_layout;
+
+            VK_CHECK_RESULT(vkAllocateDescriptorSets(g_p_vulkan_context->_device,
+                                                     &texture_descriptor_set_allocate_info,
+                                                     m_texture_descriptor_sets.data()));
         }
     }
 
@@ -395,22 +411,24 @@ void ForwardRender::SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybo
                                                   m_descriptor_pool,
                                                   1,
                                                   &m_skybox_descriptor_set);
-    }
-    VkDescriptorSetAllocateInfo allocInfo{};
 
-    allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool     = m_descriptor_pool;
-    // determines the number of info sets to be allocated from the pool.
-    allocInfo.descriptorSetCount = 1;
-    // 每个set的布局
-    allocInfo.pSetLayouts        = &m_skybox_descriptor_set_layout;
+        VkDescriptorSetAllocateInfo allocInfo{};
 
-    if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
-                                 &allocInfo,
-                                 &m_skybox_descriptor_set) != VK_SUCCESS)
-    {
-        throw std::runtime_error("failed to allocate info sets!");
+        allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool     = m_descriptor_pool;
+        // determines the number of info sets to be allocated from the pool.
+        allocInfo.descriptorSetCount = 1;
+        // 每个set的布局
+        allocInfo.pSetLayouts        = &m_skybox_descriptor_set_layout;
+
+        if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
+                                     &allocInfo,
+                                     &m_skybox_descriptor_set) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to allocate info sets!");
+        }
     }
+
     VkWriteDescriptorSet descriptor_set_writes[2];
 
     VkWriteDescriptorSet &ubo_descriptor_write = descriptor_set_writes[0];
@@ -438,6 +456,85 @@ void ForwardRender::SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybo
                            descriptor_set_writes,
                            0,
                            nullptr);
+}
+
+void ForwardRender::SetupShadowMapTexture(std::vector<Scene::DirectionLight> &directional_light_list)
+{
+    uint32_t directional_light_num = directional_light_list.size();
+
+    if (m_directional_light_shadow_sets.size() != directional_light_num)
+    {
+        if (m_directional_light_shadow_sets.size() != 0)
+        {
+            g_p_vulkan_context->_vkFreeDescriptorSets(g_p_vulkan_context->_device,
+                                                      m_descriptor_pool,
+                                                      m_directional_light_shadow_sets.size(),
+                                                      m_directional_light_shadow_sets.data());
+        }
+        m_directional_light_shadow_sets.resize(directional_light_num);
+        if (m_directional_light_shadow_sets.size() != 0)
+        {
+            std::vector<VkDescriptorSetLayout> layouts(m_directional_light_shadow_sets.size(),
+                                                       m_directional_light_shadow_set_layout);
+            VkDescriptorSetAllocateInfo        allocInfo{};
+            allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool     = m_descriptor_pool;
+            allocInfo.descriptorSetCount = m_directional_light_shadow_sets.size();
+            allocInfo.pSetLayouts        = layouts.data();
+
+            if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
+                                         &allocInfo,
+                                         m_directional_light_shadow_sets.data()) != VK_SUCCESS)
+            {
+                throw std::runtime_error("failed to allocate info sets!");
+            }
+        }
+    }
+
+    if (m_directional_light_shadows.size() != directional_light_num)
+    {
+        if (m_directional_light_shadows.size() != 0)
+        {
+            for (int i = 0; i < m_directional_light_shadows.size(); ++i)
+            {
+                m_directional_light_shadows[i].destroy();
+            }
+        }
+        m_directional_light_shadows.resize(directional_light_num);
+
+        for (int i = 0; i < m_directional_light_shadows.size(); ++i)
+        {
+            m_directional_light_shadows[i].width  = kDirectionalLightInfo.camera_width;
+            m_directional_light_shadows[i].height = kDirectionalLightInfo.camera_height;
+            m_directional_light_shadows[i].format = kDirectionalLightInfo.depth_format;
+            m_directional_light_shadows[i].init();
+        }
+    }
+
+    for (int i = 0; i < m_directional_light_shadow_sets.size(); ++i)
+    {
+        VkDescriptorImageInfo info;
+
+        info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        info.imageView   = m_directional_light_shadows[i].view;
+        info.sampler     = VulkanUtil::getOrCreateLinearSampler(g_p_vulkan_context);
+
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet          = m_directional_light_shadow_sets[i];
+        descriptorWrite.dstBinding      = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pImageInfo      = &info;
+
+        vkUpdateDescriptorSets(g_p_vulkan_context->_device,
+                               1,
+                               &descriptorWrite,
+                               0,
+                               nullptr);
+    }
+
 }
 
 void ForwardRender::updateAfterSwapchainRecreate()

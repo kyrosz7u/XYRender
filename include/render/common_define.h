@@ -7,6 +7,7 @@
 
 #include <vulkan/vulkan.h>
 #include "core/graphic/vulkan/vulkan_context.h"
+#include "core/graphic/vulkan/vulkan_utils.h"
 #include <memory>
 #include <vector>
 
@@ -24,6 +25,33 @@ namespace RenderSystem
         VkFormat       format;
         VkImageLayout  layout; // 使用图像之前，需要将其转换为适当的布局
         VkDeviceSize   width, height;
+
+        void init()
+        {
+            assert(g_p_vulkan_context != nullptr);
+            VulkanAPI::VulkanUtil::createImage(g_p_vulkan_context,
+                                               width,
+                                               height,
+                                               format,
+                                               VK_IMAGE_TILING_OPTIMAL,
+                                               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                                               VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+                                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                               image,
+                                               mem,
+                                               0,
+                                               1,
+                                               1);
+
+            view = VulkanAPI::VulkanUtil::createImageView(g_p_vulkan_context,
+                                                          image,
+                                                          format,
+                                                          VK_IMAGE_ASPECT_COLOR_BIT,
+                                                          VK_IMAGE_VIEW_TYPE_2D,
+                                                          1,
+                                                          1);
+
+        }
 
         void destroy()
         {
