@@ -26,7 +26,7 @@ void DirectionalLightShadowPass::initialize(SubPassInitInfo *subPassInitInfo)
 
 void DirectionalLightShadowPass::setupPipeLineLayout()
 {
-    auto &ubo_data_layout = m_descriptor_set_layouts[_pipeline_layout_count];
+    auto &ubo_data_layout = m_descriptor_set_layouts[_directional_shadow_layout];
 
     std::vector<VkDescriptorSetLayoutBinding> ubo_layout_bindings;
     ubo_layout_bindings.resize(2);
@@ -68,7 +68,7 @@ void DirectionalLightShadowPass::setupDescriptorSet()
     // determines the number of info sets to be allocated from the pool.
     allocInfo.descriptorSetCount = 1;
     // 每个set的布局
-    allocInfo.pSetLayouts        = &m_descriptor_set_layouts[_mesh_ubo_data_layout];
+    allocInfo.pSetLayouts        = &m_descriptor_set_layouts[_directional_shadow_layout];
 
     if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
                                  &allocInfo,
@@ -90,8 +90,7 @@ void DirectionalLightShadowPass::updateGlobalRenderDescriptorSet()
     perframe_buffer_write.dstArrayElement = 0;
     perframe_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     perframe_buffer_write.descriptorCount = 1;
-    perframe_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_per_frame_ubo
-            ->buffer_infos[RenderPerFrameUBO::_scene_info_block];
+    perframe_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_light_project_ubo_list->dynamic_info;
 
     VkWriteDescriptorSet &perobject_buffer_write = write_descriptor_sets[1];
     perobject_buffer_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -100,7 +99,7 @@ void DirectionalLightShadowPass::updateGlobalRenderDescriptorSet()
     perobject_buffer_write.dstArrayElement = 0;
     perobject_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     perobject_buffer_write.descriptorCount = 1;
-    perobject_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_model_ubo_list->buffer_info;
+    perobject_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_model_ubo_list->dynamic_info;
 
 
     vkUpdateDescriptorSets(g_p_vulkan_context->_device,
@@ -159,8 +158,8 @@ void DirectionalLightShadowPass::setupPipelines()
         shader_stage_create_infos.push_back(shader_stage_create_info);
     }
 
-    auto vertex_input_binding_description   = VulkanMeshVertex::getVertexInputBindingDescription();
-    auto vertex_input_attribute_description = VulkanMeshVertex::getVertexInputAttributeDescription();
+    auto vertex_input_binding_description   = VulkanMeshVertex::getLightVertexInputBindingDescription();
+    auto vertex_input_attribute_description = VulkanMeshVertex::getLightVertexInputAttributeDescription();
 
     VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info{};
     vertex_input_state_create_info.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -286,9 +285,9 @@ void DirectionalLightShadowPass::draw()
                                          m_p_render_command_info->p_scissor);
 
 
-    auto &render_submeshes         = *m_p_render_resource_info->p_render_submeshes;
+    auto &render_submeshes = *m_p_render_resource_info->p_render_submeshes;
 
-    for (uint32_t i = 0; i < (*m_p_render_resource_info->p_render_submeshes).size(); i++)
+    for (uint32_t i = 0; i < render_submeshes.size(); i++)
     {
         auto submesh     = (*m_p_render_resource_info->p_render_submeshes)[i];
         auto parent_mesh = submesh.parent_mesh.lock();
@@ -297,10 +296,8 @@ void DirectionalLightShadowPass::draw()
             continue;
         }
 
-        VkBuffer     vertex_buffers[] = {parent_mesh->mesh_vertex_position_buffer,
-                                         parent_mesh->mesh_vertex_normal_buffer,
-                                         parent_mesh->mesh_vertex_texcoord_buffer};
-        VkDeviceSize offsets[]        = {0, 0, 0};
+        VkBuffer     vertex_buffers[] = {parent_mesh->mesh_vertex_position_buffer};
+        VkDeviceSize offsets[]        = {0};
         g_p_vulkan_context->_vkCmdBindVertexBuffers(*m_p_render_command_info->p_current_command_buffer,
                                                     0,
                                                     sizeof(vertex_buffers) / sizeof(vertex_buffers[0]),
@@ -312,16 +309,22 @@ void DirectionalLightShadowPass::draw()
                                                   VK_INDEX_TYPE_UINT16);
 
         // bind model and light ubo
-//        uint32_t dynamicOffset = parent_mesh->m_index_in_dynamic_buffer *
-//                                 (*m_p_render_resource_info->p_render_model_ubo_list).dynamic_alignment;
-//        g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
-//                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
-//                                                     pipeline_layout,
-//                                                     0,
-//                                                     1,
-//                                                     &m_mesh_ubo_descriptor_set,
-//                                                     1,
-//                                                     &dynamicOffset);
+        uint32_t dynamic_offset[2];
+
+        dynamic_offset[0] = m_directional_light_index *
+                            (*m_p_render_resource_info->p_render_light_project_ubo_list).dynamic_alignment;
+
+        dynamic_offset[1] = parent_mesh->m_index_in_dynamic_buffer *
+                            (*m_p_render_resource_info->p_render_model_ubo_list).dynamic_alignment;
+
+        g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
+                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                     pipeline_layout,
+                                                     0,
+                                                     1,
+                                                     &m_dir_shadow_ubo_descriptor_set,
+                                                     2,
+                                                     dynamic_offset);
         g_p_vulkan_context->_vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,
                                               submesh.index_count,
                                               1,

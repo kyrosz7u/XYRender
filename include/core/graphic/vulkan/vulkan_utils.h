@@ -77,8 +77,9 @@ namespace VulkanAPI
                                            VkFormat format,
                                            VkImageAspectFlags image_aspect_flags,
                                            VkImageViewType view_type,
-                                           uint32_t layout_count,
-                                           uint32_t miplevels);
+                                           uint32_t mip_levels,
+                                           uint32_t base_layer=0,
+                                           uint32_t layout_count=1);
 
         static VkImageView createImageView(VkDevice device,
                                            VkImage &image,

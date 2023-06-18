@@ -59,7 +59,6 @@ void UIOverlayRenderPass::setupRenderpassAttachments()
                                         m_renderpass_attachments[_ui_overlay_framebuffer_attachment_backup_color].format,
                                         VK_IMAGE_ASPECT_COLOR_BIT,
                                         VK_IMAGE_VIEW_TYPE_2D,
-                                        1,
                                         1);
 
 }
@@ -243,7 +242,7 @@ void UIOverlayRenderPass::setupSubpass()
 }
 
 
-void UIOverlayRenderPass::draw(int render_target_index)
+void UIOverlayRenderPass::draw(uint32_t render_target_index)
 {
     VkClearValue clear_values[_ui_overlay_framebuffer_attachment_count] = {};
     clear_values[_ui_overlay_framebuffer_attachment_in_color].color        = {0.0f, 0.0f, 0.0f, 1.0f};

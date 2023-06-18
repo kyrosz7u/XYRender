@@ -50,7 +50,7 @@ namespace RenderSystem
 
         void initialize(RenderPassInitInfo *renderpass_init_info) override;
 
-        void draw(int render_target_index) override;
+        void draw(uint32_t render_target_index) override;
 
         void updateAfterSwapchainRecreate() override;
 

@@ -45,7 +45,7 @@ namespace RenderSystem
     struct VulkanMeshVertex
     {
 
-        static std::array<VkVertexInputBindingDescription, 3> getVertexInputBindingDescription()
+        static std::array<VkVertexInputBindingDescription, 3> getMeshVertexInputBindingDescription()
         {
             std::array<VkVertexInputBindingDescription, 3> binding_descriptions{};
 
@@ -64,7 +64,7 @@ namespace RenderSystem
             return binding_descriptions;
         }
 
-        static std::array<VkVertexInputAttributeDescription, 4> getVertexInputAttributeDescription()
+        static std::array<VkVertexInputAttributeDescription, 4> getMeshVertexInputAttributeDescription()
         {
             std::array<VkVertexInputAttributeDescription, 4> attribute_descriptions{};
 
@@ -90,6 +90,30 @@ namespace RenderSystem
             attribute_descriptions[3].location = 3;
             attribute_descriptions[3].format   = VK_FORMAT_R32G32_SFLOAT;
             attribute_descriptions[3].offset   = offsetof(VulkanMeshVertexTexcoord, texCoord);
+
+            return attribute_descriptions;
+        }
+
+        static std::array<VkVertexInputBindingDescription, 1> getLightVertexInputBindingDescription()
+        {
+            std::array<VkVertexInputBindingDescription, 1> binding_descriptions{};
+
+            // position
+            binding_descriptions[0].binding   = 0;
+            binding_descriptions[0].stride    = sizeof(VulkanMeshVertexPostition);
+            binding_descriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+            return binding_descriptions;
+        }
+
+        static std::array<VkVertexInputAttributeDescription, 1> getLightVertexInputAttributeDescription()
+        {
+            std::array<VkVertexInputAttributeDescription, 1> attribute_descriptions{};
+
+            // position
+            attribute_descriptions[0].binding  = 0; // 对应于在VkVertexInputBindingDescription中设置的绑定索引
+            attribute_descriptions[0].location = 0;
+            attribute_descriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
+            attribute_descriptions[0].offset   = offsetof(VulkanMeshVertexPostition, position);
 
             return attribute_descriptions;
         }

@@ -22,12 +22,12 @@ namespace RenderSystem
 
     struct DirectionLightInfo
     {
-        VkDeviceSize shadowmap_width = 1024;
-        VkDeviceSize shadowmap_height = 1024;
-        float camera_width = 100;
-        float camera_height = 100;
-        float camera_near = 0.1f;
-        float camera_far = 100.0f;
+        VkDeviceSize shadowmap_width = 1280;
+        VkDeviceSize shadowmap_height = 720;
+        float camera_width = 128;
+        float camera_height = 72;
+        float camera_near = 1.0f;
+        float camera_far = 50.0f;
         VkFormat depth_format = VK_FORMAT_D32_SFLOAT;
     };
 
@@ -36,6 +36,7 @@ namespace RenderSystem
         std::vector<RenderSubmesh>   *p_render_submeshes;
         std::vector<VkDescriptorSet> *p_texture_descriptor_sets;
         VkDescriptorSet              *p_skybox_descriptor_set;
+        VkDescriptorSet              *p_directional_light_shadow_map_descriptor_set;
         RenderModelUBOList           *p_render_model_ubo_list;
         RenderLightProjectUBOList    *p_render_light_project_ubo_list;
         RenderPerFrameUBO            *p_render_per_frame_ubo;

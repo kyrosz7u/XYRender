@@ -10,7 +10,7 @@ namespace RenderSystem
 {
     struct DirectionalLightShadowRenderPassInitInfo : public RenderPassInitInfo
     {
-
+        ImageAttachment* shadowmap_attachment;
     };
 
     class DirectionalLightShadowRenderPass : public RenderPassBase
@@ -37,19 +37,23 @@ namespace RenderSystem
         {
             for(int i = 0; i < m_framebuffer_per_rendertarget.size(); i++)
                 vkDestroyFramebuffer(g_p_vulkan_context->_device, m_framebuffer_per_rendertarget[i], nullptr);
+            for(int i=0; i < m_renderpass_attachments.size(); i++)
+                vkDestroyImageView(g_p_vulkan_context->_device, m_renderpass_attachments[i].view, nullptr);
             vkDestroyRenderPass(g_p_vulkan_context->_device, m_renderpass, nullptr);
         }
 
         void initialize(RenderPassInitInfo *renderpass_init_info) override;
 
-        void updateAfterSwapchainRecreate();
+        void setupRenderpassAttachments();
 
-        void draw(int render_target_index);
+        void updateAfterSwapchainRecreate() override;
+
+        void draw(uint32_t render_target_index) override;
 
     private:
-        void setupRenderPass();
+        ImageAttachment *m_p_shadowmap_attachment;
 
-        void setupRenderpassAttachments();
+        void setupRenderPass();
 
         void setupFrameBuffer();
 

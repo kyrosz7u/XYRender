@@ -23,9 +23,12 @@ void SceneManager::PostInitialize()
             m_visible_textures.push_back(texture);
         }
     }
+
     m_render->SetupModelRenderTextures(m_visible_textures);
     m_render->SetupSkyboxTexture(m_skybox);
     m_render->SetupShadowMapTexture(m_directional_lights);
+
+    m_render->PostInitialize();
 }
 
 void SceneManager::updateScene()

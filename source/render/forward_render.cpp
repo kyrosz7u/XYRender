@@ -17,12 +17,15 @@ void ForwardRender::initialize()
     m_render_command_info.p_viewport          = &m_viewport;
     m_render_command_info.p_scissor           = &m_scissor;
 
-    m_render_resource_info.p_render_submeshes        = &m_render_submeshes;
-    m_render_resource_info.p_texture_descriptor_sets = &m_texture_descriptor_sets;
-    m_render_resource_info.p_render_model_ubo_list   = &m_render_model_ubo_list;
-    m_render_resource_info.p_render_per_frame_ubo    = &m_render_per_frame_ubo;
-    m_render_resource_info.p_ui_overlay              = m_p_ui_overlay;
-    m_render_resource_info.p_skybox_descriptor_set   = &m_skybox_descriptor_set;
+    m_render_resource_info.p_render_submeshes              = &m_render_submeshes;
+    m_render_resource_info.p_texture_descriptor_sets       = &m_texture_descriptor_sets;
+    m_render_resource_info.p_render_model_ubo_list         = &m_render_model_ubo_list;
+    m_render_resource_info.p_render_light_project_ubo_list = &m_render_light_project_ubo_list;
+    m_render_resource_info.p_render_per_frame_ubo          = &m_render_per_frame_ubo;
+    m_render_resource_info.p_ui_overlay                    = m_p_ui_overlay;
+    m_render_resource_info.p_skybox_descriptor_set         = &m_skybox_descriptor_set;
+    m_render_resource_info.p_directional_light_shadow_map_descriptor_set =
+            &m_directional_light_shadow_set;
 
     m_backup_targets.resize(1);
     setupBackupBuffer();
@@ -30,9 +33,12 @@ void ForwardRender::initialize()
     setupCommandBuffer();
     setupDescriptorPool();
     setViewport();
-    setupRenderpass();
-
     setupRenderDescriptorSetLayout();
+}
+
+void ForwardRender::PostInitialize()
+{
+    setupRenderpass();
 }
 
 void ForwardRender::setupRenderTargets()
@@ -63,8 +69,10 @@ void ForwardRender::setupCommandBuffer()
             VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     command_pool_create_info.queueFamilyIndex = g_p_vulkan_context->_queue_indices.graphicsFamily.value();
 
-    if (vkCreateCommandPool(g_p_vulkan_context->_device, &command_pool_create_info, nullptr, &m_command_pool) !=
-        VK_SUCCESS)
+    if (vkCreateCommandPool(g_p_vulkan_context->_device,
+                            &command_pool_create_info,
+                            nullptr,
+                            &m_command_pool) != VK_SUCCESS)
     {
         throw std::runtime_error("vk create command pool");
     }
@@ -90,21 +98,21 @@ void ForwardRender::setupCommandBuffer()
 
 void ForwardRender::setupDescriptorPool()
 {
-    std::vector<VkDescriptorPoolSize> descriptorTypes =
+    std::vector<VkDescriptorPoolSize> descriptor_types =
                                               {
-                                                      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         3},
-                                                      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1},
+                                                      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         3 + 1},
+                                                      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 2 + 1},
                                                       {VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       2},
-                                                      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 11}
+                                                      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8 + 1 + 1 + 1}
                                               };
 
     VkDescriptorPoolCreateInfo descriptorPoolInfo{};
     descriptorPoolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     descriptorPoolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(descriptorTypes.size());
-    descriptorPoolInfo.pPoolSizes    = descriptorTypes.data();
+    descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(descriptor_types.size());
+    descriptorPoolInfo.pPoolSizes    = descriptor_types.data();
     // NOTICE: the maxSets must be equal to the descriptorSets in all subpasses
-    descriptorPoolInfo.maxSets       = 13;
+    descriptorPoolInfo.maxSets       = 13 + 1;
 
     VK_CHECK_RESULT(vkCreateDescriptorPool(g_p_vulkan_context->_device,
                                            &descriptorPoolInfo,
@@ -138,9 +146,7 @@ void ForwardRender::setupBackupBuffer()
                                                            m_backup_targets[0].image,
                                                            m_backup_targets[0].format,
                                                            VK_IMAGE_ASPECT_COLOR_BIT,
-                                                           VK_IMAGE_VIEW_TYPE_2D,
-                                                           1,
-                                                           1);
+                                                           VK_IMAGE_VIEW_TYPE_2D, 1);
 }
 
 void ForwardRender::setViewport()
@@ -165,7 +171,7 @@ void ForwardRender::setupRenderpass()
     directional_light_shadowmap_renderpass_init_info.render_command_info  = &m_render_command_info;
     directional_light_shadowmap_renderpass_init_info.render_resource_info = &m_render_resource_info;
     directional_light_shadowmap_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
-    directional_light_shadowmap_renderpass_init_info.render_targets       = &m_directional_light_shadows;
+    directional_light_shadowmap_renderpass_init_info.shadowmap_attachment = &m_directional_light_shadow;
 
     MainCameraRenderPassInitInfo maincamera_renderpass_init_info;
     maincamera_renderpass_init_info.render_command_info  = &m_render_command_info;
@@ -180,6 +186,8 @@ void ForwardRender::setupRenderpass()
     ui_overlay_renderpass_init_info.render_targets       = &m_render_targets;
     ui_overlay_renderpass_init_info.in_color_attachment  = &m_backup_targets[0];
 
+    m_render_passes[_directional_light_shadowmap_renderpass]->initialize(
+            &directional_light_shadowmap_renderpass_init_info);
     m_render_passes[_main_camera_renderpass]->initialize(&maincamera_renderpass_init_info);
     m_render_passes[_ui_overlay_renderpass]->initialize(&ui_overlay_renderpass_init_info);
 }
@@ -214,10 +222,8 @@ void ForwardRender::draw()
 
     // record command buffer
     m_render_command_info.p_current_command_buffer = &m_command_buffers[next_image_index];
-    for (int i = 0; i < m_directional_light_shadows.size(); i++)
-    {
-        m_render_passes[_directional_light_shadowmap_renderpass]->draw(i);
-    }
+
+    m_render_passes[_directional_light_shadowmap_renderpass]->draw(0);
     m_render_passes[_main_camera_renderpass]->draw(0);
     m_render_passes[_ui_overlay_renderpass]->draw(next_image_index);
 
@@ -226,8 +232,8 @@ void ForwardRender::draw()
     assert(VK_SUCCESS == res_end_command_buffer);
 
     g_p_vulkan_context->submitDrawSwapchainImageCmdBuffer(&m_command_buffers[next_image_index]);
-    g_p_vulkan_context->presentSwapchainImage(next_image_index,
-                                              std::bind(&ForwardRender::updateAfterSwapchainRecreate, this));
+    g_p_vulkan_context->presentSwapchainImage(next_image_index, [this]
+    { updateAfterSwapchainRecreate(); });
 }
 
 void ForwardRender::UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
@@ -283,9 +289,15 @@ void ForwardRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight>
                                                                      kDirectionalLightInfo.camera_height,
                                                                      kDirectionalLightInfo.camera_near,
                                                                      kDirectionalLightInfo.camera_far);
+
         forward.normalise();
-        dummy_transform.position                                    = Math::Vector3(0, 0, 0) + forward * 30;
-        m_render_light_project_ubo_list.ubo_data_list[i].light_proj = projection * dummy_transform.GetTransformMatrix();
+        dummy_transform.position = Math::Vector3(0, 0, 0) - forward * 30;
+
+        auto r_inverse   = getRotationMatrix(dummy_transform.rotation).transpose();
+        auto t_inverse   = Matrix4x4::getTrans(-dummy_transform.position);
+        auto view_matrix = r_inverse * t_inverse;
+
+        m_render_light_project_ubo_list.ubo_data_list[i].light_proj = projection * view_matrix;
     }
 }
 
@@ -350,7 +362,7 @@ void ForwardRender::setupRenderDescriptorSetLayout()
     light_project_layout_bindings.resize(1);
 
     VkDescriptorSetLayoutBinding &light_project_binding = light_project_layout_bindings[0];
-    light_project_binding.descriptorType  = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    light_project_binding.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     light_project_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
     light_project_binding.binding         = 0;
     light_project_binding.descriptorCount = 1;
@@ -366,6 +378,8 @@ void ForwardRender::setupRenderDescriptorSetLayout()
                                                 &light_project_desc_set_layout_create_info,
                                                 nullptr,
                                                 &m_directional_light_shadow_set_layout));
+}
+
 void ForwardRender::SetupModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures)
 {
     // wait for device idle
@@ -373,7 +387,7 @@ void ForwardRender::SetupModelRenderTextures(const std::vector<Texture2DPtr> &_v
     vkDeviceWaitIdle(g_p_vulkan_context->_device);
     if (m_texture_descriptor_sets.size() != _visible_textures.size())
     {
-        if (m_texture_descriptor_sets.size() > 0)
+        if (!m_texture_descriptor_sets.empty())
         {
             g_p_vulkan_context->_vkFreeDescriptorSets(g_p_vulkan_context->_device,
                                                       m_descriptor_pool,
@@ -382,7 +396,7 @@ void ForwardRender::SetupModelRenderTextures(const std::vector<Texture2DPtr> &_v
         }
 
         m_texture_descriptor_sets.resize(_visible_textures.size());
-        if (m_texture_descriptor_sets.size() != 0)
+        if (!m_texture_descriptor_sets.empty())
         {
             std::vector<VkDescriptorSetLayout> layouts(m_texture_descriptor_sets.size(),
                                                        m_texture_descriptor_set_layout);
@@ -482,79 +496,67 @@ void ForwardRender::SetupShadowMapTexture(std::vector<Scene::DirectionLight> &di
 {
     uint32_t directional_light_num = directional_light_list.size();
 
-    if (m_directional_light_shadow_sets.size() != directional_light_num)
+    if (m_directional_light_shadow_set != VK_NULL_HANDLE)
     {
-        if (m_directional_light_shadow_sets.size() != 0)
-        {
-            g_p_vulkan_context->_vkFreeDescriptorSets(g_p_vulkan_context->_device,
-                                                      m_descriptor_pool,
-                                                      m_directional_light_shadow_sets.size(),
-                                                      m_directional_light_shadow_sets.data());
-        }
-        m_directional_light_shadow_sets.resize(directional_light_num);
-        if (m_directional_light_shadow_sets.size() != 0)
-        {
-            std::vector<VkDescriptorSetLayout> layouts(m_directional_light_shadow_sets.size(),
-                                                       m_directional_light_shadow_set_layout);
-            VkDescriptorSetAllocateInfo        allocInfo{};
-            allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            allocInfo.descriptorPool     = m_descriptor_pool;
-            allocInfo.descriptorSetCount = m_directional_light_shadow_sets.size();
-            allocInfo.pSetLayouts        = layouts.data();
+        g_p_vulkan_context->_vkFreeDescriptorSets(g_p_vulkan_context->_device,
+                                                  m_descriptor_pool,
+                                                  1,
+                                                  &m_directional_light_shadow_set);
 
-            if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
-                                         &allocInfo,
-                                         m_directional_light_shadow_sets.data()) != VK_SUCCESS)
-            {
-                throw std::runtime_error("failed to allocate info sets!");
-            }
-        }
     }
 
-    if (m_directional_light_shadows.size() != directional_light_num)
-    {
-        if (m_directional_light_shadows.size() != 0)
-        {
-            for (int i = 0; i < m_directional_light_shadows.size(); ++i)
-            {
-                m_directional_light_shadows[i].destroy();
-            }
-        }
-        m_directional_light_shadows.resize(directional_light_num);
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool     = m_descriptor_pool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts        = &m_directional_light_shadow_set_layout;
 
-        for (int i = 0; i < m_directional_light_shadows.size(); ++i)
-        {
-            m_directional_light_shadows[i].width  = kDirectionalLightInfo.camera_width;
-            m_directional_light_shadows[i].height = kDirectionalLightInfo.camera_height;
-            m_directional_light_shadows[i].format = kDirectionalLightInfo.depth_format;
-            m_directional_light_shadows[i].init();
-        }
+    if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
+                                 &allocInfo,
+                                 &m_directional_light_shadow_set) != VK_SUCCESS)
+    {
+        throw std::runtime_error("failed to allocate info sets!");
     }
 
-    for (int i = 0; i < m_directional_light_shadow_sets.size(); ++i)
+    if (m_directional_light_shadow.image != VK_NULL_HANDLE)
     {
-        VkDescriptorImageInfo info;
-
-        info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        info.imageView   = m_directional_light_shadows[i].view;
-        info.sampler     = VulkanUtil::getOrCreateLinearSampler(g_p_vulkan_context);
-
-        VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet          = m_directional_light_shadow_sets[i];
-        descriptorWrite.dstBinding      = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pImageInfo      = &info;
-
-        vkUpdateDescriptorSets(g_p_vulkan_context->_device,
-                               1,
-                               &descriptorWrite,
-                               0,
-                               nullptr);
+        m_directional_light_shadow.destroy();
     }
 
+    m_directional_light_shadow.width       = kDirectionalLightInfo.shadowmap_width;
+    m_directional_light_shadow.height      = kDirectionalLightInfo.shadowmap_height;
+    m_directional_light_shadow.layer_count = directional_light_num;
+    m_directional_light_shadow.format      = kDirectionalLightInfo.depth_format;
+    m_directional_light_shadow.layout      = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    m_directional_light_shadow.usage =
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    m_directional_light_shadow.aspect    = VK_IMAGE_ASPECT_DEPTH_BIT;
+    m_directional_light_shadow.view_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    m_directional_light_shadow.init();
+
+    VkDescriptorImageInfo info;
+
+    info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+    info.imageView   = m_directional_light_shadow.view;
+    info.sampler     = VulkanUtil::getOrCreateLinearSampler(g_p_vulkan_context);
+
+    VkWriteDescriptorSet descriptor_write{};
+    descriptor_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstSet          = m_directional_light_shadow_set;
+    descriptor_write.dstBinding      = 0;
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.pImageInfo      = &info;
+
+    vkUpdateDescriptorSets(g_p_vulkan_context->_device,
+                           1,
+                           &descriptor_write,
+                           0,
+                           nullptr);
+
+//    std::reinterpret_pointer_cast<DirectionalLightShadowRenderPass>(
+//            m_render_passes[_directional_light_shadowmap_renderpass])->setupRenderpassAttachments();
 }
 
 void ForwardRender::updateAfterSwapchainRecreate()
@@ -566,6 +568,7 @@ void ForwardRender::updateAfterSwapchainRecreate()
     setupBackupBuffer();
     setupRenderTargets();
     setViewport();
+
     for (int i = 0; i < m_render_passes.size(); ++i)
     {
         m_render_passes[i]->updateAfterSwapchainRecreate();
@@ -582,3 +585,4 @@ void ForwardRender::destroy()
     vkDestroyCommandPool(g_p_vulkan_context->_device, m_command_pool, nullptr);
     vkDestroyDescriptorPool(g_p_vulkan_context->_device, m_descriptor_pool, nullptr);
 }
+

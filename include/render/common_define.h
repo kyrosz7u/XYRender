@@ -19,12 +19,17 @@ namespace RenderSystem
 
     struct ImageAttachment
     {
-        VkImage        image;
-        VkDeviceMemory mem;
-        VkImageView    view;
-        VkFormat       format;
-        VkImageLayout  layout; // 使用图像之前，需要将其转换为适当的布局
-        VkDeviceSize   width, height;
+        VkImage            image{VK_NULL_HANDLE};
+        VkDeviceMemory     mem{VK_NULL_HANDLE};
+        VkImageView        view{VK_NULL_HANDLE};
+        VkFormat           format{VK_FORMAT_UNDEFINED};
+        VkImageLayout      layout{VK_IMAGE_LAYOUT_UNDEFINED}; // 使用图像之前，需要将其转换为适当的布局
+        VkImageUsageFlags  usage{VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT};
+        VkImageAspectFlags aspect{VK_IMAGE_ASPECT_COLOR_BIT};
+        VkImageViewType    view_type{VK_IMAGE_VIEW_TYPE_2D};
+        VkDeviceSize       width{0}, height{0};
+        uint32_t           layer_count{1};
+
 
         void init()
         {
@@ -34,22 +39,22 @@ namespace RenderSystem
                                                height,
                                                format,
                                                VK_IMAGE_TILING_OPTIMAL,
-                                               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                                               VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+                                               usage,
                                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                                image,
                                                mem,
                                                0,
-                                               1,
+                                               layer_count,
                                                1);
 
             view = VulkanAPI::VulkanUtil::createImageView(g_p_vulkan_context,
                                                           image,
                                                           format,
-                                                          VK_IMAGE_ASPECT_COLOR_BIT,
-                                                          VK_IMAGE_VIEW_TYPE_2D,
+                                                          aspect,
+                                                          view_type,
                                                           1,
-                                                          1);
+                                                          0,
+                                                          layer_count);
 
         }
 
@@ -59,6 +64,10 @@ namespace RenderSystem
             vkDestroyImageView(g_p_vulkan_context->_device, view, nullptr);
             vkDestroyImage(g_p_vulkan_context->_device, image, nullptr);
             vkFreeMemory(g_p_vulkan_context->_device, mem, nullptr);
+            format = VK_FORMAT_UNDEFINED;
+            layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            width  = 0;
+            height = 0;
         }
     };
 

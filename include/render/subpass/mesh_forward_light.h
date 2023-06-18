@@ -26,6 +26,7 @@ namespace RenderSystem
             {
                 _mesh_pass_ubo_data_layout = 0,
                 _mesh_pass_texture_layout,
+                _mesh_pass_directional_light_shadow_layout,
                 _mesh_pass_pipeline_layout_count
             };
             MeshPass()
@@ -45,7 +46,7 @@ namespace RenderSystem
             void setupPipeLineLayout();
             void setupDescriptorSet() override;
             void setupPipelines() override;
-            VkDescriptorSet m_mesh_light_ubo_descriptor_set = VK_NULL_HANDLE;
+            VkDescriptorSet m_mesh_ubo_descriptor_set = VK_NULL_HANDLE;
         };
     }
 }

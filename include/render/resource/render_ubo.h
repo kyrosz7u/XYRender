@@ -29,7 +29,8 @@ namespace RenderSystem
         VkBuffer               dynamic_buffer;
         VkDeviceMemory         dynamic_buffer_memory;
         void                   *mapped_buffer_ptr;
-        VkDescriptorBufferInfo buffer_info;
+        VkDescriptorBufferInfo dynamic_info;
+        VkDescriptorBufferInfo static_info;
 
     public:
         RenderDynamicBuffer(VkDeviceSize buffer_size = -1)
@@ -53,12 +54,16 @@ namespace RenderSystem
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                      dynamic_buffer, dynamic_buffer_memory);
 
-            buffer_info.buffer = dynamic_buffer;
+            dynamic_info.buffer = dynamic_buffer;
             // dynamic buffer的offset必须是dynamic_alignment的整数倍
             // 所谓dynamic buffer，就是可以在cpu端动态修改offset的buffer
-            buffer_info.offset = 0;
+            dynamic_info.offset = 0;
             // dynamic buffer的range必须是dynamic_alignment，而非buffer_size
-            buffer_info.range  = dynamic_alignment;
+            dynamic_info.range  = dynamic_alignment;
+            // 当作static_buffer来用，要在shader中注意内存对齐的问题，通过合理插入__padding__来解决
+            static_info.buffer = dynamic_buffer;
+            static_info.offset = 0;
+            static_info.range  = buffer_size;
         }
 
         ~RenderDynamicBuffer()

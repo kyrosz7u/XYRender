@@ -7,8 +7,8 @@
 #include "render/subpass/mesh_forward_light.h"
 #include "render/subpass/skybox.h"
 #include "render/renderpass/main_camera_pass.h"
-#include "mesh_vert.h"
-#include "mesh_frag.h"
+#include "mesh_forward_vert.h"
+#include "mesh_forward_frag.h"
 #include "skybox_vert.h"
 #include "skybox_frag.h"
 
@@ -58,9 +58,7 @@ void MainCameraRenderPass::setupRenderpassAttachments()
                                         m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].format,
                                         VK_IMAGE_ASPECT_DEPTH_BIT,
                                         VK_IMAGE_VIEW_TYPE_2D,
-                                        1,
                                         1);
-
 }
 
 void MainCameraRenderPass::setupRenderPass()
@@ -202,8 +200,8 @@ void MainCameraRenderPass::setupSubpass()
     mesh_pass_init_info.subpass_index          = _main_camera_subpass_mesh;
 
     m_subpass_list[_main_camera_subpass_mesh] = std::make_shared<SubPass::MeshPass>();
-    m_subpass_list[_main_camera_subpass_mesh]->setShader(SubPass::VERTEX_SHADER, MESH_VERT);
-    m_subpass_list[_main_camera_subpass_mesh]->setShader(SubPass::FRAGMENT_SHADER, MESH_FRAG);
+    m_subpass_list[_main_camera_subpass_mesh]->setShader(SubPass::VERTEX_SHADER, MESH_FORWARD_VERT);
+    m_subpass_list[_main_camera_subpass_mesh]->setShader(SubPass::FRAGMENT_SHADER, MESH_FORWARD_FRAG);
     m_subpass_list[_main_camera_subpass_mesh]->initialize(&mesh_pass_init_info);
 
     SubPass::SubPassInitInfo skybox_pass_init_info{};
@@ -218,7 +216,7 @@ void MainCameraRenderPass::setupSubpass()
     m_subpass_list[_main_camera_subpass_skybox]->initialize(&skybox_pass_init_info);
 }
 
-void MainCameraRenderPass::draw(int render_target_index)
+void MainCameraRenderPass::draw(uint32_t render_target_index)
 {
     VkClearValue clear_values[_main_camera_framebuffer_attachment_count] = {};
     clear_values[_main_camera_framebuffer_attachment_color].color        = {0.0f, 0.0f, 0.0f, 1.0f};

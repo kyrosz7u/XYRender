@@ -4,7 +4,7 @@
 
 layout(set=0,binding = 0,row_major) uniform _per_frame_ubo_data
 {
-    mat4 proj_view;
+    mat4 camera_proj_view;
     vec3 camera_pos;
     highp int directional_light_number;
 };
@@ -32,5 +32,5 @@ void main()
     tangent = model_matrix *in_tangent;
     texcoord = in_texCoord;
 
-    gl_Position =  proj_view* model_matrix * vec4(in_position, 1.0);
+    gl_Position =  camera_proj_view * model_matrix * vec4(in_position, 1.0);
 }

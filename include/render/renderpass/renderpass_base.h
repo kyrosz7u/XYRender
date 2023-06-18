@@ -27,7 +27,7 @@ namespace RenderSystem
         }
 
         virtual void initialize(RenderPassInitInfo* renderpass_init_info) = 0;
-        virtual void draw(int render_image_index) = 0;
+        virtual void draw(uint32_t render_image_index) = 0;
         virtual void updateAfterSwapchainRecreate() = 0;
     protected:
         friend struct ImageAttachment;

@@ -122,8 +122,7 @@ Texture2D::Texture2D(const std::string &texture_path, const std::string &texture
                                        image,
                                        VK_FORMAT_R8G8B8A8_UNORM,
                                        VK_IMAGE_ASPECT_COLOR_BIT,
-                                       VK_IMAGE_VIEW_TYPE_2D,
-                                       1, mip_levels);
+                                       VK_IMAGE_VIEW_TYPE_2D, mip_levels);
 
     image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     info.sampler     = sampler;
@@ -285,7 +284,7 @@ TextureCube::TextureCube(const std::vector<std::string> &path, const std::string
                                           image_format,
                                           VK_IMAGE_ASPECT_COLOR_BIT,
                                           VK_IMAGE_VIEW_TYPE_CUBE,
-                                          6, mip_levels);
+                                          mip_levels,0 ,6);
 
     image_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     info.sampler     = sampler;
