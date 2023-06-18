@@ -13,9 +13,20 @@
 
 namespace RenderSystem
 {
+    struct RenderGlobalResourceInfo;
+
     extern std::shared_ptr<VulkanAPI::VulkanContext> g_p_vulkan_context;
 
-    struct RenderGlobalResourceInfo;
+    struct DirectionLightInfo
+    {
+        VkDeviceSize shadowmap_width = 600;
+        VkDeviceSize shadowmap_height = 600;
+        float camera_width = 600;
+        float camera_height = 600;
+        float camera_near = 1.0f;
+        float camera_far = 50.0f;
+        VkFormat depth_format = VK_FORMAT_D32_SFLOAT;
+    };
 
     struct ImageAttachment
     {

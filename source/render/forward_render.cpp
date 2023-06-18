@@ -285,10 +285,10 @@ void ForwardRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight>
     {
         auto dummy_transform = directional_light_list[i].transform;
         auto forward         = dummy_transform.GetForward();
-        auto projection      = Math::Matrix4x4::makeOrthogonalMatrix(kDirectionalLightInfo.camera_width,
-                                                                     kDirectionalLightInfo.camera_height,
-                                                                     kDirectionalLightInfo.camera_near,
-                                                                     kDirectionalLightInfo.camera_far);
+        auto projection      = Math::Matrix4x4::makeOrthogonalMatrix(m_render_resource_info.kDirectionalLightInfo.camera_width,
+                                                                     m_render_resource_info.kDirectionalLightInfo.camera_height,
+                                                                     m_render_resource_info.kDirectionalLightInfo.camera_near,
+                                                                     m_render_resource_info.kDirectionalLightInfo.camera_far);
 
 //        auto projection      = Math::Matrix4x4::makePerspectiveMatrix(90,1.33,1.0,50);
 
@@ -525,10 +525,10 @@ void ForwardRender::SetupShadowMapTexture(std::vector<Scene::DirectionLight> &di
         m_directional_light_shadow.destroy();
     }
 
-    m_directional_light_shadow.width       = kDirectionalLightInfo.shadowmap_width;
-    m_directional_light_shadow.height      = kDirectionalLightInfo.shadowmap_height;
+    m_directional_light_shadow.width       = m_render_resource_info.kDirectionalLightInfo.shadowmap_width;
+    m_directional_light_shadow.height      = m_render_resource_info.kDirectionalLightInfo.shadowmap_height;
     m_directional_light_shadow.layer_count = directional_light_num;
-    m_directional_light_shadow.format      = kDirectionalLightInfo.depth_format;
+    m_directional_light_shadow.format      = m_render_resource_info.kDirectionalLightInfo.depth_format;
     m_directional_light_shadow.layout      = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     m_directional_light_shadow.usage =
             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;

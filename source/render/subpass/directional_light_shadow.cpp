@@ -225,7 +225,7 @@ void DirectionalLightShadowPass::setupPipelines()
     depth_stencil_create_info.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depth_stencil_create_info.depthTestEnable       = VK_TRUE;
     depth_stencil_create_info.depthWriteEnable      = VK_TRUE;
-    depth_stencil_create_info.depthCompareOp        = VK_COMPARE_OP_LESS_OR_EQUAL;
+    depth_stencil_create_info.depthCompareOp        = VK_COMPARE_OP_LESS;
     depth_stencil_create_info.depthBoundsTestEnable = VK_FALSE;
     depth_stencil_create_info.stencilTestEnable     = VK_FALSE;
 
@@ -279,10 +279,25 @@ void DirectionalLightShadowPass::draw()
 
     g_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->p_current_command_buffer,
                                            VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+    VkExtent2D extent = {m_p_render_resource_info->kDirectionalLightInfo.shadowmap_width,
+                         m_p_render_resource_info->kDirectionalLightInfo.shadowmap_height};
+    VkViewport viewport{};
+    viewport.x        = 0.0f;
+    viewport.y        = 0.0f;
+    viewport.width    = static_cast<float>(extent.width);
+    viewport.height   = static_cast<float>(extent.height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor{};
+    scissor.offset = {0, 0};
+    scissor.extent = extent;
+
     g_p_vulkan_context->_vkCmdSetViewport(*m_p_render_command_info->p_current_command_buffer, 0, 1,
-                                          m_p_render_command_info->p_viewport);
+                                          &viewport);
     g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->p_current_command_buffer, 0, 1,
-                                         m_p_render_command_info->p_scissor);
+                                         &scissor);
 
 
     auto &render_submeshes = *m_p_render_resource_info->p_render_submeshes;

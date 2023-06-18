@@ -26,8 +26,6 @@ namespace RenderSystem
             _renderpass_count
         };
 
-        const DirectionLightInfo kDirectionalLightInfo;
-
         ForwardRender()
                 : m_render_light_project_ubo_list(MAX_DIRECTIONAL_LIGHT_COUNT * sizeof(VulkanLightProjectDefine))
         {}
