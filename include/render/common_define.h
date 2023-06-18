@@ -19,12 +19,12 @@ namespace RenderSystem
 
     struct DirectionLightInfo
     {
-        VkDeviceSize shadowmap_width = 600;
-        VkDeviceSize shadowmap_height = 600;
+        VkDeviceSize shadowmap_width = 1000;
+        VkDeviceSize shadowmap_height = 1000;
         float camera_width = 600;
         float camera_height = 600;
         float camera_near = 1.0f;
-        float camera_far = 50.0f;
+        float camera_far = 100.0f;
         VkFormat depth_format = VK_FORMAT_D32_SFLOAT;
     };
 

@@ -293,7 +293,7 @@ void ForwardRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight>
 //        auto projection      = Math::Matrix4x4::makePerspectiveMatrix(90,1.33,1.0,50);
 
         forward.normalise();
-        dummy_transform.position = Math::Vector3(0, 0, 0) - forward * 20;
+        dummy_transform.position = Math::Vector3(10, 0, -10) - forward * 30;
 
         auto r_inverse   = getRotationMatrix(dummy_transform.rotation).transpose();
         auto t_inverse   = Matrix4x4::getTrans(-dummy_transform.position);
