@@ -186,7 +186,7 @@ void DirectionalLightShadowPass::setupPipelines()
     rasterization_state_create_info.rasterizerDiscardEnable = VK_FALSE;
     rasterization_state_create_info.polygonMode             = VK_POLYGON_MODE_FILL;
     rasterization_state_create_info.lineWidth               = 1.0f;
-    rasterization_state_create_info.cullMode                = VK_CULL_MODE_BACK_BIT;
+    rasterization_state_create_info.cullMode                = VK_CULL_MODE_NONE;
     rasterization_state_create_info.frontFace               = VK_FRONT_FACE_CLOCKWISE;
     rasterization_state_create_info.depthBiasEnable         = VK_FALSE;
     rasterization_state_create_info.depthBiasConstantFactor = 0.0f;
@@ -225,7 +225,7 @@ void DirectionalLightShadowPass::setupPipelines()
     depth_stencil_create_info.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depth_stencil_create_info.depthTestEnable       = VK_TRUE;
     depth_stencil_create_info.depthWriteEnable      = VK_TRUE;
-    depth_stencil_create_info.depthCompareOp        = VK_COMPARE_OP_LESS;
+    depth_stencil_create_info.depthCompareOp        = VK_COMPARE_OP_LESS_OR_EQUAL;
     depth_stencil_create_info.depthBoundsTestEnable = VK_FALSE;
     depth_stencil_create_info.stencilTestEnable     = VK_FALSE;
 

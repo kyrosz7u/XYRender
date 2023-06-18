@@ -35,7 +35,7 @@ int main()
 
     model.LoadModelFile("assets/models/plane.obj", "plane");
     model.transform.position = Math::Vector3(0, 0, 0);
-    model.transform.scale    = Math::Vector3(10.0f, 10.0f, 10.0f);
+    model.transform.scale    = Math::Vector3(8.0f, 1.0f, 8.0f);
     model.ToGPU();
     scene_manager->AddModel(model);
 
@@ -52,6 +52,7 @@ int main()
     Scene::DirectionLight light;
     light.intensity = 1.0f;
     light.transform = Transform(Math::Vector3(0, 15, -15), Math::EulerAngle(50, -30, 0), Math::Vector3(1, 1, 1));
+//    light.transform.rotation = Math::EulerAngle(90, 0, 0);
 //    light.transform = Transform(Math::Vector3(0, 15, -15), Math::EulerAngle(0, 0, 0), Math::Vector3(1, 1, 1));
     light.color     = Color(1, float(244) / 255, float(214) / 255, 1.0f);
     scene_manager->AddLight(light);

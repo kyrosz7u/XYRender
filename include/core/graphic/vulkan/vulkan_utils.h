@@ -117,6 +117,8 @@ namespace VulkanAPI
 
         static VkSampler getOrCreateLinearSampler(std::shared_ptr<VulkanContext> p_context);
 
+        static VkSampler getOrCreateDepthSampler(std::shared_ptr<VulkanContext> p_context);
+
         static VkSampler getOrCreateCubeMapSampler(std::shared_ptr<VulkanContext> p_context, uint32_t mip_levels);
 
         static void destroyMipmappedSampler(VkDevice device);
@@ -129,6 +131,7 @@ namespace VulkanAPI
         static std::unordered_map<uint32_t, VkSampler> m_mipmap_sampler_texture;
         static VkSampler                               m_nearest_sampler;
         static VkSampler                               m_linear_sampler;
+        static VkSampler                               m_depth_sampler;
         static VkSampler                               m_cubemap_sampler;
 
     };

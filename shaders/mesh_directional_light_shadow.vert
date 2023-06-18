@@ -1,4 +1,4 @@
-#version 310 es
+#version 450
 
 layout(set=0,binding=0,row_major) uniform _per_light_project_ubo_data
 {

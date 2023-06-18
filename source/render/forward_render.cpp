@@ -290,8 +290,10 @@ void ForwardRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight>
                                                                      kDirectionalLightInfo.camera_near,
                                                                      kDirectionalLightInfo.camera_far);
 
+//        auto projection      = Math::Matrix4x4::makePerspectiveMatrix(90,1.33,1.0,50);
+
         forward.normalise();
-        dummy_transform.position = Math::Vector3(0, 0, 0) - forward * 30;
+        dummy_transform.position = Math::Vector3(0, 0, 0) - forward * 20;
 
         auto r_inverse   = getRotationMatrix(dummy_transform.rotation).transpose();
         auto t_inverse   = Matrix4x4::getTrans(-dummy_transform.position);
@@ -538,7 +540,7 @@ void ForwardRender::SetupShadowMapTexture(std::vector<Scene::DirectionLight> &di
 
     info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
     info.imageView   = m_directional_light_shadow.view;
-    info.sampler     = VulkanUtil::getOrCreateLinearSampler(g_p_vulkan_context);
+    info.sampler     = VulkanUtil::getOrCreateDepthSampler(g_p_vulkan_context);
 
     VkWriteDescriptorSet descriptor_write{};
     descriptor_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

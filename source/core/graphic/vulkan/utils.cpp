@@ -9,6 +9,7 @@ using namespace VulkanAPI;
 std::unordered_map<uint32_t, VkSampler> VulkanUtil::m_mipmap_sampler_texture;
 VkSampler                               VulkanUtil::m_nearest_sampler = VK_NULL_HANDLE;
 VkSampler                               VulkanUtil::m_linear_sampler  = VK_NULL_HANDLE;
+VkSampler                               VulkanUtil::m_depth_sampler  = VK_NULL_HANDLE;
 VkSampler                               VulkanUtil::m_cubemap_sampler = VK_NULL_HANDLE;
 
 std::string VulkanUtil::errorString(VkResult errorCode)
@@ -645,6 +646,41 @@ VkSampler VulkanUtil::getOrCreateLinearSampler(std::shared_ptr<VulkanContext> p_
     }
 
     return m_linear_sampler;
+}
+
+VkSampler VulkanUtil::getOrCreateDepthSampler(std::shared_ptr<VulkanContext> p_context)
+{
+    if (m_depth_sampler == VK_NULL_HANDLE)
+    {
+        VkPhysicalDeviceProperties physical_device_properties{};
+        vkGetPhysicalDeviceProperties(p_context->_physical_device, &physical_device_properties);
+
+        VkSamplerCreateInfo samplerInfo{};
+
+        samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter               = VK_FILTER_LINEAR;
+        samplerInfo.minFilter               = VK_FILTER_LINEAR;
+        samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.mipLodBias              = 0.0f;
+        samplerInfo.anisotropyEnable        = VK_FALSE;
+        samplerInfo.maxAnisotropy           = physical_device_properties.limits.maxSamplerAnisotropy; // close :1.0f
+        samplerInfo.compareEnable           = VK_FALSE;
+        samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
+        samplerInfo.minLod                  = 0.0f;
+        samplerInfo.maxLod                  = 8.0f; // todo: m_irradiance_texture_miplevels
+        samplerInfo.borderColor             = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+
+        if (vkCreateSampler(p_context->_device, &samplerInfo, nullptr, &m_depth_sampler) != VK_SUCCESS)
+        {
+            throw std::runtime_error("vk create sampler");
+        }
+    }
+
+    return m_depth_sampler;
 }
 
 VkSampler VulkanUtil::getOrCreateCubeMapSampler(std::shared_ptr<VulkanContext> p_context, uint32_t mip_levels)

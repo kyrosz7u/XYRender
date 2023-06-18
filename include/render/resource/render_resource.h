@@ -24,8 +24,8 @@ namespace RenderSystem
     {
         VkDeviceSize shadowmap_width = 1280;
         VkDeviceSize shadowmap_height = 720;
-        float camera_width = 128;
-        float camera_height = 72;
+        float camera_width = 600;
+        float camera_height = 600;
         float camera_near = 1.0f;
         float camera_far = 50.0f;
         VkFormat depth_format = VK_FORMAT_D32_SFLOAT;

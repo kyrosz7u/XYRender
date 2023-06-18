@@ -23,7 +23,7 @@ layout (set = 0, binding = 2) uniform _directional_light
     DirectionalLight directional_light[m_max_direction_light_count];
 };
 
-layout (set = 0, binding = 3) uniform _directional_light_projection
+layout (set = 0, binding = 3, row_major) uniform _directional_light_projection
 {
     highp mat4 directional_light_proj[m_max_direction_light_count];
 };
