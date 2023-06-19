@@ -671,7 +671,8 @@ VkSampler VulkanUtil::getOrCreateDepthSampler(std::shared_ptr<VulkanContext> p_c
         samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
         samplerInfo.minLod                  = 0.0f;
         samplerInfo.maxLod                  = 8.0f; // todo: m_irradiance_texture_miplevels
-        samplerInfo.borderColor             = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+        samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_WHITE;
+
         samplerInfo.unnormalizedCoordinates = VK_FALSE;
 
         if (vkCreateSampler(p_context->_device, &samplerInfo, nullptr, &m_depth_sampler) != VK_SUCCESS)

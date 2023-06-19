@@ -45,7 +45,7 @@ highp float calculate_visibility(highp vec3 world_pos, highp int light_index)
     highp vec4 light_space_pos = directional_light_proj[light_index] * vec4(world_pos, 1.0);
     highp vec3 light_space_pos_ndc = light_space_pos.xyz / light_space_pos.w;
 
-    if(light_space_pos_ndc.z >= 1.0f)
+    if(light_space_pos_ndc.z >= 1.0f || light_space_pos_ndc.z <= 0.0f)
     {
         return 1.0f;
     }
@@ -53,7 +53,7 @@ highp float calculate_visibility(highp vec3 world_pos, highp int light_index)
     highp vec3 light_space_pos_uv = light_space_pos_ndc * 0.5 + 0.5;
     highp vec3 light_space_pos_uv_y_inverted = vec3(light_space_pos_uv.x, light_space_pos_uv.y, float(light_index));
     highp float light_space_depth = texture(directional_light_shadowmap_array, light_space_pos_uv_y_inverted).r;
-    if(light_space_depth < light_space_pos_ndc.z)
+    if(light_space_depth < light_space_pos_ndc.z - 0.005)
     {
         return 0.0f;
     }
@@ -61,6 +61,8 @@ highp float calculate_visibility(highp vec3 world_pos, highp int light_index)
     {
         return 1.0f;
     }
+
+//    return light_space_depth;
 }
 
 void main()
@@ -71,7 +73,7 @@ void main()
     highp vec3 diffuse_color = vec3(0.0, 0.0, 0.0);
     highp vec3 specular_color = vec3(0.0, 0.0, 0.0);
 
-
+    highp float visibility;
     for (highp int i = 0; i < directional_light_number; ++i)
     {
         DirectionalLight light = directional_light[i];
@@ -80,7 +82,7 @@ void main()
         highp vec3 half_dir = normalize(light_dir + view_dir);
         highp float NdotL = max(dot(normalize(normal), light_dir), 0.0);
 
-        highp float visibility;
+
         if(NdotL <= 0.0)
         {
             visibility = 0.0f;
@@ -97,5 +99,8 @@ void main()
     diffuse_color /= float(directional_light_number);
     specular_color/=float(directional_light_number);
 
+//    out_color = vec4(visibility,0.0f,0.0f,1.0f);
+
     out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
+
 }

@@ -35,7 +35,7 @@ int main()
 
     model.LoadModelFile("assets/models/plane.obj", "plane");
     model.transform.position = Math::Vector3(0, 0, 0);
-    model.transform.scale    = Math::Vector3(8.0f, 1.0f, 8.0f);
+    model.transform.scale    = Math::Vector3(6.0f, 1.0f, 6.0f);
     model.ToGPU();
     scene_manager->AddModel(model);
 
