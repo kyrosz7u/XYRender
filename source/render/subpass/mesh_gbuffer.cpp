@@ -1,8 +1,8 @@
 //
-// Created by kyros on 5/21/23.
+// Created by kyrosz7u on 2023/6/25.
 //
 
-#include "render/subpass/mesh_forward_light.h"
+#include "render/subpass/mesh_gbuffer.h"
 #include "render/resource/render_mesh.h"
 #include "core/logger/logger_macros.h"
 
@@ -10,9 +10,9 @@ using namespace VulkanAPI;
 using namespace RenderSystem;
 using namespace RenderSystem::SubPass;
 
-void MeshForwardLightingPass::initialize(SubPassInitInfo *subPassInitInfo)
+void MeshGBufferPass::initialize(SubPassInitInfo *subPassInitInfo)
 {
-    auto mesh_pass_init_info = static_cast<MeshForwardLightingPassPassInitInfo *>(subPassInitInfo);
+    auto mesh_pass_init_info = static_cast<MeshGBufferPassInitInfo *>(subPassInitInfo);
     m_p_render_command_info  = mesh_pass_init_info->p_render_command_info;
     m_p_render_resource_info = mesh_pass_init_info->p_render_resource_info;
     m_subpass_index          = mesh_pass_init_info->subpass_index;
@@ -24,12 +24,12 @@ void MeshForwardLightingPass::initialize(SubPassInitInfo *subPassInitInfo)
     setupPipelines();
 }
 
-void MeshForwardLightingPass::setupPipeLineLayout()
+void MeshGBufferPass::setupPipeLineLayout()
 {
     auto &ubo_data_layout = m_descriptor_set_layouts[_mesh_pass_ubo_data_layout];
 
     std::vector<VkDescriptorSetLayoutBinding> ubo_layout_bindings;
-    ubo_layout_bindings.resize(4);
+    ubo_layout_bindings.resize(2);
 
     VkDescriptorSetLayoutBinding &perframe_buffer_binding = ubo_layout_bindings[0];
 
@@ -45,19 +45,6 @@ void MeshForwardLightingPass::setupPipeLineLayout()
     perobject_buffer_binding.binding         = 1;
     perobject_buffer_binding.descriptorCount = 1;
 
-    VkDescriptorSetLayoutBinding &directional_light_info_binding = ubo_layout_bindings[2];
-
-    directional_light_info_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    directional_light_info_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
-    directional_light_info_binding.binding         = 2;
-    directional_light_info_binding.descriptorCount = 1;
-
-    VkDescriptorSetLayoutBinding &direction_light_projection_binding = ubo_layout_bindings[3];
-
-    direction_light_projection_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    direction_light_projection_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
-    direction_light_projection_binding.binding         = 3;
-    direction_light_projection_binding.descriptorCount = 1;
 
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
     descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -93,33 +80,9 @@ void MeshForwardLightingPass::setupPipeLineLayout()
                                                 &texture_descriptorSetLayoutCreateInfo,
                                                 nullptr,
                                                 &texture_data_layout))
-
-    auto &directional_light_data_layout = m_descriptor_set_layouts[_mesh_pass_directional_light_shadow_layout];
-
-    std::vector<VkDescriptorSetLayoutBinding> directional_light_layout_bindings;
-    directional_light_layout_bindings.resize(1);
-
-    VkDescriptorSetLayoutBinding &directional_light_binding = directional_light_layout_bindings[0];
-    directional_light_binding.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    directional_light_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
-    directional_light_binding.binding         = 0;
-    directional_light_binding.descriptorCount = 1;
-
-    VkDescriptorSetLayoutCreateInfo directional_light_descriptorSetLayoutCreateInfo;
-    directional_light_descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    directional_light_descriptorSetLayoutCreateInfo.flags        = 0;
-    directional_light_descriptorSetLayoutCreateInfo.pNext        = nullptr;
-    directional_light_descriptorSetLayoutCreateInfo.bindingCount = directional_light_layout_bindings.size();
-    directional_light_descriptorSetLayoutCreateInfo.pBindings    = directional_light_layout_bindings.data();
-
-    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
-                                                &directional_light_descriptorSetLayoutCreateInfo,
-                                                nullptr,
-                                                &directional_light_data_layout))
-
 }
 
-void MeshForwardLightingPass::setupDescriptorSet()
+void MeshGBufferPass::setupDescriptorSet()
 {
     VkDescriptorSetAllocateInfo allocInfo{};
 
@@ -138,10 +101,10 @@ void MeshForwardLightingPass::setupDescriptorSet()
     }
 }
 
-void MeshForwardLightingPass::updateGlobalRenderDescriptorSet()
+void MeshGBufferPass::updateGlobalRenderDescriptorSet()
 {
     std::vector<VkWriteDescriptorSet> write_descriptor_sets;
-    write_descriptor_sets.resize(4);
+    write_descriptor_sets.resize(2);
 
     VkWriteDescriptorSet &perframe_buffer_write = write_descriptor_sets[0];
     perframe_buffer_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -162,35 +125,14 @@ void MeshForwardLightingPass::updateGlobalRenderDescriptorSet()
     perobject_buffer_write.descriptorCount = 1;
     perobject_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_model_ubo_list->dynamic_info;
 
-    VkWriteDescriptorSet &direction_buffer_write = write_descriptor_sets[2];
-    direction_buffer_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    direction_buffer_write.dstSet          = m_mesh_ubo_descriptor_set;
-    direction_buffer_write.dstBinding      = 2;
-    direction_buffer_write.dstArrayElement = 0;
-    direction_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    direction_buffer_write.descriptorCount = 1;
-    direction_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_per_frame_ubo
-            ->buffer_infos[RenderPerFrameUBO::_light_info_block];
-
-    VkWriteDescriptorSet &directional_light_probes_buffer_write = write_descriptor_sets[3];
-    directional_light_probes_buffer_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    directional_light_probes_buffer_write.dstSet          = m_mesh_ubo_descriptor_set;
-    directional_light_probes_buffer_write.dstBinding      = 3;
-    directional_light_probes_buffer_write.dstArrayElement = 0;
-    directional_light_probes_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    directional_light_probes_buffer_write.descriptorCount = 1;
-    directional_light_probes_buffer_write.pBufferInfo     = &m_p_render_resource_info->
-            p_render_light_project_ubo_list->static_info;
-
     vkUpdateDescriptorSets(g_p_vulkan_context->_device,
                            write_descriptor_sets.size(),
                            write_descriptor_sets.data(),
                            0,
                            nullptr);
-
 }
 
-void MeshForwardLightingPass::setupPipelines()
+void MeshGBufferPass::setupPipelines()
 {
     std::vector<VkDescriptorSetLayout> descriptorset_layouts;
 
@@ -350,11 +292,11 @@ void MeshForwardLightingPass::setupPipelines()
     }
 }
 
-void MeshForwardLightingPass::draw()
+void MeshGBufferPass::draw()
 {
 //    updateGlobalRenderDescriptorSet();
     VkDebugUtilsLabelEXT label_info = {
-            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Mesh Forward", {1.0f, 1.0f, 1.0f, 1.0f}};
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Mesh GBuffer", {1.0f, 1.0f, 1.0f, 1.0f}};
     g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
 
     g_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->p_current_command_buffer,
@@ -363,14 +305,6 @@ void MeshForwardLightingPass::draw()
                                           m_p_render_command_info->p_viewport);
     g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->p_current_command_buffer, 0, 1,
                                          m_p_render_command_info->p_scissor);
-    // m_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
-    //                                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
-    //                                                 pipeline_layout,
-    //                                                 0,
-    //                                                 1,
-    //                                                 NULL,
-    //                                                 0,
-    //                                                 NULL);
 
     auto &render_submeshes         = *m_p_render_resource_info->p_render_submeshes;
     auto &render_texture_desc_sets = *m_p_render_resource_info->p_texture_descriptor_sets;
@@ -421,18 +355,6 @@ void MeshForwardLightingPass::draw()
                                                      &m_mesh_ubo_descriptor_set,
                                                      1,
                                                      &dynamicOffset);
-        //bind directional light shadow map
-        if (m_p_render_resource_info->p_directional_light_shadow_map_descriptor_set != nullptr)
-        {
-            g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
-                                                         VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                         pipeline_layout,
-                                                         2,
-                                                         1,
-                                                         m_p_render_resource_info->p_directional_light_shadow_map_descriptor_set,
-                                                         0,
-                                                         NULL);
-        }
 
         g_p_vulkan_context->_vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,
                                               submesh.index_count,
@@ -444,9 +366,8 @@ void MeshForwardLightingPass::draw()
     g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
 }
 
-void MeshForwardLightingPass::updateAfterSwapchainRecreate()
+void MeshGBufferPass::updateAfterSwapchainRecreate()
 {
 
 }
-
 

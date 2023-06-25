@@ -2,8 +2,8 @@
 // Created by kyrosz7u on 2023/5/22.
 //
 
-#ifndef XEXAMPLE_MAINCAMERASUBPASS_H
-#define XEXAMPLE_MAINCAMERASUBPASS_H
+#ifndef XEXAMPLE_MAINCAMERA_DEFER_PASS_H
+#define XEXAMPLE_MAINCAMERA_DEFER_PASS_H
 
 #include "renderpass_base.h"
 #include "render/resource/render_mesh.h"
@@ -12,12 +12,12 @@ using namespace VulkanAPI;
 
 namespace RenderSystem
 {
-    struct MainCameraRenderPassInitInfo : public RenderPassInitInfo
+    struct MainCameraDeferRenderPassInitInfo : public RenderPassInitInfo
     {
 
     };
 
-    class MainCameraRenderPass : public RenderPassBase
+    class MainCameraDeferRenderPass : public RenderPassBase
     {
     public:
         enum _main_camera_subpass : unsigned int
@@ -27,20 +27,20 @@ namespace RenderSystem
             _main_camera_subpass_count
         };
 
-        enum _main_camera_framebuffer_attachment : unsigned int
+        enum _main_camera_defer_framebuffer_attachment : unsigned int
         {
             _main_camera_framebuffer_attachment_color,
             _main_camera_framebuffer_attachment_depth,
-            _main_camera_framebuffer_attachment_count
+            _main_camera_defer_framebuffer_attachment_count
         };
 
-        MainCameraRenderPass()
+        MainCameraDeferRenderPass()
         {
             m_subpass_list.resize(_main_camera_subpass_count);
-            m_renderpass_attachments.resize(_main_camera_framebuffer_attachment_count);
+            m_renderpass_attachments.resize(_main_camera_defer_framebuffer_attachment_count);
         }
 
-        ~MainCameraRenderPass()
+        ~MainCameraDeferRenderPass()
         {
             for (int i = 0; i < m_renderpass_attachments.size(); i++)
                 m_renderpass_attachments[i].destroy();

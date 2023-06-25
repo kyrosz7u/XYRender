@@ -1,16 +1,16 @@
 //
-// Created by kyrosz7u on 2023/5/19.
+// Created by kyrosz7u on 2023/6/25.
 //
 
 #include "core/logger/logger_macros.h"
-#include "render/forward_render.h"
+#include "render/defer_render.h"
 #include "render/renderpass/directional_light_shadow_pass.h"
-#include "render/renderpass/main_camera_forward_pass.h"
+#include "render/renderpass/main_camera_defer_pass.h"
 #include "render/renderpass/ui_overlay_pass.h"
 
 using namespace RenderSystem;
 
-void ForwardRender::initialize()
+void DeferRender::initialize()
 {
     m_render_command_info.command_buffer_list = &m_command_buffers;
     m_render_command_info.p_descriptor_pool   = &m_descriptor_pool;
@@ -36,12 +36,12 @@ void ForwardRender::initialize()
     setupRenderDescriptorSetLayout();
 }
 
-void ForwardRender::PostInitialize()
+void DeferRender::PostInitialize()
 {
     setupRenderpass();
 }
 
-void ForwardRender::setupRenderTargets()
+void DeferRender::setupRenderTargets()
 {
     uint32_t renderTarget_nums = g_p_vulkan_context->_swapchain_images.size();
 
@@ -60,7 +60,7 @@ void ForwardRender::setupRenderTargets()
     m_render_targets.swap(targets_tmp);
 }
 
-void ForwardRender::setupCommandBuffer()
+void DeferRender::setupCommandBuffer()
 {
     VkCommandPoolCreateInfo command_pool_create_info;
     command_pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -96,7 +96,7 @@ void ForwardRender::setupCommandBuffer()
     }
 }
 
-void ForwardRender::setupDescriptorPool()
+void DeferRender::setupDescriptorPool()
 {
     std::vector<VkDescriptorPoolSize> descriptor_types =
                                               {
@@ -120,7 +120,7 @@ void ForwardRender::setupDescriptorPool()
                                            &m_descriptor_pool))
 }
 
-void ForwardRender::setupBackupBuffer()
+void DeferRender::setupBackupBuffer()
 {
     m_backup_targets[0] = ImageAttachment{
             VK_NULL_HANDLE,
@@ -149,7 +149,7 @@ void ForwardRender::setupBackupBuffer()
                                                            VK_IMAGE_VIEW_TYPE_2D, 1);
 }
 
-void ForwardRender::setViewport()
+void DeferRender::setViewport()
 {
     uint32_t width  = g_p_vulkan_context->_swapchain_extent.width;
     uint32_t height = g_p_vulkan_context->_swapchain_extent.height;
@@ -159,12 +159,12 @@ void ForwardRender::setViewport()
                            {width, height}});
 }
 
-void ForwardRender::setupRenderpass()
+void DeferRender::setupRenderpass()
 {
     m_render_passes.resize(_renderpass_count);
 
     m_render_passes[_directional_light_shadowmap_renderpass] = std::make_shared<DirectionalLightShadowRenderPass>();
-    m_render_passes[_main_camera_renderpass]                 = std::make_shared<MainCameraForwardRenderPass>();
+    m_render_passes[_main_camera_renderpass]                 = std::make_shared<MainCameraDeferRenderPass>();
     m_render_passes[_ui_overlay_renderpass]                  = std::make_shared<UIOverlayRenderPass>();
 
     DirectionalLightShadowRenderPassInitInfo directional_light_shadowmap_renderpass_init_info;
@@ -173,7 +173,7 @@ void ForwardRender::setupRenderpass()
     directional_light_shadowmap_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
     directional_light_shadowmap_renderpass_init_info.shadowmap_attachment = &m_directional_light_shadow;
 
-    MainCameraForwardRenderPassInitInfo maincamera_renderpass_init_info;
+    MainCameraDeferRenderPassInitInfo maincamera_renderpass_init_info;
     maincamera_renderpass_init_info.render_command_info  = &m_render_command_info;
     maincamera_renderpass_init_info.render_resource_info = &m_render_resource_info;
     maincamera_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
@@ -192,16 +192,16 @@ void ForwardRender::setupRenderpass()
     m_render_passes[_ui_overlay_renderpass]->initialize(&ui_overlay_renderpass_init_info);
 }
 
-void ForwardRender::Tick()
+void DeferRender::Tick()
 {
     RenderBase::Tick();
     draw();
 }
 
-void ForwardRender::draw()
+void DeferRender::draw()
 {
     uint32_t next_image_index = g_p_vulkan_context->getNextSwapchainImageIndex(
-            std::bind(&ForwardRender::updateAfterSwapchainRecreate, this));
+            std::bind(&DeferRender::updateAfterSwapchainRecreate, this));
     if (next_image_index == -1)
     {
         LOG_INFO("next image index is -1");
@@ -236,7 +236,7 @@ void ForwardRender::draw()
     { updateAfterSwapchainRecreate(); });
 }
 
-void ForwardRender::UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
+void DeferRender::UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
                                           const std::vector<RenderSubmesh> &_visible_submeshes)
 {
     if (m_render_model_ubo_list.ubo_data_list.size() != _visible_models.size())
@@ -257,7 +257,7 @@ void ForwardRender::UpdateRenderModelList(const std::vector<Scene::Model> &_visi
     }
 }
 
-void ForwardRender::UpdateRenderPerFrameScenceUBO(
+void DeferRender::UpdateRenderPerFrameScenceUBO(
         Math::Matrix4x4 proj_view,
         Math::Vector3 camera_pos,
         std::vector<Scene::DirectionLight> &directional_light_list)
@@ -274,7 +274,7 @@ void ForwardRender::UpdateRenderPerFrameScenceUBO(
     }
 }
 
-void ForwardRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list)
+void DeferRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list)
 {
     if (m_render_light_project_ubo_list.ubo_data_list.size() != directional_light_list.size())
     {
@@ -303,14 +303,14 @@ void ForwardRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight>
     }
 }
 
-void ForwardRender::FlushRenderbuffer()
+void DeferRender::FlushRenderbuffer()
 {
     m_render_per_frame_ubo.ToGPU();
     m_render_model_ubo_list.ToGPU();
     m_render_light_project_ubo_list.ToGPU();
 }
 
-void ForwardRender::setupRenderDescriptorSetLayout()
+void DeferRender::setupRenderDescriptorSetLayout()
 {
     std::vector<VkDescriptorSetLayoutBinding> texture_layout_bindings;
     texture_layout_bindings.resize(1);
@@ -382,7 +382,7 @@ void ForwardRender::setupRenderDescriptorSetLayout()
                                                 &m_directional_light_shadow_set_layout));
 }
 
-void ForwardRender::SetupModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures)
+void DeferRender::SetupModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures)
 {
     // wait for device idle
     // 很慢的，慎用
@@ -437,7 +437,7 @@ void ForwardRender::SetupModelRenderTextures(const std::vector<Texture2DPtr> &_v
     }
 }
 
-void ForwardRender::SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture)
+void DeferRender::SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture)
 {
     // wait for device idle
     // 很慢的，禁止频繁使用
@@ -494,7 +494,7 @@ void ForwardRender::SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybo
                            nullptr);
 }
 
-void ForwardRender::SetupShadowMapTexture(std::vector<Scene::DirectionLight> &directional_light_list)
+void DeferRender::SetupShadowMapTexture(std::vector<Scene::DirectionLight> &directional_light_list)
 {
     uint32_t directional_light_num = directional_light_list.size();
 
@@ -561,7 +561,7 @@ void ForwardRender::SetupShadowMapTexture(std::vector<Scene::DirectionLight> &di
 //            m_render_passes[_directional_light_shadowmap_renderpass])->setupRenderpassAttachments();
 }
 
-void ForwardRender::updateAfterSwapchainRecreate()
+void DeferRender::updateAfterSwapchainRecreate()
 {
     vkDestroyImage(g_p_vulkan_context->_device, m_backup_targets[0].image, nullptr);
     vkDestroyImageView(g_p_vulkan_context->_device, m_backup_targets[0].view, nullptr);
@@ -577,7 +577,7 @@ void ForwardRender::updateAfterSwapchainRecreate()
     }
 }
 
-void ForwardRender::destroy()
+void DeferRender::destroy()
 {
     g_p_vulkan_context->waitForFrameInFlightFence();
     vkDeviceWaitIdle(g_p_vulkan_context->_device);
@@ -587,4 +587,6 @@ void ForwardRender::destroy()
     vkDestroyCommandPool(g_p_vulkan_context->_device, m_command_pool, nullptr);
     vkDestroyDescriptorPool(g_p_vulkan_context->_device, m_descriptor_pool, nullptr);
 }
+
+
 

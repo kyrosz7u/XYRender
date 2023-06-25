@@ -19,8 +19,8 @@ namespace RenderSystem
 
     struct DirectionLightInfo
     {
-        VkDeviceSize shadowmap_width = 1000;
-        VkDeviceSize shadowmap_height = 1000;
+        VkDeviceSize shadowmap_width = 1400;
+        VkDeviceSize shadowmap_height = 1400;
         float camera_width = 150;
         float camera_height = 150;
         float camera_near = 1.0f;

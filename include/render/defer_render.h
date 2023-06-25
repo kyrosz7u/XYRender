@@ -1,9 +1,9 @@
 //
-// Created by kyrosz7u on 2023/5/19.
+// Created by kyrosz7u on 2023/6/25.
 //
 
-#ifndef XEXAMPLE_FORWARD_RENDER_H
-#define XEXAMPLE_FORWARD_RENDER_H
+#ifndef XEXAMPLE_DEFER_RENDER_H
+#define XEXAMPLE_DEFER_RENDER_H
 
 #include "render_base.h"
 #include "renderpass/main_camera_forward_pass.h"
@@ -15,7 +15,7 @@
 namespace RenderSystem
 {
 
-    class ForwardRender : public RenderBase
+    class DeferRender : public RenderBase
     {
     public:
         enum _renderpasses
@@ -26,7 +26,7 @@ namespace RenderSystem
             _renderpass_count
         };
 
-        ForwardRender()
+        DeferRender()
                 : m_render_light_project_ubo_list(MAX_DIRECTIONAL_LIGHT_COUNT * sizeof(VulkanLightProjectDefine))
         {}
 
@@ -116,4 +116,4 @@ namespace RenderSystem
         UIOverlayPtr m_p_ui_overlay;
     };
 }
-#endif //XEXAMPLE_FORWARD_RENDER_H
+#endif //XEXAMPLE_DEFER_RENDER_H

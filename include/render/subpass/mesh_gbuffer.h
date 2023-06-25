@@ -1,9 +1,9 @@
 //
-// Created by kyros on 5/21/23.
+// Created by kyrosz7u on 2023/6/25.
 //
 
-#ifndef XEXAMPLE_MESH_FORWARD_LIGHT_H
-#define XEXAMPLE_MESH_FORWARD_LIGHT_H
+#ifndef XEXAMPLE_MESH_GBUFFER_H
+#define XEXAMPLE_MESH_GBUFFER_H
 
 #include "subpass_base.h"
 #include "render/resource/render_mesh.h"
@@ -14,12 +14,12 @@ namespace RenderSystem
 {
     namespace SubPass
     {
-        struct MeshForwardLightingPassPassInitInfo : public SubPassInitInfo
+        struct MeshGBufferPassInitInfo : public SubPassInitInfo
         {
             std::vector<RenderMeshPtr> *render_mesh_list = nullptr;
         };
 
-        class MeshForwardLightingPass : public SubPassBase
+        class MeshGBufferPass : public SubPassBase
         {
         public:
             enum _mesh_pass_pipeline_layout_define
@@ -29,9 +29,9 @@ namespace RenderSystem
                 _mesh_pass_directional_light_shadow_layout,
                 _mesh_pass_pipeline_layout_count
             };
-            MeshForwardLightingPass()
+            MeshGBufferPass()
             {
-                name = "mesh_forward_lighting_subpass";
+                name = "mesh_gbuffer_subpass";
                 m_descriptor_set_layouts.resize(_mesh_pass_pipeline_layout_count);
             }
 
@@ -50,4 +50,5 @@ namespace RenderSystem
         };
     }
 }
-#endif //XEXAMPLE_MESH_FORWARD_LIGHT_H
+
+#endif //XEXAMPLE_MESH_GBUFFER_H

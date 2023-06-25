@@ -6,7 +6,7 @@
 #include "core/graphic/vulkan/vulkan_utils.h"
 #include "render/subpass/mesh_forward_light.h"
 #include "render/subpass/skybox.h"
-#include "render/renderpass/main_camera_pass.h"
+#include "render/renderpass/main_camera_defer_pass.h"
 #include "mesh_forward_vert.h"
 #include "mesh_forward_frag.h"
 #include "skybox_vert.h"
@@ -14,9 +14,9 @@
 
 using namespace RenderSystem;
 
-void MainCameraRenderPass::initialize(RenderPassInitInfo *renderpass_init_info)
+void MainCameraDeferRenderPass::initialize(RenderPassInitInfo *renderpass_init_info)
 {
-    auto main_camera_renderpass_init_info = static_cast<MainCameraRenderPassInitInfo *>(renderpass_init_info);
+    auto main_camera_renderpass_init_info = static_cast<MainCameraDeferRenderPassInitInfo *>(renderpass_init_info);
     m_p_render_command_info  = main_camera_renderpass_init_info->render_command_info;
     m_p_render_resource_info = main_camera_renderpass_init_info->render_resource_info;
     m_p_render_targets       = main_camera_renderpass_init_info->render_targets;
@@ -27,7 +27,7 @@ void MainCameraRenderPass::initialize(RenderPassInitInfo *renderpass_init_info)
     setupSubpass();
 }
 
-void MainCameraRenderPass::setupRenderpassAttachments()
+void MainCameraDeferRenderPass::setupRenderpassAttachments()
 {
     assert(m_p_render_targets != nullptr);
     assert(m_p_render_targets->size() > 0);
@@ -61,9 +61,9 @@ void MainCameraRenderPass::setupRenderpassAttachments()
                                         1);
 }
 
-void MainCameraRenderPass::setupRenderPass()
+void MainCameraDeferRenderPass::setupRenderPass()
 {
-    VkAttachmentDescription attachments[_main_camera_framebuffer_attachment_count] = {};
+    VkAttachmentDescription attachments[_main_camera_defer_framebuffer_attachment_count] = {};
 
     VkAttachmentDescription &framebuffer_image_attachment_description = attachments[_main_camera_framebuffer_attachment_color];
     framebuffer_image_attachment_description.format         = m_renderpass_attachments[_main_camera_framebuffer_attachment_color].format;
@@ -153,7 +153,7 @@ void MainCameraRenderPass::setupRenderPass()
     }
 }
 
-void MainCameraRenderPass::setupFrameBuffer()
+void MainCameraDeferRenderPass::setupFrameBuffer()
 {
     int targetCount = (*m_p_render_targets).size();
 
@@ -165,7 +165,7 @@ void MainCameraRenderPass::setupFrameBuffer()
     for (size_t i = 0; i < targetCount; i++)
     {
         std::vector <VkImageView> framebuffer_attachments;
-        framebuffer_attachments.resize(_main_camera_framebuffer_attachment_count);
+        framebuffer_attachments.resize(_main_camera_defer_framebuffer_attachment_count);
 
         framebuffer_attachments[_main_camera_framebuffer_attachment_color] = (*m_p_render_targets)[i].view;
         framebuffer_attachments[_main_camera_framebuffer_attachment_depth] =
@@ -191,7 +191,7 @@ void MainCameraRenderPass::setupFrameBuffer()
     }
 }
 
-void MainCameraRenderPass::setupSubpass()
+void MainCameraDeferRenderPass::setupSubpass()
 {
     SubPass::SubPassInitInfo mesh_pass_init_info{};
     mesh_pass_init_info.p_render_command_info  = m_p_render_command_info;
@@ -199,7 +199,7 @@ void MainCameraRenderPass::setupSubpass()
     mesh_pass_init_info.renderpass             = m_renderpass;
     mesh_pass_init_info.subpass_index          = _main_camera_subpass_mesh;
 
-    m_subpass_list[_main_camera_subpass_mesh] = std::make_shared<SubPass::MeshPass>();
+    m_subpass_list[_main_camera_subpass_mesh] = std::make_shared<SubPass::MeshForwardLightingPass>();
     m_subpass_list[_main_camera_subpass_mesh]->setShader(SubPass::VERTEX_SHADER, MESH_FORWARD_VERT);
     m_subpass_list[_main_camera_subpass_mesh]->setShader(SubPass::FRAGMENT_SHADER, MESH_FORWARD_FRAG);
     m_subpass_list[_main_camera_subpass_mesh]->initialize(&mesh_pass_init_info);
@@ -216,9 +216,9 @@ void MainCameraRenderPass::setupSubpass()
     m_subpass_list[_main_camera_subpass_skybox]->initialize(&skybox_pass_init_info);
 }
 
-void MainCameraRenderPass::draw(uint32_t render_target_index)
+void MainCameraDeferRenderPass::draw(uint32_t render_target_index)
 {
-    VkClearValue clear_values[_main_camera_framebuffer_attachment_count] = {};
+    VkClearValue clear_values[_main_camera_defer_framebuffer_attachment_count] = {};
     clear_values[_main_camera_framebuffer_attachment_color].color        = {0.0f, 0.0f, 0.0f, 1.0f};
     clear_values[_main_camera_framebuffer_attachment_depth].depthStencil = {1.0f, 0};
 
@@ -243,9 +243,9 @@ void MainCameraRenderPass::draw(uint32_t render_target_index)
     g_p_vulkan_context->_vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
 }
 
-void MainCameraRenderPass::updateAfterSwapchainRecreate()
+void MainCameraDeferRenderPass::updateAfterSwapchainRecreate()
 {
-    for (int i = 0; i < _main_camera_framebuffer_attachment_count; ++i)
+    for (int i = 0; i < _main_camera_defer_framebuffer_attachment_count; ++i)
     {
         if (m_renderpass_attachments[i].image != VK_NULL_HANDLE)
         {

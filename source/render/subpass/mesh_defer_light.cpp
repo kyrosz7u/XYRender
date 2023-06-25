@@ -1,8 +1,8 @@
 //
-// Created by kyros on 5/21/23.
+// Created by kyros on 6/25/23.
 //
 
-#include "render/subpass/mesh_forward_light.h"
+#include "render/subpass/mesh_defer_light.h"
 #include "render/resource/render_mesh.h"
 #include "core/logger/logger_macros.h"
 
@@ -10,9 +10,9 @@ using namespace VulkanAPI;
 using namespace RenderSystem;
 using namespace RenderSystem::SubPass;
 
-void MeshForwardLightingPass::initialize(SubPassInitInfo *subPassInitInfo)
+void MeshDeferLightingPass::initialize(SubPassInitInfo *subPassInitInfo)
 {
-    auto mesh_pass_init_info = static_cast<MeshForwardLightingPassPassInitInfo *>(subPassInitInfo);
+    auto mesh_pass_init_info = static_cast<MeshDeferLightingPassPassInitInfo *>(subPassInitInfo);
     m_p_render_command_info  = mesh_pass_init_info->p_render_command_info;
     m_p_render_resource_info = mesh_pass_init_info->p_render_resource_info;
     m_subpass_index          = mesh_pass_init_info->subpass_index;
@@ -24,35 +24,28 @@ void MeshForwardLightingPass::initialize(SubPassInitInfo *subPassInitInfo)
     setupPipelines();
 }
 
-void MeshForwardLightingPass::setupPipeLineLayout()
+void MeshDeferLightingPass::setupPipeLineLayout()
 {
-    auto &ubo_data_layout = m_descriptor_set_layouts[_mesh_pass_ubo_data_layout];
+    auto &ubo_data_layout = m_descriptor_set_layouts[_mesh_defer_lighting_pass_ubo_data_layout];
 
     std::vector<VkDescriptorSetLayoutBinding> ubo_layout_bindings;
-    ubo_layout_bindings.resize(4);
+    ubo_layout_bindings.resize(3);
 
     VkDescriptorSetLayoutBinding &perframe_buffer_binding = ubo_layout_bindings[0];
 
     perframe_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    perframe_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    perframe_buffer_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
     perframe_buffer_binding.binding         = 0;
     perframe_buffer_binding.descriptorCount = 1;
 
-    VkDescriptorSetLayoutBinding &perobject_buffer_binding = ubo_layout_bindings[1];
-
-    perobject_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-    perobject_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
-    perobject_buffer_binding.binding         = 1;
-    perobject_buffer_binding.descriptorCount = 1;
-
-    VkDescriptorSetLayoutBinding &directional_light_info_binding = ubo_layout_bindings[2];
+    VkDescriptorSetLayoutBinding &directional_light_info_binding = ubo_layout_bindings[1];
 
     directional_light_info_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     directional_light_info_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
     directional_light_info_binding.binding         = 2;
     directional_light_info_binding.descriptorCount = 1;
 
-    VkDescriptorSetLayoutBinding &direction_light_projection_binding = ubo_layout_bindings[3];
+    VkDescriptorSetLayoutBinding &direction_light_projection_binding = ubo_layout_bindings[2];
 
     direction_light_projection_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     direction_light_projection_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -119,7 +112,7 @@ void MeshForwardLightingPass::setupPipeLineLayout()
 
 }
 
-void MeshForwardLightingPass::setupDescriptorSet()
+void MeshDeferLightingPass::setupDescriptorSet()
 {
     VkDescriptorSetAllocateInfo allocInfo{};
 
@@ -138,7 +131,7 @@ void MeshForwardLightingPass::setupDescriptorSet()
     }
 }
 
-void MeshForwardLightingPass::updateGlobalRenderDescriptorSet()
+void MeshDeferLightingPass::updateGlobalRenderDescriptorSet()
 {
     std::vector<VkWriteDescriptorSet> write_descriptor_sets;
     write_descriptor_sets.resize(4);
@@ -190,7 +183,7 @@ void MeshForwardLightingPass::updateGlobalRenderDescriptorSet()
 
 }
 
-void MeshForwardLightingPass::setupPipelines()
+void MeshDeferLightingPass::setupPipelines()
 {
     std::vector<VkDescriptorSetLayout> descriptorset_layouts;
 
@@ -350,7 +343,7 @@ void MeshForwardLightingPass::setupPipelines()
     }
 }
 
-void MeshForwardLightingPass::draw()
+void MeshDeferLightingPass::draw()
 {
 //    updateGlobalRenderDescriptorSet();
     VkDebugUtilsLabelEXT label_info = {
@@ -444,7 +437,7 @@ void MeshForwardLightingPass::draw()
     g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
 }
 
-void MeshForwardLightingPass::updateAfterSwapchainRecreate()
+void MeshDeferLightingPass::updateAfterSwapchainRecreate()
 {
 
 }

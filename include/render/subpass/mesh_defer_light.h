@@ -14,25 +14,25 @@ namespace RenderSystem
 {
     namespace SubPass
     {
-        struct MeshForwardLightingPassPassInitInfo : public SubPassInitInfo
+        struct MeshDeferLightingPassPassInitInfo : public SubPassInitInfo
         {
             std::vector<RenderMeshPtr> *render_mesh_list = nullptr;
         };
 
-        class MeshForwardLightingPass : public SubPassBase
+        class MeshDeferLightingPass : public SubPassBase
         {
         public:
-            enum _mesh_pass_pipeline_layout_define
+            enum _mesh_defer_lighting_pipeline_layout_define
             {
-                _mesh_pass_ubo_data_layout = 0,
-                _mesh_pass_texture_layout,
-                _mesh_pass_directional_light_shadow_layout,
-                _mesh_pass_pipeline_layout_count
+                _mesh_defer_lighting_pass_ubo_data_layout = 0,
+                _mesh_defer_lighting_pass_gbuffer_layout,
+                _mesh_defer_lighting_pass_directional_light_shadow_layout,
+                _mesh_defer_lighting_pass_pipeline_layout_count
             };
-            MeshForwardLightingPass()
+            MeshDeferLightingPass()
             {
-                name = "mesh_forward_lighting_subpass";
-                m_descriptor_set_layouts.resize(_mesh_pass_pipeline_layout_count);
+                name = "mesh_defer_lighting_subpass";
+                m_descriptor_set_layouts.resize(_mesh_defer_lighting_pass_pipeline_layout_count);
             }
 
             void draw() override;
