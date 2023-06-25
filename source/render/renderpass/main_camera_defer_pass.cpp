@@ -4,11 +4,15 @@
 
 
 #include "core/graphic/vulkan/vulkan_utils.h"
-#include "render/subpass/mesh_forward_light.h"
+#include "render/subpass/mesh_gbuffer.h"
+#include "render/subpass/defer_light.h"
 #include "render/subpass/skybox.h"
 #include "render/renderpass/main_camera_defer_pass.h"
-#include "mesh_forward_vert.h"
-#include "mesh_forward_frag.h"
+
+#include "mesh_gbuffer_vert.h"
+#include "mesh_gbuffer_frag.h"
+#include "full_screen_vert.h"
+#include "defer_lighting_frag.h"
 #include "skybox_vert.h"
 #include "skybox_frag.h"
 
@@ -32,41 +36,107 @@ void MainCameraDeferRenderPass::setupRenderpassAttachments()
     assert(m_p_render_targets != nullptr);
     assert(m_p_render_targets->size() > 0);
 
-    m_renderpass_attachments[_main_camera_framebuffer_attachment_color].format = (*m_p_render_targets)[0].format;
-    m_renderpass_attachments[_main_camera_framebuffer_attachment_color].layout = (*m_p_render_targets)[0].layout;
+    m_renderpass_attachments[_main_camera_defer_gbuffer_color_attachment].format = VK_FORMAT_R8G8B8A8_UNORM;
+    m_renderpass_attachments[_main_camera_defer_gbuffer_color_attachment].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].format = g_p_vulkan_context->findDepthFormat();
-    m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    m_renderpass_attachments[_main_camera_defer_gbuffer_normal_attachment].format = VK_FORMAT_R16G16B16_SFLOAT;
+    m_renderpass_attachments[_main_camera_defer_gbuffer_normal_attachment].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+    m_renderpass_attachments[_main_camera_defer_gbuffer_position_attachment].format = VK_FORMAT_R16G16B16_SFLOAT;
+    m_renderpass_attachments[_main_camera_defer_gbuffer_position_attachment].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    m_renderpass_attachments[_main_camera_defer_color_attachment].format = (*m_p_render_targets)[0].format;
+    m_renderpass_attachments[_main_camera_defer_color_attachment].layout = (*m_p_render_targets)[0].layout;
+
+    m_renderpass_attachments[_main_camera_defer_depth_attachment].format = g_p_vulkan_context->findDepthFormat();
+    m_renderpass_attachments[_main_camera_defer_depth_attachment].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    for (int i = 0; i < m_renderpass_attachments.size() - 2; ++i)
+    {
+        auto &renderpass_attachment = m_renderpass_attachments[i];
+        VulkanUtil::createImage(g_p_vulkan_context,
+                                g_p_vulkan_context->_swapchain_extent.width,
+                                g_p_vulkan_context->_swapchain_extent.height,
+                                renderpass_attachment.format,
+                                VK_IMAGE_TILING_OPTIMAL,
+                                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                renderpass_attachment.image,
+                                renderpass_attachment.mem,
+                                0,
+                                1,
+                                1);
+
+        renderpass_attachment.view = VulkanUtil::createImageView(g_p_vulkan_context,
+                                                                 renderpass_attachment.image,
+                                                                 renderpass_attachment.format,
+                                                                 VK_IMAGE_ASPECT_COLOR_BIT,
+                                                                 VK_IMAGE_VIEW_TYPE_2D,
+                                                                 1);
+    }
+
+    m_renderpass_attachments[_main_camera_defer_color_attachment].format = (*m_p_render_targets)[0].format;
+    m_renderpass_attachments[_main_camera_defer_color_attachment].layout = (*m_p_render_targets)[0].layout;
+
+    auto &depth_attachment = m_renderpass_attachments[_main_camera_defer_depth_attachment];
     VulkanUtil::createImage(g_p_vulkan_context,
                             g_p_vulkan_context->_swapchain_extent.width,
                             g_p_vulkan_context->_swapchain_extent.height,
-                            m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].format,
+                            depth_attachment.format,
                             VK_IMAGE_TILING_OPTIMAL,
-                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-                            VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT,
+                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                            m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].image,
-                            m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].mem,
+                            depth_attachment.image,
+                            depth_attachment.mem,
                             0,
                             1,
                             1);
 
-    m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].view =
-            VulkanUtil::createImageView(g_p_vulkan_context,
-                                        m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].image,
-                                        m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].format,
-                                        VK_IMAGE_ASPECT_DEPTH_BIT,
-                                        VK_IMAGE_VIEW_TYPE_2D,
-                                        1);
+    depth_attachment.view = VulkanUtil::createImageView(g_p_vulkan_context,
+                                                        depth_attachment.image,
+                                                        depth_attachment.format,
+                                                        VK_IMAGE_ASPECT_DEPTH_BIT,
+                                                        VK_IMAGE_VIEW_TYPE_2D,
+                                                        1);
+
 }
 
 void MainCameraDeferRenderPass::setupRenderPass()
 {
-    VkAttachmentDescription attachments[_main_camera_defer_framebuffer_attachment_count] = {};
+    VkAttachmentDescription attachments[_main_camera_defer_attachment_count] = {};
 
-    VkAttachmentDescription &framebuffer_image_attachment_description = attachments[_main_camera_framebuffer_attachment_color];
-    framebuffer_image_attachment_description.format         = m_renderpass_attachments[_main_camera_framebuffer_attachment_color].format;
+    VkAttachmentDescription &gbuffer_color_attachment_description = attachments[_main_camera_defer_gbuffer_color_attachment];
+    gbuffer_color_attachment_description.format         = m_renderpass_attachments[_main_camera_defer_gbuffer_color_attachment].format;
+    gbuffer_color_attachment_description.samples        = VK_SAMPLE_COUNT_1_BIT;
+    gbuffer_color_attachment_description.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    gbuffer_color_attachment_description.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    gbuffer_color_attachment_description.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    gbuffer_color_attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    gbuffer_color_attachment_description.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+    gbuffer_color_attachment_description.finalLayout    = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkAttachmentDescription &gbuffer_normal_attachment_description = attachments[_main_camera_defer_gbuffer_normal_attachment];
+    gbuffer_normal_attachment_description.format         = m_renderpass_attachments[_main_camera_defer_gbuffer_normal_attachment].format;
+    gbuffer_normal_attachment_description.samples        = VK_SAMPLE_COUNT_1_BIT;
+    gbuffer_normal_attachment_description.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    gbuffer_normal_attachment_description.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    gbuffer_normal_attachment_description.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    gbuffer_normal_attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    gbuffer_normal_attachment_description.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+    gbuffer_normal_attachment_description.finalLayout    = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkAttachmentDescription &gbuffer_worldpos_attachment_description = attachments[_main_camera_defer_gbuffer_position_attachment];
+    gbuffer_worldpos_attachment_description.format         = m_renderpass_attachments[_main_camera_defer_gbuffer_position_attachment].format;
+    gbuffer_worldpos_attachment_description.samples        = VK_SAMPLE_COUNT_1_BIT;
+    gbuffer_worldpos_attachment_description.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    gbuffer_worldpos_attachment_description.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    gbuffer_worldpos_attachment_description.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    gbuffer_worldpos_attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    gbuffer_worldpos_attachment_description.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+    gbuffer_worldpos_attachment_description.finalLayout    = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkAttachmentDescription &framebuffer_image_attachment_description = attachments[_main_camera_defer_color_attachment];
+    framebuffer_image_attachment_description.format         = m_renderpass_attachments[_main_camera_defer_color_attachment].format;
     framebuffer_image_attachment_description.samples        = VK_SAMPLE_COUNT_1_BIT;
     framebuffer_image_attachment_description.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
     framebuffer_image_attachment_description.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
@@ -74,66 +144,104 @@ void MainCameraDeferRenderPass::setupRenderPass()
     framebuffer_image_attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     // renderpass初始化和结束时图像的布局
     framebuffer_image_attachment_description.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-    framebuffer_image_attachment_description.finalLayout    = m_renderpass_attachments[_main_camera_framebuffer_attachment_color].layout;
+    framebuffer_image_attachment_description.finalLayout    = m_renderpass_attachments[_main_camera_defer_color_attachment].layout;
 
-    VkAttachmentDescription &depth_attachment_description = attachments[_main_camera_framebuffer_attachment_depth];
-    depth_attachment_description.format         = m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].format;
+    VkAttachmentDescription &depth_attachment_description = attachments[_main_camera_defer_depth_attachment];
+    depth_attachment_description.format         = m_renderpass_attachments[_main_camera_defer_depth_attachment].format;
     depth_attachment_description.samples        = VK_SAMPLE_COUNT_1_BIT;
     depth_attachment_description.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depth_attachment_description.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depth_attachment_description.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     depth_attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depth_attachment_description.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-    depth_attachment_description.finalLayout    = m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].layout;
+    depth_attachment_description.finalLayout    = m_renderpass_attachments[_main_camera_defer_depth_attachment].layout;
 
     VkSubpassDescription subpasses[_main_camera_subpass_count] = {};
 
-    VkAttachmentReference color_attachments_reference[1] = {};
-    color_attachments_reference[0].attachment =
-            &framebuffer_image_attachment_description - attachments;
+    VkAttachmentReference gbuffer_attachments_reference[3] = {};
+    gbuffer_attachments_reference[0].attachment =
+            &gbuffer_color_attachment_description - attachments;
     // 指定在subpass执行时，管线访问图像的布局
-    color_attachments_reference[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    gbuffer_attachments_reference[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    gbuffer_attachments_reference[1].attachment =
+            &gbuffer_normal_attachment_description - attachments;
+    gbuffer_attachments_reference[1].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    gbuffer_attachments_reference[2].attachment =
+            &gbuffer_worldpos_attachment_description - attachments;
+    gbuffer_attachments_reference[2].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkAttachmentReference depth_attachment_reference{};
     depth_attachment_reference.attachment = &depth_attachment_description - attachments;
     depth_attachment_reference.layout     = depth_attachment_description.finalLayout;
 
-    VkSubpassDescription &base_pass = subpasses[_main_camera_subpass_mesh];
-    base_pass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    base_pass.colorAttachmentCount =
-            sizeof(color_attachments_reference) / sizeof(color_attachments_reference[0]);
-    base_pass.pColorAttachments       = &color_attachments_reference[0];
-    base_pass.pDepthStencilAttachment = &depth_attachment_reference;
-    base_pass.preserveAttachmentCount = 0;
-    base_pass.pPreserveAttachments    = NULL;
+    VkSubpassDescription &gbuffer_pass = subpasses[_main_camera_gbuffer_subpass];
+    gbuffer_pass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    gbuffer_pass.colorAttachmentCount =
+            sizeof(gbuffer_attachments_reference) / sizeof(gbuffer_attachments_reference[0]);
+    gbuffer_pass.pColorAttachments       = &gbuffer_attachments_reference[0];
+    gbuffer_pass.pDepthStencilAttachment = &depth_attachment_reference;
+    gbuffer_pass.preserveAttachmentCount = 0;
+    gbuffer_pass.pPreserveAttachments    = nullptr;
 
-    VkSubpassDescription &skybox_pass = subpasses[_main_camera_subpass_skybox];
+    VkAttachmentReference framebuffer_image_attachment_reference{};
+    framebuffer_image_attachment_reference.attachment = &framebuffer_image_attachment_description - attachments;
+    framebuffer_image_attachment_reference.layout     = framebuffer_image_attachment_description.finalLayout;
+
+    VkSubpassDescription &framebuffer_pass = subpasses[_main_camera_defer_lighting_subpass];
+    framebuffer_pass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    framebuffer_pass.colorAttachmentCount    = 1;
+    framebuffer_pass.pColorAttachments       = &framebuffer_image_attachment_reference;
+    framebuffer_pass.pDepthStencilAttachment = nullptr;
+    framebuffer_pass.preserveAttachmentCount = 0;
+    framebuffer_pass.pPreserveAttachments    = nullptr;
+
+    VkSubpassDescription &skybox_pass = subpasses[_main_camera_skybox_subpass];
     skybox_pass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
     skybox_pass.colorAttachmentCount    = 1;
-    skybox_pass.pColorAttachments       = &color_attachments_reference[0];
-    skybox_pass.pDepthStencilAttachment = &depth_attachment_reference;
+    skybox_pass.pColorAttachments       = &gbuffer_attachments_reference[0];
+    skybox_pass.pDepthStencilAttachment = nullptr;
     skybox_pass.preserveAttachmentCount = 0;
-    skybox_pass.pPreserveAttachments    = NULL;
+    skybox_pass.pPreserveAttachments    = nullptr;
 
-    VkSubpassDependency dependencies[2];
+    VkSubpassDependency dependencies[4];
 
-    VkSubpassDependency &base_pass_dependency = dependencies[0];
-    base_pass_dependency.srcSubpass    = VK_SUBPASS_EXTERNAL;
-    base_pass_dependency.dstSubpass    = _main_camera_subpass_mesh;
-    base_pass_dependency.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    base_pass_dependency.dstStageMask  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    base_pass_dependency.srcAccessMask = 0;
-    base_pass_dependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    base_pass_dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    VkSubpassDependency &gbuffer_depend_external = dependencies[0];
+    gbuffer_depend_external.srcSubpass      = VK_SUBPASS_EXTERNAL;
+    gbuffer_depend_external.dstSubpass      = _main_camera_gbuffer_subpass;
+    gbuffer_depend_external.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    gbuffer_depend_external.dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    gbuffer_depend_external.srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    gbuffer_depend_external.dstAccessMask   = VK_ACCESS_SHADER_READ_BIT;
+    gbuffer_depend_external.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
-    VkSubpassDependency &skybox_pass_dependency = dependencies[1];
-    skybox_pass_dependency.srcSubpass      = _main_camera_subpass_mesh;
-    skybox_pass_dependency.dstSubpass      = _main_camera_subpass_skybox;
-    skybox_pass_dependency.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    skybox_pass_dependency.dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    skybox_pass_dependency.srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    skybox_pass_dependency.dstAccessMask   = VK_ACCESS_SHADER_READ_BIT;
-    skybox_pass_dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    VkSubpassDependency &defer_lighting_depend_on_gbuffer = dependencies[1];
+    defer_lighting_depend_on_gbuffer.srcSubpass      = _main_camera_gbuffer_subpass;
+    defer_lighting_depend_on_gbuffer.dstSubpass      = _main_camera_defer_lighting_subpass;
+    defer_lighting_depend_on_gbuffer.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    defer_lighting_depend_on_gbuffer.dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    defer_lighting_depend_on_gbuffer.srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    defer_lighting_depend_on_gbuffer.dstAccessMask   = VK_ACCESS_SHADER_READ_BIT;
+    defer_lighting_depend_on_gbuffer.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    VkSubpassDependency &skybox_pass_depend_on_lighting = dependencies[2];
+    skybox_pass_depend_on_lighting.srcSubpass      = _main_camera_gbuffer_subpass;
+    skybox_pass_depend_on_lighting.dstSubpass      = _main_camera_skybox_subpass;
+    skybox_pass_depend_on_lighting.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    skybox_pass_depend_on_lighting.dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    skybox_pass_depend_on_lighting.srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    skybox_pass_depend_on_lighting.dstAccessMask   = VK_ACCESS_SHADER_READ_BIT;
+    skybox_pass_depend_on_lighting.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    VkSubpassDependency &external_depend_on_skybox = dependencies[3];
+    external_depend_on_skybox.srcSubpass      = _main_camera_skybox_subpass;
+    external_depend_on_skybox.dstSubpass      = VK_SUBPASS_EXTERNAL;
+    external_depend_on_skybox.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    external_depend_on_skybox.dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    external_depend_on_skybox.srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    external_depend_on_skybox.dstAccessMask   = VK_ACCESS_SHADER_READ_BIT;
+    external_depend_on_skybox.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
 
     VkRenderPassCreateInfo renderpass_create_info{};
@@ -164,12 +272,17 @@ void MainCameraDeferRenderPass::setupFrameBuffer()
     // create frame buffer for every imageview
     for (size_t i = 0; i < targetCount; i++)
     {
-        std::vector <VkImageView> framebuffer_attachments;
-        framebuffer_attachments.resize(_main_camera_defer_framebuffer_attachment_count);
-
-        framebuffer_attachments[_main_camera_framebuffer_attachment_color] = (*m_p_render_targets)[i].view;
-        framebuffer_attachments[_main_camera_framebuffer_attachment_depth] =
-                m_renderpass_attachments[_main_camera_framebuffer_attachment_depth].view;
+        std::vector<VkImageView> framebuffer_attachments;
+        framebuffer_attachments.resize(_main_camera_defer_attachment_count);
+        framebuffer_attachments[_main_camera_defer_gbuffer_color_attachment]    =
+                m_renderpass_attachments[_main_camera_defer_gbuffer_color_attachment].view;
+        framebuffer_attachments[_main_camera_defer_gbuffer_normal_attachment]   =
+                m_renderpass_attachments[_main_camera_defer_gbuffer_normal_attachment].view;
+        framebuffer_attachments[_main_camera_defer_gbuffer_position_attachment] =
+                m_renderpass_attachments[_main_camera_defer_gbuffer_position_attachment].view;
+        framebuffer_attachments[_main_camera_defer_color_attachment] = (*m_p_render_targets)[i].view;
+        framebuffer_attachments[_main_camera_defer_depth_attachment] =
+                m_renderpass_attachments[_main_camera_defer_depth_attachment].view;
 
         VkFramebufferCreateInfo framebuffer_create_info{};
         framebuffer_create_info.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -193,34 +306,51 @@ void MainCameraDeferRenderPass::setupFrameBuffer()
 
 void MainCameraDeferRenderPass::setupSubpass()
 {
-    SubPass::SubPassInitInfo mesh_pass_init_info{};
-    mesh_pass_init_info.p_render_command_info  = m_p_render_command_info;
-    mesh_pass_init_info.p_render_resource_info = m_p_render_resource_info;
-    mesh_pass_init_info.renderpass             = m_renderpass;
-    mesh_pass_init_info.subpass_index          = _main_camera_subpass_mesh;
+    SubPass::MeshGBufferPassInitInfo gbuffer_pass_init_info{};
+    gbuffer_pass_init_info.p_render_command_info  = m_p_render_command_info;
+    gbuffer_pass_init_info.p_render_resource_info = m_p_render_resource_info;
+    gbuffer_pass_init_info.renderpass             = m_renderpass;
+    gbuffer_pass_init_info.subpass_index          = _main_camera_gbuffer_subpass;
 
-    m_subpass_list[_main_camera_subpass_mesh] = std::make_shared<SubPass::MeshForwardLightingPass>();
-    m_subpass_list[_main_camera_subpass_mesh]->setShader(SubPass::VERTEX_SHADER, MESH_FORWARD_VERT);
-    m_subpass_list[_main_camera_subpass_mesh]->setShader(SubPass::FRAGMENT_SHADER, MESH_FORWARD_FRAG);
-    m_subpass_list[_main_camera_subpass_mesh]->initialize(&mesh_pass_init_info);
+    m_subpass_list[_main_camera_gbuffer_subpass] = std::make_shared<SubPass::MeshGBufferPass>();
+    m_subpass_list[_main_camera_gbuffer_subpass]->setShader(SubPass::VERTEX_SHADER, MESH_GBUFFER_VERT);
+    m_subpass_list[_main_camera_gbuffer_subpass]->setShader(SubPass::FRAGMENT_SHADER, MESH_GBUFFER_FRAG);
+    m_subpass_list[_main_camera_gbuffer_subpass]->initialize(&gbuffer_pass_init_info);
+
+    SubPass::DeferLightPassInitInfo lighting_pass_init_info{};
+    lighting_pass_init_info.p_render_command_info  = m_p_render_command_info;
+    lighting_pass_init_info.p_render_resource_info = m_p_render_resource_info;
+    lighting_pass_init_info.renderpass             = m_renderpass;
+    lighting_pass_init_info.subpass_index          = _main_camera_defer_lighting_subpass;
+    lighting_pass_init_info.gbuffer_color_attachment    = &m_renderpass_attachments[_main_camera_defer_gbuffer_color_attachment];
+    lighting_pass_init_info.gbuffer_normal_attachment   = &m_renderpass_attachments[_main_camera_defer_gbuffer_normal_attachment];
+    lighting_pass_init_info.gbuffer_position_attachment = &m_renderpass_attachments[_main_camera_defer_gbuffer_position_attachment];
+
+    m_subpass_list[_main_camera_defer_lighting_subpass] = std::make_shared<SubPass::DeferLightPass>();
+    m_subpass_list[_main_camera_defer_lighting_subpass]->setShader(SubPass::VERTEX_SHADER, FULL_SCREEN_VERT);
+    m_subpass_list[_main_camera_defer_lighting_subpass]->setShader(SubPass::FRAGMENT_SHADER, DEFER_LIGHTING_FRAG);
+    m_subpass_list[_main_camera_defer_lighting_subpass]->initialize(&lighting_pass_init_info);
 
     SubPass::SubPassInitInfo skybox_pass_init_info{};
     skybox_pass_init_info.p_render_command_info  = m_p_render_command_info;
     skybox_pass_init_info.p_render_resource_info = m_p_render_resource_info;
     skybox_pass_init_info.renderpass             = m_renderpass;
-    skybox_pass_init_info.subpass_index          = _main_camera_subpass_skybox;
+    skybox_pass_init_info.subpass_index          = _main_camera_skybox_subpass;
 
-    m_subpass_list[_main_camera_subpass_skybox] = std::make_shared<SubPass::SkyBoxPass>();
-    m_subpass_list[_main_camera_subpass_skybox]->setShader(SubPass::VERTEX_SHADER, SKYBOX_VERT);
-    m_subpass_list[_main_camera_subpass_skybox]->setShader(SubPass::FRAGMENT_SHADER, SKYBOX_FRAG);
-    m_subpass_list[_main_camera_subpass_skybox]->initialize(&skybox_pass_init_info);
+    m_subpass_list[_main_camera_skybox_subpass] = std::make_shared<SubPass::SkyBoxPass>();
+    m_subpass_list[_main_camera_skybox_subpass]->setShader(SubPass::VERTEX_SHADER, SKYBOX_VERT);
+    m_subpass_list[_main_camera_skybox_subpass]->setShader(SubPass::FRAGMENT_SHADER, SKYBOX_FRAG);
+    m_subpass_list[_main_camera_skybox_subpass]->initialize(&skybox_pass_init_info);
 }
 
 void MainCameraDeferRenderPass::draw(uint32_t render_target_index)
 {
-    VkClearValue clear_values[_main_camera_defer_framebuffer_attachment_count] = {};
-    clear_values[_main_camera_framebuffer_attachment_color].color        = {0.0f, 0.0f, 0.0f, 1.0f};
-    clear_values[_main_camera_framebuffer_attachment_depth].depthStencil = {1.0f, 0};
+    VkClearValue clear_values[_main_camera_defer_attachment_count] = {};
+    clear_values[_main_camera_defer_gbuffer_color_attachment].color    = {0.0f, 0.0f, 0.0f, 1.0f};
+    clear_values[_main_camera_defer_gbuffer_normal_attachment].color   = {0.0f, 0.0f, 0.0f, 1.0f};
+    clear_values[_main_camera_defer_gbuffer_position_attachment].color = {0.0f, 0.0f, 0.0f, 1.0f};
+    clear_values[_main_camera_defer_color_attachment].color            = {0.0f, 0.0f, 0.0f, 1.0f};
+    clear_values[_main_camera_defer_depth_attachment].depthStencil     = {1.0f, 0};
 
     VkRenderPassBeginInfo renderpass_begin_info{};
     renderpass_begin_info.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -235,17 +365,19 @@ void MainCameraDeferRenderPass::draw(uint32_t render_target_index)
                                               &renderpass_begin_info,
                                               VK_SUBPASS_CONTENTS_INLINE);
 
-    m_subpass_list[_main_camera_subpass_mesh]->draw();
+    m_subpass_list[_main_camera_gbuffer_subpass]->draw();
     g_p_vulkan_context->_vkCmdNextSubpass(*m_p_render_command_info->p_current_command_buffer,
                                           VK_SUBPASS_CONTENTS_INLINE);
-    m_subpass_list[_main_camera_subpass_skybox]->draw();
-
+    m_subpass_list[_main_camera_defer_lighting_subpass]->draw();
+    g_p_vulkan_context->_vkCmdNextSubpass(*m_p_render_command_info->p_current_command_buffer,
+                                          VK_SUBPASS_CONTENTS_INLINE);
+    m_subpass_list[_main_camera_skybox_subpass]->draw();
     g_p_vulkan_context->_vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
 }
 
 void MainCameraDeferRenderPass::updateAfterSwapchainRecreate()
 {
-    for (int i = 0; i < _main_camera_defer_framebuffer_attachment_count; ++i)
+    for (int i = 0; i < _main_camera_defer_attachment_count - 2; ++i)
     {
         if (m_renderpass_attachments[i].image != VK_NULL_HANDLE)
         {

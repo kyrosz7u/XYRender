@@ -22,22 +22,26 @@ namespace RenderSystem
     public:
         enum _main_camera_subpass : unsigned int
         {
-            _main_camera_subpass_mesh,
-            _main_camera_subpass_skybox,
+            _main_camera_gbuffer_subpass,
+            _main_camera_defer_lighting_subpass,
+            _main_camera_skybox_subpass,
             _main_camera_subpass_count
         };
 
         enum _main_camera_defer_framebuffer_attachment : unsigned int
         {
-            _main_camera_framebuffer_attachment_color,
-            _main_camera_framebuffer_attachment_depth,
-            _main_camera_defer_framebuffer_attachment_count
+            _main_camera_defer_gbuffer_color_attachment,
+            _main_camera_defer_gbuffer_normal_attachment,
+            _main_camera_defer_gbuffer_position_attachment,
+            _main_camera_defer_color_attachment,
+            _main_camera_defer_depth_attachment,
+            _main_camera_defer_attachment_count
         };
 
         MainCameraDeferRenderPass()
         {
             m_subpass_list.resize(_main_camera_subpass_count);
-            m_renderpass_attachments.resize(_main_camera_defer_framebuffer_attachment_count);
+            m_renderpass_attachments.resize(_main_camera_defer_attachment_count);
         }
 
         ~MainCameraDeferRenderPass()
