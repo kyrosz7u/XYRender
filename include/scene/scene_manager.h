@@ -2,6 +2,7 @@
 #include "scene/camera.h"
 #include "scene/direction_light.h"
 #include "render/forward_render.h"
+#include "render/defer_render.h"
 #include "camera.h"
 #include <memory>
 
@@ -22,7 +23,7 @@ namespace Scene
             m_ui_overlay  = std::make_shared<UIOverlay>();
             m_ui_overlay->initialize(window);
 
-            m_render = std::make_shared<ForwardRender>();
+            m_render = std::make_shared<DeferRender>();
             m_render->setUIOverlay(m_ui_overlay);
             m_render->initialize();
         }
@@ -57,7 +58,7 @@ namespace Scene
     private:
         friend class Camera;
 
-        std::shared_ptr<ForwardRender>     m_render;
+        std::shared_ptr<DeferRender>     m_render;
         UIOverlayPtr                       m_ui_overlay;
         // models
         std::vector<Scene::Model>          m_models;

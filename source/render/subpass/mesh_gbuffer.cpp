@@ -34,7 +34,7 @@ void MeshGBufferPass::setupPipeLineLayout()
     VkDescriptorSetLayoutBinding &perframe_buffer_binding = ubo_layout_bindings[0];
 
     perframe_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    perframe_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    perframe_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
     perframe_buffer_binding.binding         = 0;
     perframe_buffer_binding.descriptorCount = 1;
 
@@ -220,7 +220,7 @@ void MeshGBufferPass::setupPipelines()
     multisample_state_create_info.sampleShadingEnable  = VK_FALSE;
     multisample_state_create_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkPipelineColorBlendAttachmentState color_blend_attachments[1] = {};
+    VkPipelineColorBlendAttachmentState color_blend_attachments[3] = {};
     color_blend_attachments[0].colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                                                      VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     color_blend_attachments[0].blendEnable         = VK_FALSE;
@@ -230,6 +230,9 @@ void MeshGBufferPass::setupPipelines()
     color_blend_attachments[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
     color_blend_attachments[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
     color_blend_attachments[0].alphaBlendOp        = VK_BLEND_OP_ADD;
+
+    color_blend_attachments[1] = color_blend_attachments[0];
+    color_blend_attachments[2] = color_blend_attachments[0];
 
     VkPipelineColorBlendStateCreateInfo color_blend_state_create_info = {};
     color_blend_state_create_info.sType         = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;

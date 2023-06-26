@@ -13,12 +13,12 @@ using namespace RenderSystem::SubPass;
 void DeferLightPass::initialize(SubPassInitInfo *subPassInitInfo)
 {
     auto mesh_pass_init_info = static_cast<DeferLightPassInitInfo *>(subPassInitInfo);
-    m_p_render_command_info  = mesh_pass_init_info->p_render_command_info;
-    m_p_render_resource_info = mesh_pass_init_info->p_render_resource_info;
-    m_subpass_index          = mesh_pass_init_info->subpass_index;
-    m_renderpass             = mesh_pass_init_info->renderpass;
-    m_gbuffer_color_attachment = mesh_pass_init_info->gbuffer_color_attachment;
-    m_gbuffer_normal_attachment = mesh_pass_init_info->gbuffer_normal_attachment;
+    m_p_render_command_info       = mesh_pass_init_info->p_render_command_info;
+    m_p_render_resource_info      = mesh_pass_init_info->p_render_resource_info;
+    m_subpass_index               = mesh_pass_init_info->subpass_index;
+    m_renderpass                  = mesh_pass_init_info->renderpass;
+    m_gbuffer_color_attachment    = mesh_pass_init_info->gbuffer_color_attachment;
+    m_gbuffer_normal_attachment   = mesh_pass_init_info->gbuffer_normal_attachment;
     m_gbuffer_position_attachment = mesh_pass_init_info->gbuffer_position_attachment;
 
     setupPipeLineLayout();
@@ -45,25 +45,25 @@ void DeferLightPass::setupPipeLineLayout()
 
     directional_light_info_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     directional_light_info_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
-    directional_light_info_binding.binding         = 2;
+    directional_light_info_binding.binding         = 1;
     directional_light_info_binding.descriptorCount = 1;
 
     VkDescriptorSetLayoutBinding &direction_light_projection_binding = ubo_layout_bindings[2];
 
     direction_light_projection_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     direction_light_projection_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
-    direction_light_projection_binding.binding         = 3;
+    direction_light_projection_binding.binding         = 2;
     direction_light_projection_binding.descriptorCount = 1;
 
-    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
-    descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorSetLayoutCreateInfo.flags        = 0;
-    descriptorSetLayoutCreateInfo.pNext        = nullptr;
-    descriptorSetLayoutCreateInfo.bindingCount = ubo_layout_bindings.size();
-    descriptorSetLayoutCreateInfo.pBindings    = ubo_layout_bindings.data();
+    VkDescriptorSetLayoutCreateInfo descriptorset_layout_ci;
+    descriptorset_layout_ci.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    descriptorset_layout_ci.flags        = 0;
+    descriptorset_layout_ci.pNext        = nullptr;
+    descriptorset_layout_ci.bindingCount = ubo_layout_bindings.size();
+    descriptorset_layout_ci.pBindings    = ubo_layout_bindings.data();
 
     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
-                                                &descriptorSetLayoutCreateInfo,
+                                                &descriptorset_layout_ci,
                                                 nullptr,
                                                 &ubo_data_layout))
 
@@ -79,27 +79,26 @@ void DeferLightPass::setupPipeLineLayout()
     gbuffer_color_binding.descriptorCount = 1;
 
     VkDescriptorSetLayoutBinding &gbuffer_normal_binding = texture_layout_bindings[1];
-    gbuffer_color_binding.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    gbuffer_color_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
-    gbuffer_color_binding.binding         = 1;
-    gbuffer_color_binding.descriptorCount = 1;
+    gbuffer_normal_binding.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    gbuffer_normal_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+    gbuffer_normal_binding.binding         = 1;
+    gbuffer_normal_binding.descriptorCount = 1;
 
-    VkDescriptorSetLayoutBinding &gbuffer_wordpos_binding = texture_layout_bindings[2];
-    gbuffer_color_binding.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
-    gbuffer_color_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
-    gbuffer_color_binding.binding         = 2;
-    gbuffer_color_binding.descriptorCount = 1;
+    VkDescriptorSetLayoutBinding &gbuffer_position_binding = texture_layout_bindings[2];
+    gbuffer_position_binding.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    gbuffer_position_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+    gbuffer_position_binding.binding         = 2;
+    gbuffer_position_binding.descriptorCount = 1;
 
-
-    VkDescriptorSetLayoutCreateInfo texture_descriptorSetLayoutCreateInfo;
-    texture_descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    texture_descriptorSetLayoutCreateInfo.flags        = 0;
-    texture_descriptorSetLayoutCreateInfo.pNext        = nullptr;
-    texture_descriptorSetLayoutCreateInfo.bindingCount = texture_layout_bindings.size();
-    texture_descriptorSetLayoutCreateInfo.pBindings    = texture_layout_bindings.data();
+    VkDescriptorSetLayoutCreateInfo texture_descriptorset_layout_ci;
+    texture_descriptorset_layout_ci.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    texture_descriptorset_layout_ci.flags        = 0;
+    texture_descriptorset_layout_ci.pNext        = nullptr;
+    texture_descriptorset_layout_ci.bindingCount = texture_layout_bindings.size();
+    texture_descriptorset_layout_ci.pBindings    = texture_layout_bindings.data();
 
     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(g_p_vulkan_context->_device,
-                                                &texture_descriptorSetLayoutCreateInfo,
+                                                &texture_descriptorset_layout_ci,
                                                 nullptr,
                                                 &texture_data_layout))
 
@@ -108,11 +107,11 @@ void DeferLightPass::setupPipeLineLayout()
     std::vector<VkDescriptorSetLayoutBinding> directional_light_layout_bindings;
     directional_light_layout_bindings.resize(1);
 
-    VkDescriptorSetLayoutBinding &directional_light_binding = directional_light_layout_bindings[0];
-    directional_light_binding.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    directional_light_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
-    directional_light_binding.binding         = 0;
-    directional_light_binding.descriptorCount = 1;
+    VkDescriptorSetLayoutBinding &directional_light_shadow_binding = directional_light_layout_bindings[0];
+    directional_light_shadow_binding.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    directional_light_shadow_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
+    directional_light_shadow_binding.binding         = 0;
+    directional_light_shadow_binding.descriptorCount = 1;
 
     VkDescriptorSetLayoutCreateInfo directional_light_descriptorSetLayoutCreateInfo;
     directional_light_descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -140,7 +139,7 @@ void DeferLightPass::setupDescriptorSet()
 
     if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
                                  &allocInfo,
-                                 &m_mesh_ubo_descriptor_set) != VK_SUCCESS)
+                                 &m_scence_ubo_descriptor_set) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to allocate info sets!");
     }
@@ -161,7 +160,7 @@ void DeferLightPass::updateGlobalRenderDescriptorSet()
 
     VkWriteDescriptorSet &perframe_buffer_write = write_descriptor_sets[0];
     perframe_buffer_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    perframe_buffer_write.dstSet          = m_mesh_ubo_descriptor_set;
+    perframe_buffer_write.dstSet          = m_scence_ubo_descriptor_set;
     perframe_buffer_write.dstBinding      = 0;
     perframe_buffer_write.dstArrayElement = 0;
     perframe_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -172,8 +171,8 @@ void DeferLightPass::updateGlobalRenderDescriptorSet()
 
     VkWriteDescriptorSet &directional_light_info_write = write_descriptor_sets[1];
     directional_light_info_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    directional_light_info_write.dstSet          = m_mesh_ubo_descriptor_set;
-    directional_light_info_write.dstBinding      = 2;
+    directional_light_info_write.dstSet          = m_scence_ubo_descriptor_set;
+    directional_light_info_write.dstBinding      = 1;
     directional_light_info_write.dstArrayElement = 0;
     directional_light_info_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     directional_light_info_write.descriptorCount = 1;
@@ -182,8 +181,8 @@ void DeferLightPass::updateGlobalRenderDescriptorSet()
 
     VkWriteDescriptorSet &directional_light_probes_buffer_write = write_descriptor_sets[2];
     directional_light_probes_buffer_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    directional_light_probes_buffer_write.dstSet          = m_mesh_ubo_descriptor_set;
-    directional_light_probes_buffer_write.dstBinding      = 3;
+    directional_light_probes_buffer_write.dstSet          = m_scence_ubo_descriptor_set;
+    directional_light_probes_buffer_write.dstBinding      = 2;
     directional_light_probes_buffer_write.dstArrayElement = 0;
     directional_light_probes_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     directional_light_probes_buffer_write.descriptorCount = 1;
@@ -223,7 +222,7 @@ void DeferLightPass::updateGlobalRenderDescriptorSet()
     gbuffer_perframe_buffer_write.dstArrayElement = 0;
     gbuffer_perframe_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
     gbuffer_perframe_buffer_write.descriptorCount = 1;
-    gbuffer_perframe_buffer_write.pImageInfo     = &gbuffer_color_info;
+    gbuffer_perframe_buffer_write.pImageInfo      = &gbuffer_color_info;
 
     VkWriteDescriptorSet &gbuffer_normal_write = gbuffer_write_descriptor_sets[1];
     gbuffer_normal_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -232,7 +231,7 @@ void DeferLightPass::updateGlobalRenderDescriptorSet()
     gbuffer_normal_write.dstArrayElement = 0;
     gbuffer_normal_write.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
     gbuffer_normal_write.descriptorCount = 1;
-    gbuffer_normal_write.pImageInfo     = &gbuffer_normal_info;
+    gbuffer_normal_write.pImageInfo      = &gbuffer_normal_info;
 
     VkWriteDescriptorSet &gbuffer_position_write = gbuffer_write_descriptor_sets[2];
     gbuffer_position_write.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -241,7 +240,7 @@ void DeferLightPass::updateGlobalRenderDescriptorSet()
     gbuffer_position_write.dstArrayElement = 0;
     gbuffer_position_write.descriptorType  = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
     gbuffer_position_write.descriptorCount = 1;
-    gbuffer_position_write.pImageInfo     = &gbuffer_position_info;
+    gbuffer_position_write.pImageInfo      = &gbuffer_position_info;
 
     vkUpdateDescriptorSets(g_p_vulkan_context->_device,
                            gbuffer_write_descriptor_sets.size(),
@@ -298,15 +297,12 @@ void DeferLightPass::setupPipelines()
         shader_stage_create_infos.push_back(shader_stage_create_info);
     }
 
-    auto vertex_input_binding_description   = VulkanMeshVertex::getMeshVertexInputBindingDescription();
-    auto vertex_input_attribute_description = VulkanMeshVertex::getMeshVertexInputAttributeDescription();
-
     VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info{};
     vertex_input_state_create_info.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_state_create_info.vertexBindingDescriptionCount   = vertex_input_binding_description.size();
-    vertex_input_state_create_info.pVertexBindingDescriptions      = vertex_input_binding_description.data();
-    vertex_input_state_create_info.vertexAttributeDescriptionCount = vertex_input_attribute_description.size();
-    vertex_input_state_create_info.pVertexAttributeDescriptions    = vertex_input_attribute_description.data();
+    vertex_input_state_create_info.vertexBindingDescriptionCount   = 0;
+    vertex_input_state_create_info.pVertexBindingDescriptions      = nullptr;
+    vertex_input_state_create_info.vertexAttributeDescriptionCount = 0;
+    vertex_input_state_create_info.pVertexAttributeDescriptions    = nullptr;
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly_create_info{};
     input_assembly_create_info.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -363,8 +359,8 @@ void DeferLightPass::setupPipelines()
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil_create_info{};
     depth_stencil_create_info.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depth_stencil_create_info.depthTestEnable       = VK_TRUE;
-    depth_stencil_create_info.depthWriteEnable      = VK_TRUE;
+    depth_stencil_create_info.depthTestEnable       = VK_FALSE;
+    depth_stencil_create_info.depthWriteEnable      = VK_FALSE;
     depth_stencil_create_info.depthCompareOp        = VK_COMPARE_OP_LESS;
     depth_stencil_create_info.depthBoundsTestEnable = VK_FALSE;
     depth_stencil_create_info.stencilTestEnable     = VK_FALSE;
@@ -414,7 +410,7 @@ void DeferLightPass::draw()
 {
 //    updateGlobalRenderDescriptorSet();
     VkDebugUtilsLabelEXT label_info = {
-            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Mesh Forward", {1.0f, 1.0f, 1.0f, 1.0f}};
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Mesh Defer Lighting", {1.0f, 1.0f, 1.0f, 1.0f}};
     g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
 
     g_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->p_current_command_buffer,
@@ -424,27 +420,36 @@ void DeferLightPass::draw()
     g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->p_current_command_buffer, 0, 1,
                                          m_p_render_command_info->p_scissor);
 
+    VkDescriptorSet descriptor_sets[] = {m_scence_ubo_descriptor_set, m_gbuffer_descriptor_set};
 
-        //bind directional light shadow map
-        if (m_p_render_resource_info->p_directional_light_shadow_map_descriptor_set != nullptr)
-        {
-            g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
-                                                         VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                                         pipeline_layout,
-                                                         2,
-                                                         1,
-                                                         m_p_render_resource_info->p_directional_light_shadow_map_descriptor_set,
-                                                         0,
-                                                         NULL);
-        }
+    g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
+                                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                 pipeline_layout,
+                                                 0,
+                                                 2,
+                                                 descriptor_sets,
+                                                 0,
+                                                 nullptr);
 
-        g_p_vulkan_context->_vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,
-                                              3,
-                                              1,
-                                              0,
-                                              0,
-                                              0);
-        g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
+    //bind directional light shadow map
+    if (m_p_render_resource_info->p_directional_light_shadow_map_descriptor_set != nullptr)
+    {
+        g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
+                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                     pipeline_layout,
+                                                     2,
+                                                     1,
+                                                     m_p_render_resource_info->p_directional_light_shadow_map_descriptor_set,
+                                                     0,
+                                                     nullptr);
+    }
+
+    g_p_vulkan_context->_vkCmdDraw(*m_p_render_command_info->p_current_command_buffer,
+                                   3,
+                                   1,
+                                   0,
+                                   0);
+    g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
 }
 
 void DeferLightPass::updateAfterSwapchainRecreate()

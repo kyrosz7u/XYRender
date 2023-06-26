@@ -24,7 +24,6 @@ namespace VulkanAPI
     struct RenderCommandInfo
     {
         VkCommandBuffer              *p_current_command_buffer{nullptr};
-        std::vector<VkCommandBuffer> *command_buffer_list{nullptr};
         VkDescriptorPool             *p_descriptor_pool{nullptr};
         const VkViewport             *p_viewport{nullptr};
         const VkRect2D               *p_scissor{nullptr};

@@ -9,10 +9,10 @@
 #include <spdlog/async.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include "core/singleton_decorator.h"
+#include "core/singleton_template.h"
 
-class Logger : public SingletonDecorator<Logger> {
-    friend class SingletonDecorator<Logger>;
+class Logger : public SingletonTemplate<Logger> {
+    friend class SingletonTemplate<Logger>;
 
 public:
     enum class LogLevel : uint8_t {

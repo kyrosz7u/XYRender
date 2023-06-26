@@ -36,13 +36,13 @@ void MainCameraDeferRenderPass::setupRenderpassAttachments()
     assert(m_p_render_targets != nullptr);
     assert(m_p_render_targets->size() > 0);
 
-    m_renderpass_attachments[_main_camera_defer_gbuffer_color_attachment].format = VK_FORMAT_R8G8B8A8_UNORM;
+    m_renderpass_attachments[_main_camera_defer_gbuffer_color_attachment].format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
     m_renderpass_attachments[_main_camera_defer_gbuffer_color_attachment].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    m_renderpass_attachments[_main_camera_defer_gbuffer_normal_attachment].format = VK_FORMAT_R16G16B16_SFLOAT;
+    m_renderpass_attachments[_main_camera_defer_gbuffer_normal_attachment].format = VK_FORMAT_A2B10G10R10_UNORM_PACK32;
     m_renderpass_attachments[_main_camera_defer_gbuffer_normal_attachment].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    m_renderpass_attachments[_main_camera_defer_gbuffer_position_attachment].format = VK_FORMAT_R16G16B16_SFLOAT;
+    m_renderpass_attachments[_main_camera_defer_gbuffer_position_attachment].format = VK_FORMAT_R16G16B16A16_SFLOAT;
     m_renderpass_attachments[_main_camera_defer_gbuffer_position_attachment].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     m_renderpass_attachments[_main_camera_defer_color_attachment].format = (*m_p_render_targets)[0].format;
@@ -59,7 +59,8 @@ void MainCameraDeferRenderPass::setupRenderpassAttachments()
                                 g_p_vulkan_context->_swapchain_extent.height,
                                 renderpass_attachment.format,
                                 VK_IMAGE_TILING_OPTIMAL,
-                                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
+                                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                                VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                 renderpass_attachment.image,
                                 renderpass_attachment.mem,
@@ -185,23 +186,36 @@ void MainCameraDeferRenderPass::setupRenderPass()
     gbuffer_pass.preserveAttachmentCount = 0;
     gbuffer_pass.pPreserveAttachments    = nullptr;
 
+    VkAttachmentReference defer_lighting_input_attachment_description[_main_camera_defer_attachment_count-2];
+
+    defer_lighting_input_attachment_description[0].attachment = &gbuffer_color_attachment_description - attachments;
+    defer_lighting_input_attachment_description[0].layout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    defer_lighting_input_attachment_description[1].attachment = &gbuffer_normal_attachment_description - attachments;
+    defer_lighting_input_attachment_description[1].layout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    defer_lighting_input_attachment_description[2].attachment = &gbuffer_worldpos_attachment_description - attachments;
+    defer_lighting_input_attachment_description[2].layout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
     VkAttachmentReference framebuffer_image_attachment_reference{};
     framebuffer_image_attachment_reference.attachment = &framebuffer_image_attachment_description - attachments;
     framebuffer_image_attachment_reference.layout     = framebuffer_image_attachment_description.finalLayout;
 
-    VkSubpassDescription &framebuffer_pass = subpasses[_main_camera_defer_lighting_subpass];
-    framebuffer_pass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    framebuffer_pass.colorAttachmentCount    = 1;
-    framebuffer_pass.pColorAttachments       = &framebuffer_image_attachment_reference;
-    framebuffer_pass.pDepthStencilAttachment = nullptr;
-    framebuffer_pass.preserveAttachmentCount = 0;
-    framebuffer_pass.pPreserveAttachments    = nullptr;
+    VkSubpassDescription &defer_lighting_pass = subpasses[_main_camera_defer_lighting_subpass];
+    defer_lighting_pass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    defer_lighting_pass.inputAttachmentCount    = sizeof(defer_lighting_input_attachment_description) / sizeof(defer_lighting_input_attachment_description[0]);
+    defer_lighting_pass.pInputAttachments       = &defer_lighting_input_attachment_description[0];
+    defer_lighting_pass.colorAttachmentCount    = 1;
+    defer_lighting_pass.pColorAttachments       = &framebuffer_image_attachment_reference;
+    defer_lighting_pass.pDepthStencilAttachment = nullptr;
+    defer_lighting_pass.preserveAttachmentCount = 0;
+    defer_lighting_pass.pPreserveAttachments    = nullptr;
 
     VkSubpassDescription &skybox_pass = subpasses[_main_camera_skybox_subpass];
     skybox_pass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
     skybox_pass.colorAttachmentCount    = 1;
-    skybox_pass.pColorAttachments       = &gbuffer_attachments_reference[0];
-    skybox_pass.pDepthStencilAttachment = nullptr;
+    skybox_pass.pColorAttachments       = &framebuffer_image_attachment_reference;
+    skybox_pass.pDepthStencilAttachment = &depth_attachment_reference;
     skybox_pass.preserveAttachmentCount = 0;
     skybox_pass.pPreserveAttachments    = nullptr;
 
@@ -226,7 +240,7 @@ void MainCameraDeferRenderPass::setupRenderPass()
     defer_lighting_depend_on_gbuffer.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
     VkSubpassDependency &skybox_pass_depend_on_lighting = dependencies[2];
-    skybox_pass_depend_on_lighting.srcSubpass      = _main_camera_gbuffer_subpass;
+    skybox_pass_depend_on_lighting.srcSubpass      = _main_camera_defer_lighting_subpass;
     skybox_pass_depend_on_lighting.dstSubpass      = _main_camera_skybox_subpass;
     skybox_pass_depend_on_lighting.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     skybox_pass_depend_on_lighting.dstStageMask    = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
@@ -315,13 +329,13 @@ void MainCameraDeferRenderPass::setupSubpass()
     m_subpass_list[_main_camera_gbuffer_subpass] = std::make_shared<SubPass::MeshGBufferPass>();
     m_subpass_list[_main_camera_gbuffer_subpass]->setShader(SubPass::VERTEX_SHADER, MESH_GBUFFER_VERT);
     m_subpass_list[_main_camera_gbuffer_subpass]->setShader(SubPass::FRAGMENT_SHADER, MESH_GBUFFER_FRAG);
-    m_subpass_list[_main_camera_gbuffer_subpass]->initialize(&gbuffer_pass_init_info);
+
 
     SubPass::DeferLightPassInitInfo lighting_pass_init_info{};
-    lighting_pass_init_info.p_render_command_info  = m_p_render_command_info;
-    lighting_pass_init_info.p_render_resource_info = m_p_render_resource_info;
-    lighting_pass_init_info.renderpass             = m_renderpass;
-    lighting_pass_init_info.subpass_index          = _main_camera_defer_lighting_subpass;
+    lighting_pass_init_info.p_render_command_info       = m_p_render_command_info;
+    lighting_pass_init_info.p_render_resource_info      = m_p_render_resource_info;
+    lighting_pass_init_info.renderpass                  = m_renderpass;
+    lighting_pass_init_info.subpass_index               = _main_camera_defer_lighting_subpass;
     lighting_pass_init_info.gbuffer_color_attachment    = &m_renderpass_attachments[_main_camera_defer_gbuffer_color_attachment];
     lighting_pass_init_info.gbuffer_normal_attachment   = &m_renderpass_attachments[_main_camera_defer_gbuffer_normal_attachment];
     lighting_pass_init_info.gbuffer_position_attachment = &m_renderpass_attachments[_main_camera_defer_gbuffer_position_attachment];
@@ -329,7 +343,6 @@ void MainCameraDeferRenderPass::setupSubpass()
     m_subpass_list[_main_camera_defer_lighting_subpass] = std::make_shared<SubPass::DeferLightPass>();
     m_subpass_list[_main_camera_defer_lighting_subpass]->setShader(SubPass::VERTEX_SHADER, FULL_SCREEN_VERT);
     m_subpass_list[_main_camera_defer_lighting_subpass]->setShader(SubPass::FRAGMENT_SHADER, DEFER_LIGHTING_FRAG);
-    m_subpass_list[_main_camera_defer_lighting_subpass]->initialize(&lighting_pass_init_info);
 
     SubPass::SubPassInitInfo skybox_pass_init_info{};
     skybox_pass_init_info.p_render_command_info  = m_p_render_command_info;
@@ -340,6 +353,9 @@ void MainCameraDeferRenderPass::setupSubpass()
     m_subpass_list[_main_camera_skybox_subpass] = std::make_shared<SubPass::SkyBoxPass>();
     m_subpass_list[_main_camera_skybox_subpass]->setShader(SubPass::VERTEX_SHADER, SKYBOX_VERT);
     m_subpass_list[_main_camera_skybox_subpass]->setShader(SubPass::FRAGMENT_SHADER, SKYBOX_FRAG);
+
+    m_subpass_list[_main_camera_gbuffer_subpass]->initialize(&gbuffer_pass_init_info);
+    m_subpass_list[_main_camera_defer_lighting_subpass]->initialize(&lighting_pass_init_info);
     m_subpass_list[_main_camera_skybox_subpass]->initialize(&skybox_pass_init_info);
 }
 

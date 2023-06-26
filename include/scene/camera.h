@@ -93,8 +93,8 @@ namespace Scene
         }
 
     private:
-        std::weak_ptr<SceneManager>  m_p_parent_scene;
-        std::weak_ptr<ForwardRender> render_in_scene;
+        std::weak_ptr<SceneManager> m_p_parent_scene;
+        std::weak_ptr<RenderBase>   render_in_scene;
     };
 }
 

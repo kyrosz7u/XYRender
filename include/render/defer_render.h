@@ -11,6 +11,8 @@
 #include "render/resource/render_resource.h"
 #include "scene/model.h"
 #include "scene/direction_light.h"
+#include "core/threadpool.h"
+#include "core/logger/logger_macros.h"
 
 namespace RenderSystem
 {
@@ -24,6 +26,14 @@ namespace RenderSystem
             _main_camera_renderpass,
             _ui_overlay_renderpass,
             _renderpass_count
+        };
+
+        struct ThreadData
+        {
+            int                          thread_index;
+            RenderPassPtr                p_renderpass;
+            VkCommandPool                commandPool;
+            std::vector<VkCommandBuffer> secondary_command_buffers;
         };
 
         DeferRender()
@@ -86,8 +96,12 @@ namespace RenderSystem
         void setupRenderDescriptorSetLayout();
 
     private:
-        VkCommandPool                m_command_pool{VK_NULL_HANDLE};
-        std::vector<VkCommandBuffer> m_command_buffers;
+        VkCommandPool                m_primary_command_pool{VK_NULL_HANDLE};
+        std::vector<VkCommandBuffer> m_primary_command_buffers;
+        // multi thread
+        ThreadPool                   m_thread_pool;
+        std::vector<ThreadData>      m_thread_datas;
+
         VkDescriptorPool             m_descriptor_pool{VK_NULL_HANDLE};
         std::vector<RenderPassPtr>   m_render_passes;
         // render target
@@ -114,6 +128,8 @@ namespace RenderSystem
         Matrix4x4 m_proj_matrix;
 
         UIOverlayPtr m_p_ui_overlay;
+
+        void setupMultiThread();
     };
 }
 #endif //XEXAMPLE_DEFER_RENDER_H

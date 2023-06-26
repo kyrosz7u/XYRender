@@ -26,7 +26,6 @@ namespace RenderSystem
             {
                 _mesh_pass_ubo_data_layout = 0,
                 _mesh_pass_texture_layout,
-                _mesh_pass_directional_light_shadow_layout,
                 _mesh_pass_pipeline_layout_count
             };
             MeshGBufferPass()

@@ -6,7 +6,6 @@
 #define XEXAMPLE_FORWARD_RENDER_H
 
 #include "render_base.h"
-#include "renderpass/main_camera_forward_pass.h"
 #include "render/resource/render_ubo.h"
 #include "render/resource/render_resource.h"
 #include "scene/model.h"

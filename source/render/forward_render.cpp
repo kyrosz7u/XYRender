@@ -12,10 +12,9 @@ using namespace RenderSystem;
 
 void ForwardRender::initialize()
 {
-    m_render_command_info.command_buffer_list = &m_command_buffers;
-    m_render_command_info.p_descriptor_pool   = &m_descriptor_pool;
-    m_render_command_info.p_viewport          = &m_viewport;
-    m_render_command_info.p_scissor           = &m_scissor;
+    g_render_command_info.p_descriptor_pool   = &m_descriptor_pool;
+    g_render_command_info.p_viewport          = &m_viewport;
+    g_render_command_info.p_scissor           = &m_scissor;
 
     m_render_resource_info.p_render_submeshes              = &m_render_submeshes;
     m_render_resource_info.p_texture_descriptor_sets       = &m_texture_descriptor_sets;
@@ -168,19 +167,19 @@ void ForwardRender::setupRenderpass()
     m_render_passes[_ui_overlay_renderpass]                  = std::make_shared<UIOverlayRenderPass>();
 
     DirectionalLightShadowRenderPassInitInfo directional_light_shadowmap_renderpass_init_info;
-    directional_light_shadowmap_renderpass_init_info.render_command_info  = &m_render_command_info;
+    directional_light_shadowmap_renderpass_init_info.render_command_info  = &g_render_command_info;
     directional_light_shadowmap_renderpass_init_info.render_resource_info = &m_render_resource_info;
     directional_light_shadowmap_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
     directional_light_shadowmap_renderpass_init_info.shadowmap_attachment = &m_directional_light_shadow;
 
     MainCameraForwardRenderPassInitInfo maincamera_renderpass_init_info;
-    maincamera_renderpass_init_info.render_command_info  = &m_render_command_info;
+    maincamera_renderpass_init_info.render_command_info  = &g_render_command_info;
     maincamera_renderpass_init_info.render_resource_info = &m_render_resource_info;
     maincamera_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
     maincamera_renderpass_init_info.render_targets       = &m_backup_targets;
 
     UIOverlayRenderPassInitInfo ui_overlay_renderpass_init_info;
-    ui_overlay_renderpass_init_info.render_command_info  = &m_render_command_info;
+    ui_overlay_renderpass_init_info.render_command_info  = &g_render_command_info;
     ui_overlay_renderpass_init_info.render_resource_info = &m_render_resource_info;
     ui_overlay_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
     ui_overlay_renderpass_init_info.render_targets       = &m_render_targets;
@@ -221,7 +220,7 @@ void ForwardRender::draw()
     assert(VK_SUCCESS == res_begin_command_buffer);
 
     // record command buffer
-    m_render_command_info.p_current_command_buffer = &m_command_buffers[next_image_index];
+    g_render_command_info.p_current_command_buffer = &m_command_buffers[next_image_index];
 
     m_render_passes[_directional_light_shadowmap_renderpass]->draw(0);
     m_render_passes[_main_camera_renderpass]->draw(0);

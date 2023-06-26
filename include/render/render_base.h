@@ -14,6 +14,7 @@ namespace RenderSystem
 {
     using namespace VulkanAPI;
     extern std::shared_ptr<VulkanContext> g_p_vulkan_context;
+    extern thread_local VulkanAPI::RenderCommandInfo   g_render_command_info;
 
     class RenderBase
     {
@@ -58,7 +59,7 @@ namespace RenderSystem
 
     protected:
         RenderGlobalResourceInfo     m_render_resource_info;
-        VulkanAPI::RenderCommandInfo m_render_command_info;
+//        VulkanAPI::RenderCommandInfo g_render_command_info;
         uint32_t                     m_frame_count{0};
         float                        m_frame_time{0};
     private:

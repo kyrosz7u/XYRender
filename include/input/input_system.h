@@ -5,7 +5,7 @@
 #ifndef XEXAMPLE_INPUT_SYSTEM_H
 #define XEXAMPLE_INPUT_SYSTEM_H
 
-#include "core/singleton_decorator.h"
+#include "core/singleton_template.h"
 #include "core/window/glfw_window.h"
 #include "core/math/math.h"
 
@@ -13,7 +13,7 @@
 
 // main函数执行前，先执行SingletonDecorator<_InputSystem>::createInstance()，创建InputSystem实例
 // 需要
-class _InputSystem : public SingletonDecorator<_InputSystem>
+class _InputSystem : public SingletonTemplate<_InputSystem>
 {
 public:
     enum CameraCommand : unsigned int

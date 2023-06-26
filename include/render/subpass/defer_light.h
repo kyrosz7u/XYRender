@@ -48,8 +48,8 @@ namespace RenderSystem
             void setupPipeLineLayout();
             void setupDescriptorSet() override;
             void setupPipelines() override;
-            VkDescriptorSet m_mesh_ubo_descriptor_set = VK_NULL_HANDLE;
-            VkDescriptorSet m_gbuffer_descriptor_set = VK_NULL_HANDLE;
+            VkDescriptorSet m_scence_ubo_descriptor_set = VK_NULL_HANDLE;
+            VkDescriptorSet m_gbuffer_descriptor_set    = VK_NULL_HANDLE;
 
             ImageAttachment *m_gbuffer_color_attachment = nullptr;
             ImageAttachment *m_gbuffer_normal_attachment = nullptr;
