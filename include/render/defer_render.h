@@ -128,8 +128,6 @@ namespace RenderSystem
         Matrix4x4 m_proj_matrix;
 
         UIOverlayPtr m_p_ui_overlay;
-
-        void setupMultiThread();
     };
 }
 #endif //XEXAMPLE_DEFER_RENDER_H

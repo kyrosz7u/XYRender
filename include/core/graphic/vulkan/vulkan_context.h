@@ -23,10 +23,10 @@ namespace VulkanAPI
 {
     struct RenderCommandInfo
     {
-        VkCommandBuffer              *p_current_command_buffer{nullptr};
-        VkDescriptorPool             *p_descriptor_pool{nullptr};
-        const VkViewport             *p_viewport{nullptr};
-        const VkRect2D               *p_scissor{nullptr};
+        VkCommandBuffer  *p_current_command_buffer{nullptr};
+        VkDescriptorPool *p_descriptor_pool{nullptr};
+        const VkViewport *p_viewport{nullptr};
+        const VkRect2D   *p_scissor{nullptr};
     };
 
     struct QueueFamilyIndices
@@ -80,6 +80,7 @@ namespace VulkanAPI
         PFN_vkResetFences                _vkResetFences;
         PFN_vkResetCommandPool           _vkResetCommandPool;
         PFN_vkBeginCommandBuffer         _vkBeginCommandBuffer;
+        PFN_vkCmdExecuteCommands         _vkCmdExecuteCommands;
         PFN_vkEndCommandBuffer           _vkEndCommandBuffer;
         PFN_vkCmdBeginRenderPass         _vkCmdBeginRenderPass;
         PFN_vkCmdNextSubpass             _vkCmdNextSubpass;

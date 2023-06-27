@@ -77,6 +77,12 @@ namespace RenderSystem
 
             virtual void draw() = 0;
 
+            virtual void drawMultiThreading(std::vector<RenderThreadData> &thread_data, VkCommandBufferInheritanceInfo& inheritance_info,
+                                            uint32_t command_buffer_index, uint32_t thread_start_index, uint32_t thread_count)
+            {
+                throw std::runtime_error("drawMultiThreading not implemented");
+            }
+
             virtual void updateAfterSwapchainRecreate()
             {}
 
@@ -93,10 +99,10 @@ namespace RenderSystem
             RenderCommandInfo        *m_p_render_command_info  = nullptr;
             RenderGlobalResourceInfo *m_p_render_resource_info = nullptr;
 
-            VkRenderPass                            m_renderpass         = VK_NULL_HANDLE;
-            uint32_t                                m_subpass_index      = VK_SUBPASS_EXTERNAL;
-            VkPipelineLayout                        pipeline_layout      = VK_NULL_HANDLE;
-            VkPipeline                              pipeline             = VK_NULL_HANDLE;
+            VkRenderPass                            m_renderpass    = VK_NULL_HANDLE;
+            uint32_t                                m_subpass_index = VK_SUBPASS_EXTERNAL;
+            VkPipelineLayout                        pipeline_layout = VK_NULL_HANDLE;
+            VkPipeline                              pipeline        = VK_NULL_HANDLE;
 //            std::vector<DescriptorSet>              m_descriptorset_list;
             std::vector<VkDescriptorSetLayout>      m_descriptor_set_layouts;
             std::vector<std::vector<unsigned char>> m_shader_list;

@@ -32,6 +32,12 @@ namespace RenderSystem
 
             void draw() override;
 
+            void drawMultiThreading(std::vector<RenderThreadData> &thread_data,
+                                    VkCommandBufferInheritanceInfo &inheritance_info,
+                                    uint32_t command_buffer_index,
+                                    uint32_t thread_start_index,
+                                    uint32_t thread_count) override;
+
             void updateGlobalRenderDescriptorSet();
 
             void updateAfterSwapchainRecreate() override;
@@ -52,6 +58,9 @@ namespace RenderSystem
 
             VkDescriptorSet m_dir_shadow_ubo_descriptor_set = VK_NULL_HANDLE;
             uint32_t        m_directional_light_index       = 0;
+
+            void drawSingleThread(VkCommandBuffer &command_buffer, VkCommandBufferInheritanceInfo &inheritance_info,
+                                  uint32_t submesh_start_index, uint32_t submesh_end_index);
         };
     }
 }

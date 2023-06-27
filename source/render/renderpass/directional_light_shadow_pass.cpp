@@ -14,13 +14,15 @@ void DirectionalLightShadowRenderPass::initialize(RenderPassInitInfo *renderpass
     auto direction_light_shadow_renderpass_init_info = static_cast<DirectionalLightShadowRenderPassInitInfo *>(renderpass_init_info);
     m_p_render_command_info  = direction_light_shadow_renderpass_init_info->render_command_info;
     m_p_render_resource_info = direction_light_shadow_renderpass_init_info->render_resource_info;
-//    m_p_render_targets       = direction_light_shadow_renderpass_init_info->render_targets;
     m_p_shadowmap_attachment = direction_light_shadow_renderpass_init_info->shadowmap_attachment;
 
     setupRenderpassAttachments();
     setupRenderPass();
     setupFrameBuffer();
     setupSubpass();
+#ifdef MULTI_THREAD_RENDERING
+    setupMultiThreading(m_p_shadowmap_attachment->layer_count*MESH_DRAW_THREAD_NUM);
+#endif
 }
 
 void DirectionalLightShadowRenderPass::setupRenderpassAttachments()
@@ -158,7 +160,49 @@ void DirectionalLightShadowRenderPass::setupSubpass()
     m_subpass_list[_direction_light_shadow_subpass_shadow]->setShader(SubPass::FRAGMENT_SHADER,
                                                                       MESH_DIRECTIONAL_LIGHT_SHADOW_FRAG);
     m_subpass_list[_direction_light_shadow_subpass_shadow]->initialize(&directinal_light_shadow_pass_init_info);
+}
 
+void DirectionalLightShadowRenderPass::drawMultiThreading(uint32_t render_target_index, uint32_t command_buffer_index)
+{
+    VkClearValue clear_values[_direction_light_attachment_count] = {};
+    clear_values[_direction_light_attachment_depth].depthStencil = {1.0f, 0};
+
+    uint32_t direction_light_nums = m_p_shadowmap_attachment->layer_count;
+    assert(m_framebuffer_per_rendertarget.size() == direction_light_nums);
+
+    VkExtent2D extent = {static_cast<uint32_t>(m_renderpass_attachments[0].width),
+                         static_cast<uint32_t>(m_renderpass_attachments[0].height)};
+
+    for(uint32_t i=0;i<direction_light_nums;++i)
+    {
+        VkRenderPassBeginInfo renderpass_begin_info{};
+        renderpass_begin_info.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderpass_begin_info.renderPass        = m_renderpass;
+        renderpass_begin_info.framebuffer       = m_framebuffer_per_rendertarget[i];
+        renderpass_begin_info.renderArea.offset = {0, 0};
+        renderpass_begin_info.renderArea.extent = extent;
+        renderpass_begin_info.clearValueCount   = (sizeof(clear_values) / sizeof(clear_values[0]));
+        renderpass_begin_info.pClearValues      = clear_values;
+
+        g_p_vulkan_context->_vkCmdBeginRenderPass(*m_p_render_command_info->p_current_command_buffer,
+                                                  &renderpass_begin_info,
+                                                  VK_SUBPASS_CONTENTS_INLINE);
+        std::reinterpret_pointer_cast<SubPass::DirectionalLightShadowPass>(
+                m_subpass_list[_direction_light_shadow_subpass_shadow])->setDirectionalLightIndex(i);
+
+        VkCommandBufferInheritanceInfo inheritance_info{};
+
+        inheritance_info.sType                = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+        inheritance_info.renderPass           = m_renderpass;
+        inheritance_info.framebuffer          = m_framebuffer_per_rendertarget[i];
+
+        m_subpass_list[_direction_light_shadow_subpass_shadow]->drawMultiThreading(m_thread_data,
+                                                                                   inheritance_info,
+                                                                                   command_buffer_index,
+                                                                                   i*MESH_DRAW_THREAD_NUM,
+                                                                                   MESH_DRAW_THREAD_NUM);
+        g_p_vulkan_context->_vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
+    }
 }
 
 void DirectionalLightShadowRenderPass::draw(uint32_t render_target_index)

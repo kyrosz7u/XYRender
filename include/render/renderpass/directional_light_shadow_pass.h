@@ -50,6 +50,8 @@ namespace RenderSystem
 
         void draw(uint32_t render_target_index) override;
 
+        void drawMultiThreading(uint32_t render_target_index, uint32_t command_buffer_index) override;
+
     private:
         ImageAttachment *m_p_shadowmap_attachment;
 

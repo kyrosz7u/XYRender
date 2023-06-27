@@ -11,9 +11,9 @@ using namespace RenderSystem;
 
 void DeferRender::initialize()
 {
-    g_render_command_info.p_descriptor_pool   = &m_descriptor_pool;
-    g_render_command_info.p_viewport          = &m_viewport;
-    g_render_command_info.p_scissor           = &m_scissor;
+    m_render_command_info.p_descriptor_pool = &m_descriptor_pool;
+    m_render_command_info.p_viewport        = &m_viewport;
+    m_render_command_info.p_scissor         = &m_scissor;
 
     m_render_resource_info.p_render_submeshes              = &m_render_submeshes;
     m_render_resource_info.p_texture_descriptor_sets       = &m_texture_descriptor_sets;
@@ -75,22 +75,18 @@ void DeferRender::setupCommandBuffer()
         throw std::runtime_error("vk create command pool");
     }
 
+    uint32_t renderTarget_nums = g_p_vulkan_context->_swapchain_images.size();
+    m_primary_command_buffers.resize(renderTarget_nums);
     VkCommandBufferAllocateInfo command_buffer_allocate_info{};
     command_buffer_allocate_info.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     command_buffer_allocate_info.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    command_buffer_allocate_info.commandBufferCount = 1U;
+    command_buffer_allocate_info.commandBufferCount = m_primary_command_buffers.size();
     command_buffer_allocate_info.commandPool        = m_primary_command_pool;
 
-    uint32_t renderTarget_nums = g_p_vulkan_context->_swapchain_images.size();
-    m_primary_command_buffers.resize(renderTarget_nums);
-    for (uint32_t i = 0; i < renderTarget_nums; ++i)
+    if (vkAllocateCommandBuffers(g_p_vulkan_context->_device, &command_buffer_allocate_info,
+                                 m_primary_command_buffers.data()) != VK_SUCCESS)
     {
-        if (vkAllocateCommandBuffers(g_p_vulkan_context->_device, &command_buffer_allocate_info,
-                                     &m_primary_command_buffers[i]) !=
-            VK_SUCCESS)
-        {
-            throw std::runtime_error("vk allocate command buffers");
-        }
+        throw std::runtime_error("vk allocate command buffers");
     }
 }
 
@@ -166,19 +162,19 @@ void DeferRender::setupRenderpass()
     m_render_passes[_ui_overlay_renderpass]                  = std::make_shared<UIOverlayRenderPass>();
 
     DirectionalLightShadowRenderPassInitInfo directional_light_shadowmap_renderpass_init_info;
-    directional_light_shadowmap_renderpass_init_info.render_command_info  = &g_render_command_info;
+    directional_light_shadowmap_renderpass_init_info.render_command_info  = &m_render_command_info;
     directional_light_shadowmap_renderpass_init_info.render_resource_info = &m_render_resource_info;
     directional_light_shadowmap_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
     directional_light_shadowmap_renderpass_init_info.shadowmap_attachment = &m_directional_light_shadow;
 
     MainCameraDeferRenderPassInitInfo maincamera_renderpass_init_info;
-    maincamera_renderpass_init_info.render_command_info  = &g_render_command_info;
+    maincamera_renderpass_init_info.render_command_info  = &m_render_command_info;
     maincamera_renderpass_init_info.render_resource_info = &m_render_resource_info;
     maincamera_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
     maincamera_renderpass_init_info.render_targets       = &m_backup_targets;
 
     UIOverlayRenderPassInitInfo ui_overlay_renderpass_init_info;
-    ui_overlay_renderpass_init_info.render_command_info  = &g_render_command_info;
+    ui_overlay_renderpass_init_info.render_command_info  = &m_render_command_info;
     ui_overlay_renderpass_init_info.render_resource_info = &m_render_resource_info;
     ui_overlay_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
     ui_overlay_renderpass_init_info.render_targets       = &m_render_targets;
@@ -190,11 +186,6 @@ void DeferRender::setupRenderpass()
     m_render_passes[_ui_overlay_renderpass]->initialize(&ui_overlay_renderpass_init_info);
 }
 
-void DeferRender::setupMultiThread()
-{
-
-}
-
 void DeferRender::Tick()
 {
     RenderBase::Tick();
@@ -204,7 +195,8 @@ void DeferRender::Tick()
 void DeferRender::draw()
 {
     uint32_t next_image_index = g_p_vulkan_context->getNextSwapchainImageIndex(
-            [this] { updateAfterSwapchainRecreate(); });
+            [this]
+            { updateAfterSwapchainRecreate(); });
     if (next_image_index == -1)
     {
         LOG_INFO("next image index is -1");
@@ -224,14 +216,15 @@ void DeferRender::draw()
     assert(VK_SUCCESS == res_begin_command_buffer);
 
     // record command buffer
-    g_render_command_info.p_current_command_buffer = &m_primary_command_buffers[next_image_index];
+    m_render_command_info.p_current_command_buffer = &m_primary_command_buffers[next_image_index];
 
     m_render_passes[_directional_light_shadowmap_renderpass]->draw(0);
     m_render_passes[_main_camera_renderpass]->draw(0);
     m_render_passes[_ui_overlay_renderpass]->draw(next_image_index);
 
     // end command buffer
-    VkResult res_end_command_buffer = g_p_vulkan_context->_vkEndCommandBuffer(m_primary_command_buffers[next_image_index]);
+    VkResult res_end_command_buffer = g_p_vulkan_context->_vkEndCommandBuffer(
+            m_primary_command_buffers[next_image_index]);
     assert(VK_SUCCESS == res_end_command_buffer);
 
     g_p_vulkan_context->submitDrawSwapchainImageCmdBuffer(&m_primary_command_buffers[next_image_index]);
@@ -240,7 +233,7 @@ void DeferRender::draw()
 }
 
 void DeferRender::UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
-                                          const std::vector<RenderSubmesh> &_visible_submeshes)
+                                        const std::vector<RenderSubmesh> &_visible_submeshes)
 {
     if (m_render_model_ubo_list.ubo_data_list.size() != _visible_models.size())
     {
@@ -288,10 +281,11 @@ void DeferRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight> &
     {
         auto dummy_transform = directional_light_list[i].transform;
         auto forward         = dummy_transform.GetForward();
-        auto projection      = Math::Matrix4x4::makeOrthogonalMatrix(m_render_resource_info.kDirectionalLightInfo.camera_width,
-                                                                     m_render_resource_info.kDirectionalLightInfo.camera_height,
-                                                                     m_render_resource_info.kDirectionalLightInfo.camera_near,
-                                                                     m_render_resource_info.kDirectionalLightInfo.camera_far);
+        auto projection      = Math::Matrix4x4::makeOrthogonalMatrix(
+                m_render_resource_info.kDirectionalLightInfo.camera_width,
+                m_render_resource_info.kDirectionalLightInfo.camera_height,
+                m_render_resource_info.kDirectionalLightInfo.camera_near,
+                m_render_resource_info.kDirectionalLightInfo.camera_far);
 
 //        auto projection      = Math::Matrix4x4::makePerspectiveMatrix(90,1.33,1.0,50);
 

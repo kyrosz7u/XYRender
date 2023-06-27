@@ -8,24 +8,48 @@
 #include <vulkan/vulkan.h>
 #include "core/graphic/vulkan/vulkan_context.h"
 #include "core/graphic/vulkan/vulkan_utils.h"
+#include "core/threadpool.h"
 #include <memory>
 #include <vector>
 
 namespace RenderSystem
 {
     struct RenderGlobalResourceInfo;
+    struct ImageAttachment;
 
     extern std::shared_ptr<VulkanAPI::VulkanContext> g_p_vulkan_context;
+    extern const uint32_t                            DEFAULT_THREAD_COUNT;
+    extern const uint32_t                            MESH_DRAW_THREAD_NUM;
+
+    struct RenderThreadData
+    {
+        VkCommandPool                secondary_command_pool;
+        std::vector<VkCommandBuffer> command_buffers;
+        ThreadPool                   *p_thread_pool;
+    };
 
     struct DirectionLightInfo
     {
-        VkDeviceSize shadowmap_width = 1400;
+        VkDeviceSize shadowmap_width  = 1400;
         VkDeviceSize shadowmap_height = 1400;
-        float camera_width = 150;
-        float camera_height = 150;
-        float camera_near = 1.0f;
-        float camera_far = 100.0f;
-        VkFormat depth_format = VK_FORMAT_D32_SFLOAT;
+        float        camera_width     = 150;
+        float        camera_height    = 150;
+        float        camera_near      = 1.0f;
+        float        camera_far       = 100.0f;
+        VkFormat     depth_format     = VK_FORMAT_D32_SFLOAT;
+    };
+
+    struct RenderPassInitInfo
+    {
+        VulkanAPI::RenderCommandInfo *render_command_info = nullptr;
+
+        RenderGlobalResourceInfo *render_resource_info;
+
+        std::vector<ImageAttachment> *render_targets = nullptr;
+
+        VkDescriptorPool *descriptor_pool = nullptr;
+
+        std::vector<VkClearValue> clearValues;
     };
 
     struct ImageAttachment
@@ -81,22 +105,5 @@ namespace RenderSystem
             height = 0;
         }
     };
-
-    struct RenderPassInitInfo
-    {
-        VulkanAPI::RenderCommandInfo *render_command_info = nullptr;
-
-        RenderGlobalResourceInfo *render_resource_info;
-
-        std::vector<ImageAttachment> *render_targets = nullptr;
-
-        VkDescriptorPool *descriptor_pool = nullptr;
-
-        std::vector<VkClearValue> clearValues;
-//        std::vector<VkSubpassDependency> subpassDependencies;
-//        std::vector<VkSubpassDescription> subpassDescriptions;
-    };
-
-
 }
 #endif //XEXAMPLE_COMMON_DEFINE_H
