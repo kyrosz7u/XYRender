@@ -131,7 +131,7 @@ void DirectionalLightShadowPass::setupPipelines()
                                nullptr,
                                &pipeline_layout) != VK_SUCCESS)
     {
-        throw std::runtime_error("create " + name + " pipeline layout");
+        throw std::runtime_error("create " + name + " m_pipeline layout");
     }
 
     std::map<int, VkShaderModule> shader_modules;
@@ -258,10 +258,10 @@ void DirectionalLightShadowPass::setupPipelines()
                                   1,
                                   &pipelineInfo,
                                   nullptr,
-                                  &pipeline) !=
+                                  &m_pipeline) !=
         VK_SUCCESS)
     {
-        throw std::runtime_error("create " + name + " graphics pipeline");
+        throw std::runtime_error("create " + name + " graphics m_pipeline");
     }
 
     for (auto &shader_module: shader_modules)
@@ -280,9 +280,7 @@ void DirectionalLightShadowPass::drawSingleThread(VkCommandBuffer &command_buffe
     command_buffer_begin_info.flags            = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
     command_buffer_begin_info.pInheritanceInfo = &inheritance_info;
 
-    VK_CHECK_RESULT(vkBeginCommandBuffer(command_buffer, &command_buffer_begin_info))
-
-    g_p_vulkan_context->_vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    VK_CHECK_RESULT(g_p_vulkan_context->_vkBeginCommandBuffer(command_buffer, &command_buffer_begin_info))
 
     VkExtent2D extent = {static_cast<uint32_t>(m_p_render_resource_info->kDirectionalLightInfo.shadowmap_width),
                          static_cast<uint32_t>(m_p_render_resource_info->kDirectionalLightInfo.shadowmap_height)};
@@ -298,6 +296,7 @@ void DirectionalLightShadowPass::drawSingleThread(VkCommandBuffer &command_buffe
     scissor.offset = {0, 0};
     scissor.extent = extent;
 
+    g_p_vulkan_context->_vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
     g_p_vulkan_context->_vkCmdSetViewport(command_buffer, 0, 1, &viewport);
     g_p_vulkan_context->_vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
@@ -348,23 +347,23 @@ void DirectionalLightShadowPass::drawSingleThread(VkCommandBuffer &command_buffe
                                               submesh.vertex_offset,
                                               0);
     }
+
+    VK_CHECK_RESULT(g_p_vulkan_context->_vkEndCommandBuffer(command_buffer))
 }
 
-void DirectionalLightShadowPass::drawMultiThreading(std::vector<RenderThreadData> &thread_data,
+void DirectionalLightShadowPass::drawMultiThreading(ThreadPool &thread_pool,
+                                                    std::vector<RenderThreadData> &thread_data,
                                                     VkCommandBufferInheritanceInfo &inheritance_info,
                                                     uint32_t command_buffer_index,
                                                     uint32_t thread_start_index,
                                                     uint32_t thread_count)
 {
-
-    auto &thread_pool = *thread_data[0].p_thread_pool;
-
     uint32_t submesh_count                = m_p_render_resource_info->p_render_submeshes->size();
     uint32_t submesh_per_thread           = submesh_count / thread_count;
     uint32_t submesh_per_thread_remainder = submesh_count % thread_count;
 
     VkDebugUtilsLabelEXT label_info = {
-            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Directional light shadow", {1.0f, 1.0f, 1.0f, 1.0f}};
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Directional light shadow MultiThread", {1.0f, 1.0f, 1.0f, 1.0f}};
     g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
 
     for (uint32_t i = 0; i < thread_count; ++i)
@@ -386,22 +385,6 @@ void DirectionalLightShadowPass::drawMultiThreading(std::vector<RenderThreadData
                 });
     }
 
-    for(int i = 0;i<thread_count;++i)
-    {
-        thread_pool.threads[thread_start_index + i]->wait();
-    }
-
-    std::vector<VkCommandBuffer> recorded_command_buffers;
-
-    for(int i = 0;i<thread_count;++i)
-    {
-        recorded_command_buffers.push_back(thread_data[thread_start_index + i].command_buffers[command_buffer_index]);
-    }
-
-    g_p_vulkan_context->_vkCmdExecuteCommands(*m_p_render_command_info->p_current_command_buffer,
-                                              recorded_command_buffers.size(),
-                                              recorded_command_buffers.data());
-
     g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
 }
 
@@ -412,7 +395,7 @@ void DirectionalLightShadowPass::draw()
     g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
 
     g_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->p_current_command_buffer,
-                                           VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+                                           VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 
     VkExtent2D extent = {static_cast<uint32_t>(m_p_render_resource_info->kDirectionalLightInfo.shadowmap_width),
                          static_cast<uint32_t>(m_p_render_resource_info->kDirectionalLightInfo.shadowmap_height)};

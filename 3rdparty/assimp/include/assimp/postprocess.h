@@ -137,7 +137,7 @@ enum aiPostProcessSteps
      * importer property, <tt>#AI_CONFIG_PP_RVC_FLAGS</tt>. This is quite useful
      * if you don't need all parts of the output structure. Vertex colors
      * are rarely used today for example... Calling this step to remove unneeded
-     * data from the pipeline as early as possible results in increased
+     * data from the m_pipeline as early as possible results in increased
      * performance and a more optimized output data structure.
      * This step is also useful if you want to force Assimp to recompute
      * normals or tangents. The corresponding steps don't recompute them if
@@ -305,7 +305,7 @@ enum aiPostProcessSteps
      * Several material settings not contributing to the final appearance of
      * a surface are ignored in all comparisons (e.g. the material name).
      * So, if you're passing additional information through the
-     * content pipeline (probably using *magic* material names), don't
+     * content m_pipeline (probably using *magic* material names), don't
      * specify this flag. Alternatively take a look at the
      * <tt>#AI_CONFIG_PP_RRM_EXCLUDE_LIST</tt> importer property.
      */
@@ -367,7 +367,7 @@ enum aiPostProcessSteps
      *   <li>Set the <tt>#AI_CONFIG_PP_FD_REMOVE</tt> importer property to
      *       1. This will cause the step to remove degenerate triangles from the
      *       import as soon as they're detected. They won't pass any further
-     *       pipeline steps.
+     *       m_pipeline steps.
      *   </li>
      * </ul>
      * <br><b>2.</b>(if you don't support lines and points at all)<br>
@@ -478,7 +478,7 @@ enum aiPostProcessSteps
      *  collapsed and joined.
      *
      *  Node names can be lost during this step. If you use special 'tag nodes'
-     *  to pass additional information through your content pipeline, use the
+     *  to pass additional information through your content m_pipeline, use the
      *  <tt>#AI_CONFIG_PP_OG_EXCLUDE_LIST</tt> importer property to specify a
      *  list of node names you want to be kept. Nodes matching one of the names
      *  in this list won't be touched or modified.

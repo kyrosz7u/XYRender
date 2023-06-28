@@ -5448,7 +5448,7 @@ GLFWAPI uint64_t glfwGetTimerFrequency(void);
  *  When moving a context between threads, you must make it non-current on the
  *  old thread before making it current on the new one.
  *
- *  By default, making a context non-current implicitly forces a pipeline flush.
+ *  By default, making a context non-current implicitly forces a m_pipeline flush.
  *  On machines that support `GL_KHR_context_flush_control`, you can control
  *  whether a context performs this flush by setting the
  *  [GLFW_CONTEXT_RELEASE_BEHAVIOR](@ref GLFW_CONTEXT_RELEASE_BEHAVIOR_hint)

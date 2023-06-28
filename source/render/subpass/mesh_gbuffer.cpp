@@ -153,7 +153,7 @@ void MeshGBufferPass::setupPipelines()
                                nullptr,
                                &pipeline_layout) != VK_SUCCESS)
     {
-        throw std::runtime_error("create " + name + " pipeline layout");
+        throw std::runtime_error("create " + name + " m_pipeline layout");
     }
 
     std::map<int, VkShaderModule> shader_modules;
@@ -283,16 +283,129 @@ void MeshGBufferPass::setupPipelines()
                                   1,
                                   &pipelineInfo,
                                   nullptr,
-                                  &pipeline) !=
+                                  &m_pipeline) !=
         VK_SUCCESS)
     {
-        throw std::runtime_error("create " + name + " graphics pipeline");
+        throw std::runtime_error("create " + name + " graphics m_pipeline");
     }
 
     for (auto &shader_module: shader_modules)
     {
         vkDestroyShaderModule(g_p_vulkan_context->_device, shader_module.second, nullptr);
     }
+}
+
+void MeshGBufferPass::drawSingleThread(VkCommandBuffer &command_buffer,
+                                       VkCommandBufferInheritanceInfo &inheritance_info,
+                                       uint32_t submesh_start_index,
+                                       uint32_t submesh_end_index)
+{
+    VkCommandBufferBeginInfo command_buffer_begin_info{};
+    command_buffer_begin_info.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    command_buffer_begin_info.flags            = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    command_buffer_begin_info.pInheritanceInfo = &inheritance_info;
+
+    VK_CHECK_RESULT(g_p_vulkan_context->_vkBeginCommandBuffer(command_buffer, &command_buffer_begin_info))
+
+    g_p_vulkan_context->_vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+    g_p_vulkan_context->_vkCmdSetViewport(command_buffer, 0, 1, m_p_render_command_info->p_viewport);
+    g_p_vulkan_context->_vkCmdSetScissor(command_buffer, 0, 1, m_p_render_command_info->p_scissor);
+
+    auto &render_texture_desc_sets = *m_p_render_resource_info->p_texture_descriptor_sets;
+
+    for (uint32_t i = submesh_start_index; i < submesh_end_index; ++i)
+    {
+        auto submesh     = (*m_p_render_resource_info->p_render_submeshes)[i];
+        auto parent_mesh = submesh.parent_mesh.lock();
+        if (parent_mesh == nullptr)
+        {
+            continue;
+        }
+        if (submesh.material_index != -1)
+        {
+
+            g_p_vulkan_context->_vkCmdBindDescriptorSets(command_buffer,
+                                                         VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                         pipeline_layout,
+                                                         1,
+                                                         1,
+                                                         &render_texture_desc_sets[submesh.material_index],
+                                                         0,
+                                                         nullptr);
+        }
+
+        VkBuffer     vertex_buffers[] = {parent_mesh->mesh_vertex_position_buffer,
+                                         parent_mesh->mesh_vertex_normal_buffer,
+                                         parent_mesh->mesh_vertex_texcoord_buffer};
+        VkDeviceSize offsets[]        = {0, 0, 0};
+        g_p_vulkan_context->_vkCmdBindVertexBuffers(command_buffer,
+                                                    0,
+                                                    sizeof(vertex_buffers) / sizeof(vertex_buffers[0]),
+                                                    vertex_buffers,
+                                                    offsets);
+        g_p_vulkan_context->_vkCmdBindIndexBuffer(command_buffer,
+                                                  parent_mesh->mesh_index_buffer,
+                                                  0,
+                                                  VK_INDEX_TYPE_UINT16);
+
+        // bind model ubo
+        uint32_t dynamicOffset = parent_mesh->m_index_in_dynamic_buffer *
+                                 (*m_p_render_resource_info->p_render_model_ubo_list).dynamic_alignment;
+        g_p_vulkan_context->_vkCmdBindDescriptorSets(command_buffer,
+                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                     pipeline_layout,
+                                                     0,
+                                                     1,
+                                                     &m_mesh_ubo_descriptor_set,
+                                                     1,
+                                                     &dynamicOffset);
+
+        g_p_vulkan_context->_vkCmdDrawIndexed(command_buffer,
+                                              submesh.index_count,
+                                              1,
+                                              submesh.index_offset,
+                                              submesh.vertex_offset,
+                                              0);
+    }
+
+    VK_CHECK_RESULT(g_p_vulkan_context->_vkEndCommandBuffer(command_buffer))
+}
+
+void MeshGBufferPass::drawMultiThreading(ThreadPool &thread_pool,
+                                         std::vector<RenderThreadData> &thread_data,
+                                         VkCommandBufferInheritanceInfo &inheritance_info,
+                                         uint32_t command_buffer_index,
+                                         uint32_t thread_start_index,
+                                         uint32_t thread_count)
+{
+    uint32_t submesh_count                = m_p_render_resource_info->p_render_submeshes->size();
+    uint32_t submesh_per_thread           = submesh_count / thread_count;
+    uint32_t submesh_per_thread_remainder = submesh_count % thread_count;
+
+    VkDebugUtilsLabelEXT label_info = {
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Mesh GBuffer MultiThread", {1.0f, 1.0f, 1.0f, 1.0f}};
+    g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
+
+    for (uint32_t i = 0; i < thread_count; ++i)
+    {
+        auto     &command_buffer     = thread_data[thread_start_index + i].command_buffers[command_buffer_index];
+        uint32_t submesh_start_index = i * submesh_per_thread;
+        uint32_t submesh_end_index   = submesh_start_index + submesh_per_thread;
+        if (i == thread_count - 1)
+        {
+            submesh_end_index += submesh_per_thread_remainder;
+        }
+        thread_pool.threads[thread_start_index + i]->addJob(
+                [this, &command_buffer, &inheritance_info, submesh_start_index, submesh_end_index]()
+                {
+                    drawSingleThread(command_buffer,
+                                     inheritance_info,
+                                     submesh_start_index,
+                                     submesh_end_index);
+                });
+    }
+
+    g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
 }
 
 void MeshGBufferPass::draw()
@@ -303,7 +416,7 @@ void MeshGBufferPass::draw()
     g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
 
     g_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->p_current_command_buffer,
-                                           VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+                                           VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
     g_p_vulkan_context->_vkCmdSetViewport(*m_p_render_command_info->p_current_command_buffer, 0, 1,
                                           m_p_render_command_info->p_viewport);
     g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->p_current_command_buffer, 0, 1,

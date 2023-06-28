@@ -217,9 +217,14 @@ void DeferRender::draw()
 
     // record command buffer
     m_render_command_info.p_current_command_buffer = &m_primary_command_buffers[next_image_index];
-
+#ifdef MULTI_THREAD_RENDERING
+    m_render_passes[_directional_light_shadowmap_renderpass]->drawMultiThreading(0, next_image_index);
+    m_render_passes[_main_camera_renderpass]->drawMultiThreading(0, next_image_index);
+#else
     m_render_passes[_directional_light_shadowmap_renderpass]->draw(0);
     m_render_passes[_main_camera_renderpass]->draw(0);
+#endif
+
     m_render_passes[_ui_overlay_renderpass]->draw(next_image_index);
 
     // end command buffer

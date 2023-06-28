@@ -25,7 +25,6 @@ namespace RenderSystem
     {
         VkCommandPool                secondary_command_pool;
         std::vector<VkCommandBuffer> command_buffers;
-        ThreadPool                   *p_thread_pool;
     };
 
     struct DirectionLightInfo

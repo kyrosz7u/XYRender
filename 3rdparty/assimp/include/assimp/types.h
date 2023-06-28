@@ -251,7 +251,7 @@ struct aiColor3D {
  *
  *  Most text file loaders provide proper Unicode input file handling, special unicode
  *  characters are correctly transcoded to UTF8 and are kept throughout the libraries'
- *  import pipeline.
+ *  import m_pipeline.
  *
  *  For most applications, it will be absolutely sufficient to interpret the
  *  aiString as ASCII data and work with it as one would work with a plain char*.

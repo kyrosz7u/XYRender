@@ -29,6 +29,9 @@ void MainCameraDeferRenderPass::initialize(RenderPassInitInfo *renderpass_init_i
     setupRenderPass();
     setupFrameBuffer();
     setupSubpass();
+#ifdef MULTI_THREAD_RENDERING
+    setupMultiThreading(MESH_DRAW_THREAD_NUM);
+#endif
 }
 
 void MainCameraDeferRenderPass::setupRenderpassAttachments()
@@ -186,7 +189,7 @@ void MainCameraDeferRenderPass::setupRenderPass()
     gbuffer_pass.preserveAttachmentCount = 0;
     gbuffer_pass.pPreserveAttachments    = nullptr;
 
-    VkAttachmentReference defer_lighting_input_attachment_description[_main_camera_defer_attachment_count-2];
+    VkAttachmentReference defer_lighting_input_attachment_description[_main_camera_defer_attachment_count - 2];
 
     defer_lighting_input_attachment_description[0].attachment = &gbuffer_color_attachment_description - attachments;
     defer_lighting_input_attachment_description[0].layout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -203,7 +206,8 @@ void MainCameraDeferRenderPass::setupRenderPass()
 
     VkSubpassDescription &defer_lighting_pass = subpasses[_main_camera_defer_lighting_subpass];
     defer_lighting_pass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    defer_lighting_pass.inputAttachmentCount    = sizeof(defer_lighting_input_attachment_description) / sizeof(defer_lighting_input_attachment_description[0]);
+    defer_lighting_pass.inputAttachmentCount    = sizeof(defer_lighting_input_attachment_description) /
+                                                  sizeof(defer_lighting_input_attachment_description[0]);
     defer_lighting_pass.pInputAttachments       = &defer_lighting_input_attachment_description[0];
     defer_lighting_pass.colorAttachmentCount    = 1;
     defer_lighting_pass.pColorAttachments       = &framebuffer_image_attachment_reference;
@@ -359,6 +363,60 @@ void MainCameraDeferRenderPass::setupSubpass()
     m_subpass_list[_main_camera_skybox_subpass]->initialize(&skybox_pass_init_info);
 }
 
+void MainCameraDeferRenderPass::drawMultiThreading(uint32_t render_target_index, uint32_t command_buffer_index)
+{
+    VkClearValue clear_values[_main_camera_defer_attachment_count] = {};
+    clear_values[_main_camera_defer_gbuffer_color_attachment].color    = {0.0f, 0.0f, 0.0f, 1.0f};
+    clear_values[_main_camera_defer_gbuffer_normal_attachment].color   = {0.0f, 0.0f, 0.0f, 1.0f};
+    clear_values[_main_camera_defer_gbuffer_position_attachment].color = {0.0f, 0.0f, 0.0f, 1.0f};
+    clear_values[_main_camera_defer_color_attachment].color            = {0.0f, 0.0f, 0.0f, 1.0f};
+    clear_values[_main_camera_defer_depth_attachment].depthStencil     = {1.0f, 0};
+
+    VkRenderPassBeginInfo renderpass_begin_info{};
+    renderpass_begin_info.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderpass_begin_info.renderPass        = m_renderpass;
+    renderpass_begin_info.framebuffer       = m_framebuffer_per_rendertarget[render_target_index];
+    renderpass_begin_info.renderArea.offset = {0, 0};
+    renderpass_begin_info.renderArea.extent = g_p_vulkan_context->_swapchain_extent;
+    renderpass_begin_info.clearValueCount   = (sizeof(clear_values) / sizeof(clear_values[0]));
+    renderpass_begin_info.pClearValues      = clear_values;
+
+    g_p_vulkan_context->_vkCmdBeginRenderPass(*m_p_render_command_info->p_current_command_buffer,
+                                              &renderpass_begin_info,
+                                              VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
+    VkCommandBufferInheritanceInfo inheritance_info{};
+    inheritance_info.sType       = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+    inheritance_info.renderPass  = m_renderpass;
+    inheritance_info.framebuffer = m_framebuffer_per_rendertarget[render_target_index];
+
+    m_subpass_list[_main_camera_gbuffer_subpass]->drawMultiThreading(m_thread_pool,
+                                                                     m_thread_data,
+                                                                     inheritance_info,
+                                                                     command_buffer_index,
+                                                                     0,
+                                                                     MESH_DRAW_THREAD_NUM);
+    m_thread_pool.wait();
+
+    std::vector<VkCommandBuffer> recorded_command_buffers;
+    for (uint32_t i = 0; i < m_thread_data.size(); ++i)
+    {
+        recorded_command_buffers.push_back(m_thread_data[i].command_buffers[command_buffer_index]);
+    }
+
+    g_p_vulkan_context->_vkCmdExecuteCommands(*m_p_render_command_info->p_current_command_buffer,
+                                              recorded_command_buffers.size(),
+                                              recorded_command_buffers.data());
+
+    g_p_vulkan_context->_vkCmdNextSubpass(*m_p_render_command_info->p_current_command_buffer,
+                                          VK_SUBPASS_CONTENTS_INLINE);
+    m_subpass_list[_main_camera_defer_lighting_subpass]->draw();
+    g_p_vulkan_context->_vkCmdNextSubpass(*m_p_render_command_info->p_current_command_buffer,
+                                          VK_SUBPASS_CONTENTS_INLINE);
+    m_subpass_list[_main_camera_skybox_subpass]->draw();
+    g_p_vulkan_context->_vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
+}
+
 void MainCameraDeferRenderPass::draw(uint32_t render_target_index)
 {
     VkClearValue clear_values[_main_camera_defer_attachment_count] = {};
@@ -393,6 +451,7 @@ void MainCameraDeferRenderPass::draw(uint32_t render_target_index)
 
 void MainCameraDeferRenderPass::updateAfterSwapchainRecreate()
 {
+    m_thread_pool.wait();
     for (int i = 0; i < _main_camera_defer_attachment_count - 2; ++i)
     {
         if (m_renderpass_attachments[i].image != VK_NULL_HANDLE)

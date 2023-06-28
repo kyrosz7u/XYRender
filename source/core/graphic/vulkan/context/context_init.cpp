@@ -306,6 +306,7 @@ void VulkanContext::createLogicalDevice()
     _vkResetFences            = (PFN_vkResetFences) vkGetDeviceProcAddr(_device, "vkResetFences");
     _vkResetCommandPool       = (PFN_vkResetCommandPool) vkGetDeviceProcAddr(_device, "vkResetCommandPool");
     _vkBeginCommandBuffer     = (PFN_vkBeginCommandBuffer) vkGetDeviceProcAddr(_device, "vkBeginCommandBuffer");
+    _vkCmdExecuteCommands     = (PFN_vkCmdExecuteCommands) vkGetDeviceProcAddr(_device, "vkCmdExecuteCommands");
     _vkEndCommandBuffer       = (PFN_vkEndCommandBuffer) vkGetDeviceProcAddr(_device, "vkEndCommandBuffer");
     _vkCmdBeginRenderPass     = (PFN_vkCmdBeginRenderPass) vkGetDeviceProcAddr(_device, "vkCmdBeginRenderPass");
     _vkCmdNextSubpass         = (PFN_vkCmdNextSubpass) vkGetDeviceProcAddr(_device, "vkCmdNextSubpass");

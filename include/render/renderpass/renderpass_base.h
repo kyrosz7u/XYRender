@@ -39,7 +39,6 @@ namespace RenderSystem
 
             for(int i = 0; i < thread_count; i++)
             {
-                m_thread_data[i].p_thread_pool = &m_thread_pool;
                 m_thread_data[i].command_buffers.resize(g_p_vulkan_context->_swapchain_images.size());
 
                 VkCommandPoolCreateInfo command_pool_create_info;

@@ -211,7 +211,7 @@ void MeshForwardLightingPass::setupPipelines()
                                nullptr,
                                &pipeline_layout) != VK_SUCCESS)
     {
-        throw std::runtime_error("create " + name + " pipeline layout");
+        throw std::runtime_error("create " + name + " m_pipeline layout");
     }
 
     std::map<int, VkShaderModule> shader_modules;
@@ -338,10 +338,10 @@ void MeshForwardLightingPass::setupPipelines()
                                   1,
                                   &pipelineInfo,
                                   nullptr,
-                                  &pipeline) !=
+                                  &m_pipeline) !=
         VK_SUCCESS)
     {
-        throw std::runtime_error("create " + name + " graphics pipeline");
+        throw std::runtime_error("create " + name + " graphics m_pipeline");
     }
 
     for (auto &shader_module: shader_modules)
@@ -358,7 +358,7 @@ void MeshForwardLightingPass::draw()
     g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
 
     g_p_vulkan_context->_vkCmdBindPipeline(*m_p_render_command_info->p_current_command_buffer,
-                                           VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+                                           VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
     g_p_vulkan_context->_vkCmdSetViewport(*m_p_render_command_info->p_current_command_buffer, 0, 1,
                                           m_p_render_command_info->p_viewport);
     g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->p_current_command_buffer, 0, 1,

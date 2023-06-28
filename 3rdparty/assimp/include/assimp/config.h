@@ -171,7 +171,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * removed by the postprocessing step nor will other materials be replaced
  * by a reference to it. <br>
  * This option might be useful if you are using some magic material names
- * to pass additional semantics through the content pipeline. This ensures
+ * to pass additional semantics through the content m_pipeline. This ensures
  * they won't be optimized away, but a general optimization is still
  * performed for materials not contained in the list.
  * Property type: String. Default value: n/a
@@ -258,7 +258,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * If a node matches on of these names, it will not be modified or
  * removed by the postprocessing step.<br>
  * This option might be useful if you are using some magic node names
- * to pass additional semantics through the content pipeline. This ensures
+ * to pass additional semantics through the content m_pipeline. This ensures
  * they won't be optimized away, but a general optimization is still
  * performed for nodes not contained in the list.
  * Property type: String. Default value: n/a
@@ -946,7 +946,7 @@ enum aiComponent
 /** @brief Ogre Importer detect the texture usage from its filename.
  *
  * Ogre material texture units do not define texture type, the textures usage
- * depends on the used shader or Ogre's fixed pipeline. If this config property
+ * depends on the used shader or Ogre's fixed m_pipeline. If this config property
  * is true Assimp will try to detect the type from the textures filename postfix:
  * _n, _nrm, _nrml, _normal, _normals and _normalmap for normal map, _s, _spec,
  * _specular and _specularmap for specular map, _l, _light, _lightmap, _occ

@@ -207,7 +207,7 @@ struct aiLight {
      *  The ambient light color is multiplied with the ambient
      *  material color to obtain the final color that contributes
      *  to the ambient shading term. Most renderers will ignore
-     *  this value it, is just a remaining of the fixed-function pipeline
+     *  this value it, is just a remaining of the fixed-function m_pipeline
      *  that is still supported by quite many file formats.
      */
     C_STRUCT aiColor3D mColorAmbient;

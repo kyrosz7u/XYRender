@@ -32,7 +32,8 @@ namespace RenderSystem
 
             void draw() override;
 
-            void drawMultiThreading(std::vector<RenderThreadData> &thread_data,
+            void drawMultiThreading(ThreadPool &thread_pool,
+                                    std::vector<RenderThreadData> &thread_data,
                                     VkCommandBufferInheritanceInfo &inheritance_info,
                                     uint32_t command_buffer_index,
                                     uint32_t thread_start_index,

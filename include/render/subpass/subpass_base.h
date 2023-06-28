@@ -65,10 +65,10 @@ namespace RenderSystem
             void setShader(ShaderType type, std::vector<unsigned char> shader)
             {
                 m_shader_list[type] = shader;
-                if (pipeline != VK_NULL_HANDLE)
+                if (m_pipeline != VK_NULL_HANDLE)
                 {
-                    vkDestroyPipeline(g_p_vulkan_context->_device, pipeline, nullptr);
-                    pipeline = VK_NULL_HANDLE;
+                    vkDestroyPipeline(g_p_vulkan_context->_device, m_pipeline, nullptr);
+                    m_pipeline = VK_NULL_HANDLE;
                     setupPipelines();
                 }
             }
@@ -77,8 +77,12 @@ namespace RenderSystem
 
             virtual void draw() = 0;
 
-            virtual void drawMultiThreading(std::vector<RenderThreadData> &thread_data, VkCommandBufferInheritanceInfo& inheritance_info,
-                                            uint32_t command_buffer_index, uint32_t thread_start_index, uint32_t thread_count)
+            virtual void drawMultiThreading(ThreadPool &thread_pool,
+                                            std::vector<RenderThreadData> &thread_data,
+                                            VkCommandBufferInheritanceInfo &inheritance_info,
+                                            uint32_t command_buffer_index,
+                                            uint32_t thread_start_index,
+                                            uint32_t thread_count)
             {
                 throw std::runtime_error("drawMultiThreading not implemented");
             }
@@ -101,10 +105,10 @@ namespace RenderSystem
 
             VkRenderPass                            m_renderpass    = VK_NULL_HANDLE;
             uint32_t                                m_subpass_index = VK_SUBPASS_EXTERNAL;
-            VkPipelineLayout                        pipeline_layout = VK_NULL_HANDLE;
-            VkPipeline                              pipeline        = VK_NULL_HANDLE;
+            VkPipelineLayout                   pipeline_layout = VK_NULL_HANDLE;
+            VkPipeline                         m_pipeline      = VK_NULL_HANDLE;
 //            std::vector<DescriptorSet>              m_descriptorset_list;
-            std::vector<VkDescriptorSetLayout>      m_descriptor_set_layouts;
+            std::vector<VkDescriptorSetLayout> m_descriptor_set_layouts;
             std::vector<std::vector<unsigned char>> m_shader_list;
         };
     }
