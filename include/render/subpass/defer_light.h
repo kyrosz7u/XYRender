@@ -31,6 +31,7 @@ namespace RenderSystem
                 _mesh_defer_lighting_pass_directional_light_shadow_layout,
                 _mesh_defer_lighting_pass_pipeline_layout_count
             };
+
             DeferLightPass()
             {
                 name = "mesh_defer_light_subpass";
@@ -39,21 +40,27 @@ namespace RenderSystem
 
             void draw() override;
 
-            void updateGlobalRenderDescriptorSet();
-
             void updateAfterSwapchainRecreate() override;
 
         private:
             void initialize(SubPassInitInfo *subPassInitInfo) override;
+
             void setupPipeLineLayout();
+
             void setupDescriptorSet() override;
+
             void setupPipelines() override;
+
             VkDescriptorSet m_scence_ubo_descriptor_set = VK_NULL_HANDLE;
             VkDescriptorSet m_gbuffer_descriptor_set    = VK_NULL_HANDLE;
 
-            ImageAttachment *m_gbuffer_color_attachment = nullptr;
-            ImageAttachment *m_gbuffer_normal_attachment = nullptr;
-            ImageAttachment *m_gbuffer_position_attachment = nullptr;
+            ImageAttachment *m_p_gbuffer_color_attachment    = nullptr;
+            ImageAttachment *m_p_gbuffer_normal_attachment   = nullptr;
+            ImageAttachment *m_p_gbuffer_position_attachment = nullptr;
+
+            void updateGlobalDescriptorSet();
+
+            void updateGBufferDescriptorSet();
         };
     }
 }

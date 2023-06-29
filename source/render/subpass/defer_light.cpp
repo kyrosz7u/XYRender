@@ -13,18 +13,19 @@ using namespace RenderSystem::SubPass;
 void DeferLightPass::initialize(SubPassInitInfo *subPassInitInfo)
 {
     auto mesh_pass_init_info = static_cast<DeferLightPassInitInfo *>(subPassInitInfo);
-    m_p_render_command_info       = mesh_pass_init_info->p_render_command_info;
-    m_p_render_resource_info      = mesh_pass_init_info->p_render_resource_info;
-    m_subpass_index               = mesh_pass_init_info->subpass_index;
-    m_renderpass                  = mesh_pass_init_info->renderpass;
-    m_gbuffer_color_attachment    = mesh_pass_init_info->gbuffer_color_attachment;
-    m_gbuffer_normal_attachment   = mesh_pass_init_info->gbuffer_normal_attachment;
-    m_gbuffer_position_attachment = mesh_pass_init_info->gbuffer_position_attachment;
+    m_p_render_command_info         = mesh_pass_init_info->p_render_command_info;
+    m_p_render_resource_info        = mesh_pass_init_info->p_render_resource_info;
+    m_subpass_index                 = mesh_pass_init_info->subpass_index;
+    m_renderpass                    = mesh_pass_init_info->renderpass;
+    m_p_gbuffer_color_attachment    = mesh_pass_init_info->gbuffer_color_attachment;
+    m_p_gbuffer_normal_attachment   = mesh_pass_init_info->gbuffer_normal_attachment;
+    m_p_gbuffer_position_attachment = mesh_pass_init_info->gbuffer_position_attachment;
 
     setupPipeLineLayout();
     setupDescriptorSet();
-    updateGlobalRenderDescriptorSet();
     setupPipelines();
+    updateGlobalDescriptorSet();
+    updateGBufferDescriptorSet();
 }
 
 void DeferLightPass::setupPipeLineLayout()
@@ -153,7 +154,7 @@ void DeferLightPass::setupDescriptorSet()
     }
 }
 
-void DeferLightPass::updateGlobalRenderDescriptorSet()
+void DeferLightPass::updateGlobalDescriptorSet()
 {
     std::vector<VkWriteDescriptorSet> write_descriptor_sets;
     write_descriptor_sets.resize(3);
@@ -196,6 +197,11 @@ void DeferLightPass::updateGlobalRenderDescriptorSet()
                            nullptr);
 
 
+
+}
+
+void DeferLightPass::updateGBufferDescriptorSet()
+{
     std::vector<VkWriteDescriptorSet> gbuffer_write_descriptor_sets;
     gbuffer_write_descriptor_sets.resize(3);
 
@@ -204,15 +210,15 @@ void DeferLightPass::updateGlobalRenderDescriptorSet()
     VkDescriptorImageInfo gbuffer_position_info;
 
     gbuffer_color_info.sampler     = VK_NULL_HANDLE;
-    gbuffer_color_info.imageView   = m_gbuffer_color_attachment->view;
+    gbuffer_color_info.imageView   = m_p_gbuffer_color_attachment->view;
     gbuffer_color_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     gbuffer_normal_info.sampler     = VK_NULL_HANDLE;
-    gbuffer_normal_info.imageView   = m_gbuffer_normal_attachment->view;
+    gbuffer_normal_info.imageView   = m_p_gbuffer_normal_attachment->view;
     gbuffer_normal_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     gbuffer_position_info.sampler     = VK_NULL_HANDLE;
-    gbuffer_position_info.imageView   = m_gbuffer_position_attachment->view;
+    gbuffer_position_info.imageView   = m_p_gbuffer_position_attachment->view;
     gbuffer_position_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     VkWriteDescriptorSet &gbuffer_perframe_buffer_write = gbuffer_write_descriptor_sets[0];
@@ -408,7 +414,6 @@ void DeferLightPass::setupPipelines()
 
 void DeferLightPass::draw()
 {
-//    updateGlobalRenderDescriptorSet();
     VkDebugUtilsLabelEXT label_info = {
             VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Mesh Defer Lighting", {1.0f, 1.0f, 1.0f, 1.0f}};
     g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
@@ -454,7 +459,7 @@ void DeferLightPass::draw()
 
 void DeferLightPass::updateAfterSwapchainRecreate()
 {
-
+    updateGBufferDescriptorSet();
 }
 
 
