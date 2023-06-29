@@ -42,9 +42,9 @@ namespace RenderSystem
 
         void initialize() override;
 
-        void PostInitialize();
+        void postInitialize() override;
 
-        void destroy();
+        void destroy() override;
 
         void setupRenderTargets();
 
@@ -62,26 +62,21 @@ namespace RenderSystem
             m_proj_matrix = proj;
         }
 
-        void setUIOverlay(UIOverlayPtr ui_overlay)
-        {
-            m_p_ui_overlay = ui_overlay;
-        }
-
         void UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
-                                   const std::vector<RenderSubmesh> &_visible_submeshes);
+                                   const std::vector<RenderSubmesh> &_visible_submeshes) override;
 
         void UpdateRenderPerFrameScenceUBO(Matrix4x4 proj_view, Vector3 camera_pos,
-                                           std::vector<Scene::DirectionLight> &directional_light_list);
+                                           std::vector<Scene::DirectionLight> &directional_light_list) override;
 
-        void SetupModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures);
+        void SetupModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures) override;
 
-        void SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture);
+        void SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture) override;
 
-        void UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list);
+        void UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list) override;
 
-        void SetupShadowMapTexture(std::vector<Scene::DirectionLight> &directional_light_list);
+        void SetupShadowMapTexture(std::vector<Scene::DirectionLight> &directional_light_list) override;
 
-        void FlushRenderbuffer();
+        void FlushRenderbuffer() override;
 
     private:
 
@@ -126,8 +121,6 @@ namespace RenderSystem
 
         Matrix4x4 m_view_matrix;
         Matrix4x4 m_proj_matrix;
-
-        UIOverlayPtr m_p_ui_overlay;
     };
 }
 #endif //XEXAMPLE_DEFER_RENDER_H

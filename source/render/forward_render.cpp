@@ -35,7 +35,7 @@ void ForwardRender::initialize()
     setupRenderDescriptorSetLayout();
 }
 
-void ForwardRender::PostInitialize()
+void ForwardRender::postInitialize()
 {
     setupRenderpass();
 }
@@ -222,8 +222,13 @@ void ForwardRender::draw()
     // record command buffer
     m_render_command_info.p_current_command_buffer = &m_command_buffers[next_image_index];
 
+#ifdef MULTI_THREAD_RENDERING
+    m_render_passes[_directional_light_shadowmap_renderpass]->drawMultiThreading(0, next_image_index);
+    m_render_passes[_main_camera_renderpass]->drawMultiThreading(0, next_image_index);
+#else
     m_render_passes[_directional_light_shadowmap_renderpass]->draw(0);
     m_render_passes[_main_camera_renderpass]->draw(0);
+#endif
     m_render_passes[_ui_overlay_renderpass]->draw(next_image_index);
 
     // end command buffer
@@ -503,7 +508,6 @@ void ForwardRender::SetupShadowMapTexture(std::vector<Scene::DirectionLight> &di
                                                   m_descriptor_pool,
                                                   1,
                                                   &m_directional_light_shadow_set);
-
     }
 
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -555,9 +559,6 @@ void ForwardRender::SetupShadowMapTexture(std::vector<Scene::DirectionLight> &di
                            &descriptor_write,
                            0,
                            nullptr);
-
-//    std::reinterpret_pointer_cast<DirectionalLightShadowRenderPass>(
-//            m_render_passes[_directional_light_shadowmap_renderpass])->setupRenderpassAttachments();
 }
 
 void ForwardRender::updateAfterSwapchainRecreate()

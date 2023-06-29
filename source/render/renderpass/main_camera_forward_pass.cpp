@@ -25,6 +25,9 @@ void MainCameraForwardRenderPass::initialize(RenderPassInitInfo *renderpass_init
     setupRenderPass();
     setupFrameBuffer();
     setupSubpass();
+#ifdef MULTI_THREAD_RENDERING
+    setupMultiThreading(MESH_DRAW_THREAD_NUM);
+#endif
 }
 
 void MainCameraForwardRenderPass::setupRenderpassAttachments()
@@ -214,6 +217,59 @@ void MainCameraForwardRenderPass::setupSubpass()
     m_subpass_list[_main_camera_subpass_skybox]->setShader(SubPass::VERTEX_SHADER, SKYBOX_VERT);
     m_subpass_list[_main_camera_subpass_skybox]->setShader(SubPass::FRAGMENT_SHADER, SKYBOX_FRAG);
     m_subpass_list[_main_camera_subpass_skybox]->initialize(&skybox_pass_init_info);
+}
+
+void MainCameraForwardRenderPass::drawMultiThreading(uint32_t render_target_index, uint32_t command_buffer_index)
+{
+    VkClearValue clear_values[_main_camera_framebuffer_attachment_count] = {};
+    clear_values[_main_camera_framebuffer_attachment_color].color        = {0.0f, 0.0f, 0.0f, 1.0f};
+    clear_values[_main_camera_framebuffer_attachment_depth].depthStencil = {1.0f, 0};
+
+    VkRenderPassBeginInfo renderpass_begin_info{};
+    renderpass_begin_info.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderpass_begin_info.renderPass        = m_renderpass;
+    renderpass_begin_info.framebuffer       = m_framebuffer_per_rendertarget[render_target_index];
+    renderpass_begin_info.renderArea.offset = {0, 0};
+    renderpass_begin_info.renderArea.extent = g_p_vulkan_context->_swapchain_extent;
+    renderpass_begin_info.clearValueCount   = (sizeof(clear_values) / sizeof(clear_values[0]));
+    renderpass_begin_info.pClearValues      = clear_values;
+
+    g_p_vulkan_context->_vkCmdBeginRenderPass(*m_p_render_command_info->p_current_command_buffer,
+                                              &renderpass_begin_info,
+                                              VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
+    VkCommandBufferInheritanceInfo inheritance_info{};
+    inheritance_info.sType       = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+    inheritance_info.renderPass  = m_renderpass;
+    inheritance_info.framebuffer = m_framebuffer_per_rendertarget[render_target_index];
+
+    VkDebugUtilsLabelEXT label_info = {
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, nullptr, "Mesh Forward Lighting MultiThread", {1.0f, 1.0f, 1.0f, 1.0f}};
+    g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
+    m_subpass_list[_main_camera_subpass_mesh]->drawMultiThreading(m_thread_pool,
+                                                                     m_thread_data,
+                                                                     inheritance_info,
+                                                                     command_buffer_index,
+                                                                     0,
+                                                                     MESH_DRAW_THREAD_NUM);
+    m_thread_pool.wait();
+
+    std::vector<VkCommandBuffer> recorded_command_buffers;
+    for (uint32_t i = 0; i < m_thread_data.size(); ++i)
+    {
+        recorded_command_buffers.push_back(m_thread_data[i].command_buffers[command_buffer_index]);
+    }
+
+    g_p_vulkan_context->_vkCmdExecuteCommands(*m_p_render_command_info->p_current_command_buffer,
+                                              recorded_command_buffers.size(),
+                                              recorded_command_buffers.data());
+    g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
+
+    g_p_vulkan_context->_vkCmdNextSubpass(*m_p_render_command_info->p_current_command_buffer,
+                                          VK_SUBPASS_CONTENTS_INLINE);
+    m_subpass_list[_main_camera_subpass_skybox]->draw();
+
+    g_p_vulkan_context->_vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
 }
 
 void MainCameraForwardRenderPass::draw(uint32_t render_target_index)

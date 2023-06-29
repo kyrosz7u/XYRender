@@ -37,6 +37,13 @@ namespace RenderSystem
 
             void draw() override;
 
+            void drawMultiThreading(ThreadPool &thread_pool,
+                                    std::vector<RenderThreadData> &thread_data,
+                                    VkCommandBufferInheritanceInfo &inheritance_info,
+                                    uint32_t command_buffer_index,
+                                    uint32_t thread_start_index,
+                                    uint32_t thread_count) override;
+
             void updateGlobalRenderDescriptorSet();
 
             void updateAfterSwapchainRecreate() override;
@@ -47,6 +54,9 @@ namespace RenderSystem
             void setupDescriptorSet() override;
             void setupPipelines() override;
             VkDescriptorSet m_mesh_ubo_descriptor_set = VK_NULL_HANDLE;
+
+            void drawSingleThread(VkCommandBuffer &command_buffer, VkCommandBufferInheritanceInfo &inheritance_info,
+                                  uint32_t submesh_start_index, uint32_t submesh_end_index);
         };
     }
 }

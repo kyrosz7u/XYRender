@@ -23,6 +23,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 add_definitions(-DMULTI_THREAD_RENDERING)
+add_definitions(-DFORWARD_RENDERING)
 
 if(APPLE)
     set(vulkan_lib ${THIRD_PARTY_DIR}/VulkanSDK/lib/MacOS/libvulkan.1.dylib)

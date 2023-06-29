@@ -13,28 +13,11 @@ namespace Scene
     class SceneManager : public std::enable_shared_from_this<SceneManager>
     {
     public:
-        SceneManager()
-        {
-            auto window      = InputSystem.GetRawWindow();
-            auto window_size = window->getWindowSize();
-            m_main_camera = std::make_shared<Camera>(window_size.x / window_size.y,
-                                                     90, 0.1f, 200.0f,
-                                                     Scene::perspective);
-            m_ui_overlay  = std::make_shared<UIOverlay>();
-            m_ui_overlay->initialize(window);
+        SceneManager();
 
-            m_render = std::make_shared<DeferRender>();
-            m_render->setUIOverlay(m_ui_overlay);
-            m_render->initialize();
-        }
+        ~SceneManager();
 
-        ~SceneManager()
-        {
-            // 必须显式调用render->destroy释放commandbuffer，
-            // 否则会导致command还在执行的同时，destroy了资源
-            // 因为成员变量的析构会晚于对象析构函数的调用
-            m_render->destroy();
-        }
+        void PostInitialize();
 
         void AddModel(Model model)
         {
@@ -52,13 +35,10 @@ namespace Scene
         }
 
         void Tick();
-
-        void PostInitialize();
-
     private:
         friend class Camera;
 
-        std::shared_ptr<DeferRender>     m_render;
+        std::shared_ptr<RenderBase>        m_render;
         UIOverlayPtr                       m_ui_overlay;
         // models
         std::vector<Scene::Model>          m_models;

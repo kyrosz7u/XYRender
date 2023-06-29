@@ -350,6 +350,124 @@ void MeshForwardLightingPass::setupPipelines()
     }
 }
 
+void MeshForwardLightingPass::drawSingleThread(VkCommandBuffer &command_buffer,
+                                       VkCommandBufferInheritanceInfo &inheritance_info,
+                                       uint32_t submesh_start_index,
+                                       uint32_t submesh_end_index)
+{
+    VkCommandBufferBeginInfo command_buffer_begin_info{};
+    command_buffer_begin_info.sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    command_buffer_begin_info.flags            = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    command_buffer_begin_info.pInheritanceInfo = &inheritance_info;
+
+    VK_CHECK_RESULT(g_p_vulkan_context->_vkBeginCommandBuffer(command_buffer, &command_buffer_begin_info))
+
+    g_p_vulkan_context->_vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+    g_p_vulkan_context->_vkCmdSetViewport(command_buffer, 0, 1, m_p_render_command_info->p_viewport);
+    g_p_vulkan_context->_vkCmdSetScissor(command_buffer, 0, 1, m_p_render_command_info->p_scissor);
+
+    auto &render_texture_desc_sets = *m_p_render_resource_info->p_texture_descriptor_sets;
+
+    for (uint32_t i = submesh_start_index; i < submesh_end_index; ++i)
+    {
+        auto submesh     = (*m_p_render_resource_info->p_render_submeshes)[i];
+        auto parent_mesh = submesh.parent_mesh.lock();
+        if (parent_mesh == nullptr)
+        {
+            continue;
+        }
+        if (submesh.material_index != -1)
+        {
+
+            g_p_vulkan_context->_vkCmdBindDescriptorSets(command_buffer,
+                                                         VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                         pipeline_layout,
+                                                         1,
+                                                         1,
+                                                         &render_texture_desc_sets[submesh.material_index],
+                                                         0,
+                                                         NULL);
+        }
+
+        VkBuffer     vertex_buffers[] = {parent_mesh->mesh_vertex_position_buffer,
+                                         parent_mesh->mesh_vertex_normal_buffer,
+                                         parent_mesh->mesh_vertex_texcoord_buffer};
+        VkDeviceSize offsets[]        = {0, 0, 0};
+        g_p_vulkan_context->_vkCmdBindVertexBuffers(command_buffer,
+                                                    0,
+                                                    sizeof(vertex_buffers) / sizeof(vertex_buffers[0]),
+                                                    vertex_buffers,
+                                                    offsets);
+        g_p_vulkan_context->_vkCmdBindIndexBuffer(command_buffer,
+                                                  parent_mesh->mesh_index_buffer,
+                                                  0,
+                                                  VK_INDEX_TYPE_UINT16);
+
+        // bind model ubo
+        uint32_t dynamicOffset = parent_mesh->m_index_in_dynamic_buffer *
+                                 (*m_p_render_resource_info->p_render_model_ubo_list).dynamic_alignment;
+        g_p_vulkan_context->_vkCmdBindDescriptorSets(command_buffer,
+                                                     VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                     pipeline_layout,
+                                                     0,
+                                                     1,
+                                                     &m_mesh_ubo_descriptor_set,
+                                                     1,
+                                                     &dynamicOffset);
+        //bind directional light shadow map
+        if (m_p_render_resource_info->p_directional_light_shadow_map_descriptor_set != nullptr)
+        {
+            g_p_vulkan_context->_vkCmdBindDescriptorSets(command_buffer,
+                                                         VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                                         pipeline_layout,
+                                                         2,
+                                                         1,
+                                                         m_p_render_resource_info->p_directional_light_shadow_map_descriptor_set,
+                                                         0,
+                                                         NULL);
+        }
+
+        g_p_vulkan_context->_vkCmdDrawIndexed(command_buffer,
+                                              submesh.index_count,
+                                              1,
+                                              submesh.index_offset,
+                                              submesh.vertex_offset,
+                                              0);
+    }
+    VK_CHECK_RESULT(g_p_vulkan_context->_vkEndCommandBuffer(command_buffer))
+}
+
+void MeshForwardLightingPass::drawMultiThreading(ThreadPool &thread_pool,
+                                         std::vector<RenderThreadData> &thread_data,
+                                         VkCommandBufferInheritanceInfo &inheritance_info,
+                                         uint32_t command_buffer_index,
+                                         uint32_t thread_start_index,
+                                         uint32_t thread_count)
+{
+    uint32_t submesh_count                = m_p_render_resource_info->p_render_submeshes->size();
+    uint32_t submesh_per_thread           = submesh_count / thread_count;
+    uint32_t submesh_per_thread_remainder = submesh_count % thread_count;
+
+    for (uint32_t i = 0; i < thread_count; ++i)
+    {
+        auto     &command_buffer     = thread_data[thread_start_index + i].command_buffers[command_buffer_index];
+        uint32_t submesh_start_index = i * submesh_per_thread;
+        uint32_t submesh_end_index   = submesh_start_index + submesh_per_thread;
+        if (i == thread_count - 1)
+        {
+            submesh_end_index += submesh_per_thread_remainder;
+        }
+        thread_pool.threads[thread_start_index + i]->addJob(
+                [this, &command_buffer, &inheritance_info, submesh_start_index, submesh_end_index]()
+                {
+                    drawSingleThread(command_buffer,
+                                     inheritance_info,
+                                     submesh_start_index,
+                                     submesh_end_index);
+                });
+    }
+}
+
 void MeshForwardLightingPass::draw()
 {
     VkDebugUtilsLabelEXT label_info = {
@@ -362,14 +480,6 @@ void MeshForwardLightingPass::draw()
                                           m_p_render_command_info->p_viewport);
     g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->p_current_command_buffer, 0, 1,
                                          m_p_render_command_info->p_scissor);
-    // m_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
-    //                                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
-    //                                                 pipeline_layout,
-    //                                                 0,
-    //                                                 1,
-    //                                                 NULL,
-    //                                                 0,
-    //                                                 NULL);
 
     auto &render_submeshes         = *m_p_render_resource_info->p_render_submeshes;
     auto &render_texture_desc_sets = *m_p_render_resource_info->p_texture_descriptor_sets;

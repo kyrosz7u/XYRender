@@ -34,7 +34,7 @@ void DeferRender::initialize()
     setupRenderDescriptorSetLayout();
 }
 
-void DeferRender::PostInitialize()
+void DeferRender::postInitialize()
 {
     setupRenderpass();
 }
@@ -224,7 +224,6 @@ void DeferRender::draw()
     m_render_passes[_directional_light_shadowmap_renderpass]->draw(0);
     m_render_passes[_main_camera_renderpass]->draw(0);
 #endif
-
     m_render_passes[_ui_overlay_renderpass]->draw(next_image_index);
 
     // end command buffer

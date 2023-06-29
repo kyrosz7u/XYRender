@@ -1,7 +1,37 @@
-
 #include "scene/scene_manager.h"
+#include "core/logger/logger_macros.h"
 
 using namespace Scene;
+
+SceneManager::SceneManager()
+{
+    auto window      = InputSystem.GetRawWindow();
+    auto window_size = window->getWindowSize();
+    m_main_camera = std::make_shared<Camera>(window_size.x / window_size.y,
+                                             90, 0.1f, 200.0f,
+                                             Scene::perspective);
+    m_ui_overlay  = std::make_shared<UIOverlay>();
+    m_ui_overlay->initialize(window);
+#ifdef DEFER_RENDERING
+    m_render = std::make_shared<DeferRender>();
+#elif FORWARD_RENDERING
+    m_render = std::make_shared<ForwardRender>();
+#else
+    LOG_ERROR("No render type specified! Please define DEFER_RENDERING or FORWARD_RENDERING in CMakeLists.txt.")
+    throw std::runtime_error(
+            "No render type specified! Please define DEFER_RENDERING or FORWARD_RENDERING in CMakeLists.txt.");
+#endif
+    m_render->setUIOverlay(m_ui_overlay);
+    m_render->initialize();
+}
+
+SceneManager::~SceneManager()
+{
+    // 必须显式调用render->destroy释放commandbuffer，
+    // 否则会导致command还在执行的同时，destroy了资源
+    // 因为成员变量的析构会晚于对象析构函数的调用
+    m_render->destroy();
+}
 
 void SceneManager::PostInitialize()
 {
@@ -28,7 +58,7 @@ void SceneManager::PostInitialize()
     m_render->SetupSkyboxTexture(m_skybox);
     m_render->SetupShadowMapTexture(m_directional_lights);
 
-    m_render->PostInitialize();
+    m_render->postInitialize();
 }
 
 void SceneManager::updateScene()

@@ -390,6 +390,9 @@ void MainCameraDeferRenderPass::drawMultiThreading(uint32_t render_target_index,
     inheritance_info.renderPass  = m_renderpass;
     inheritance_info.framebuffer = m_framebuffer_per_rendertarget[render_target_index];
 
+    VkDebugUtilsLabelEXT label_info = {
+            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, nullptr, "Mesh GBuffer", {1.0f, 1.0f, 1.0f, 1.0f}};
+    g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
     m_subpass_list[_main_camera_gbuffer_subpass]->drawMultiThreading(m_thread_pool,
                                                                      m_thread_data,
                                                                      inheritance_info,
@@ -407,6 +410,7 @@ void MainCameraDeferRenderPass::drawMultiThreading(uint32_t render_target_index,
     g_p_vulkan_context->_vkCmdExecuteCommands(*m_p_render_command_info->p_current_command_buffer,
                                               recorded_command_buffers.size(),
                                               recorded_command_buffers.data());
+    g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
 
     g_p_vulkan_context->_vkCmdNextSubpass(*m_p_render_command_info->p_current_command_buffer,
                                           VK_SUBPASS_CONTENTS_INLINE);

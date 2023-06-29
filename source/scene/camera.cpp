@@ -16,7 +16,7 @@ void Camera::PostInitialize()
         render_in_scene = scene_ptr->m_render;
     } else
     {
-        throw std::runtime_error("Camera::PostInitialize() failed to get scene_ptr");
+        throw std::runtime_error("Camera::postInitialize() failed to get scene_ptr");
     }
 }
 

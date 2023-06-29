@@ -362,10 +362,6 @@ void DirectionalLightShadowPass::drawMultiThreading(ThreadPool &thread_pool,
     uint32_t submesh_per_thread           = submesh_count / thread_count;
     uint32_t submesh_per_thread_remainder = submesh_count % thread_count;
 
-    VkDebugUtilsLabelEXT label_info = {
-            VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, NULL, "Directional light shadow MultiThread", {1.0f, 1.0f, 1.0f, 1.0f}};
-    g_p_vulkan_context->_vkCmdBeginDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer, &label_info);
-
     for (uint32_t i = 0; i < thread_count; ++i)
     {
         auto     &command_buffer     = thread_data[thread_start_index + i].command_buffers[command_buffer_index];
@@ -384,8 +380,6 @@ void DirectionalLightShadowPass::drawMultiThreading(ThreadPool &thread_pool,
                                      submesh_end_index);
                 });
     }
-
-    g_p_vulkan_context->_vkCmdEndDebugUtilsLabelEXT(*m_p_render_command_info->p_current_command_buffer);
 }
 
 void DirectionalLightShadowPass::draw()
