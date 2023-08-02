@@ -99,7 +99,7 @@ void VulkanContext::createInstance()
 
     instance_create_info.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instance_create_info.pApplicationInfo = &appInfo;
-    instance_create_info.flags            = 0;
+    instance_create_info.flags            = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 
     // get required extensions
     uint32_t   glfwExtensionCount = 0;
@@ -114,7 +114,7 @@ void VulkanContext::createInstance()
 //  and your code must make use of the portability subset extension to discover your devices (again).
 //  https://stackoverflow.com/questions/72789012/why-does-vkcreateinstance-return-vk-error-incompatible-driver-on-macos-despite
     required_extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-//    required_extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    required_extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 
     instance_create_info.enabledExtensionCount   = static_cast<uint32_t>(required_extensions.size());
     instance_create_info.ppEnabledExtensionNames = required_extensions.data();
