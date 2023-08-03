@@ -70,9 +70,18 @@ namespace Scene
 
         Matrix4x4 calculateViewMatrix()
         {
-            auto r_inverse = getRotationMatrix(rotation);
-            r_inverse = r_inverse.transpose();
+            auto r_inverse = Matrix4x4::IDENTITY;
             auto t_inverse = Matrix4x4::getTrans(-position);
+
+            r_inverse[0][0] = Right.x;
+            r_inverse[0][1] = Right.y;
+            r_inverse[0][2] = Right.z;
+            r_inverse[1][0] = Up.x;
+            r_inverse[1][1] = Up.y;
+            r_inverse[1][2] = Up.z;
+            r_inverse[2][0] = Forward.x;
+            r_inverse[2][1] = Forward.y;
+            r_inverse[2][2] = Forward.z;
 
             return r_inverse * t_inverse;
         }

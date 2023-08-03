@@ -25,10 +25,13 @@ void Camera::Tick()
     const auto render_ptr = render_in_scene.lock();
     if (render_ptr == nullptr) return;
 
-    auto rotMat = getRotationMatrix(rotation);
-    Right   = rotMat * Vector3(1, 0, 0);
-    Up      = rotMat * Vector3(0, 1, 0);
-    Forward = rotMat * Vector3(0, 0, 1);
+//    auto rotMat = getRotationMatrix(rotation);
+//    Right   = rotMat * Vector3(1, 0, 0);
+//    Up      = rotMat * Vector3(0, 1, 0);
+//    Forward = rotMat * Vector3(0, 0, 1);
+
+    auto rotMat = Matrix3x3(Right, Up, Forward);
+    rotMat = rotMat.transpose();
 
     if (InputSystem.Focused)
     {
@@ -36,7 +39,7 @@ void Camera::Tick()
         auto  moveDir = rotMat * InputSystem.Move;
         position = position + moveDir * speed * render_ptr->getFrameTime();
 
-        rotation.x -= InputSystem.Look.y * render_ptr->getFrameTime() * speed * 2;
+        rotation.x += InputSystem.Look.y * render_ptr->getFrameTime() * speed * 2;
         rotation.y -= InputSystem.Look.x * render_ptr->getFrameTime() * speed * 2;
 
         if (rotation.x > 89.0f)
@@ -47,6 +50,18 @@ void Camera::Tick()
             rotation.y -= 360.0f;
         if (rotation.y < -360.0f)
             rotation.y += 360.0f;
+
+        Forward.x = cos(rotation.x * Math_PI / 180.0f) * sin(rotation.y * Math_PI / 180.0f);
+        Forward.y = sin(rotation.x * Math_PI / 180.0f);
+        Forward.z = cos(rotation.x * Math_PI / 180.0f) * cos(rotation.y * Math_PI / 180.0f);
+
+        Forward.normalise();
+
+        auto WorldUp = Vector3(0, 1, 0);
+        Right = WorldUp.crossProduct(Forward);
+        Right.normalise();
+        Up = Forward.crossProduct(Right);
+        Up.normalise();
     }
 }
 

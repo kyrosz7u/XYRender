@@ -14,7 +14,7 @@
 
 namespace Math
 {
-    typedef Vector3    EulerAngle; // degree unit
+    typedef Vector3    EulerAngle; // degree unit pitch, yaw, row
     typedef Vector4    Color;
     typedef Vector2    TexCoord;
     typedef Vector3    Position;
