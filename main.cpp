@@ -7,20 +7,14 @@
 #include "input/input_system.h"
 #include "ui/ui_overlay.h"
 
+std::shared_ptr<GLFWWindow> window = nullptr;
+std::shared_ptr<Scene::SceneManager> scene_manager = nullptr;
+
 int main()
 {
-    GLFWWindowCreateInfo windowCreateInfo;
-    auto           window = std::make_shared<GLFWWindow>();
-
-    window->initialize(windowCreateInfo);
-
-    InputSystem.initialize(window);
-    RenderBase::setupGlobally(window->getWindowHandler());
-
+    globalInit();
+    
     Scene::Model model;
-
-    auto scene_manager = std::make_shared<Scene::SceneManager>();
-
     model.LoadModelFile("assets/models/Kong.fbx","Kong");
     model.ToGPU();
     scene_manager->AddModel(model);
@@ -65,3 +59,17 @@ int main()
     }
     return 0;
 }
+
+void globalInit()
+{
+    GLFWWindowCreateInfo windowCreateInfo;
+    window = std::make_shared<GLFWWindow>();
+
+    window->initialize(windowCreateInfo);
+
+    InputSystem.initialize(window);
+    RenderBase::setupGlobally(window->getWindowHandler());
+
+    scene_manager = std::make_shared<Scene::SceneManager>();
+}
+
