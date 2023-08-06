@@ -3,7 +3,7 @@ project(XExample)
 
 set(CMAKE_CXX_STANDARD 17)
 set(RENDER_TARGET_NAME XRender)
-set(TARGET_NAME XExample)
+set(TARGET_NAME XYRender)
 #set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_BUILD_TYPE "Debug")
 

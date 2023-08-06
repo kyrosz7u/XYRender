@@ -17,7 +17,7 @@ void GLFWWindow::initialize(GLFWWindowCreateInfo create_info)
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    m_window = glfwCreateWindow(create_info.width, create_info.height, "123", nullptr, nullptr);
+    m_window = glfwCreateWindow(create_info.width, create_info.height, "XYRender", nullptr, nullptr);
     if (!m_window)
     {
         glfwTerminate();

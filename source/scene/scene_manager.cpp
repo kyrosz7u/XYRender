@@ -12,7 +12,7 @@ SceneManager::SceneManager()
                                              Scene::perspective);
     m_ui_overlay  = std::make_shared<UIOverlay>();
     m_ui_overlay->initialize(window);
-#ifdef DEFER_RENDERING
+#ifdef DEFERRED_RENDERING
     m_render = std::make_shared<DeferRender>();
 #elif FORWARD_RENDERING
     m_render = std::make_shared<ForwardRender>();
