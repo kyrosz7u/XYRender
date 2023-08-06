@@ -10,6 +10,8 @@
 std::shared_ptr<GLFWWindow> window = nullptr;
 std::shared_ptr<Scene::SceneManager> scene_manager = nullptr;
 
+void globalInit();
+
 int main()
 {
     globalInit();
