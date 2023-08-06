@@ -33,11 +33,14 @@ XYRender是使用C++17+Vulkan1.3实现的一个高性能实时渲染器，可以
 cmake -G "Visual Studio 16 2019" -A x64 ..
 ```
 2. 打开build文件夹，双击XYRender.sln，选择Release模式，右键ALL_BUILD，点击生成
-3. 运行XYRender.exe
+3. 设置工作路径为XYRender项目所在根目录
+4. 运行XYRender.exe
+
 #### 使用Clion构建
 1. 打开Clion，选择Open，选择XYRender目录，点击OK
 2. 点击Build->Build Project
-3. 运行XYRender.exe
+3. 设置工作路径为XYRender项目所在根目录
+4. 点击运行按钮
 
 ### macOS >= 11 (arm64 only)
 
@@ -47,7 +50,11 @@ cmake -G "Visual Studio 16 2019" -A x64 ..
 cmake -G "Xcode" ..
 ```
 2. 打开build文件夹，双击XYRender.xcodeproj，选择Release模式，点击Build
-3. 运行XYRender.app
+3. 设置工作路径为XYRender项目所在根目录
+4. 运行XYRender.app
+
+#### 使用Clion构建
+与Windows相同
 
 ## 文档
 
