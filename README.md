@@ -103,10 +103,16 @@ assets
         ├── Hair.png
         └── TCP2_CustomRamp.png
 ```
+## 结果展示
+![结果展示](images/demo.png)
+
 ## TODO List
 - [ ] 优化渲染器的组件化，使得渲染器的添加更加方便
 - [ ] 点光源shadowmap
 - [ ] PBR渲染
 - [ ] Mac x86_64支持
+
+## License
+XYRender is licensed under the [MIT License](LICENSE). 
 
 ## References
