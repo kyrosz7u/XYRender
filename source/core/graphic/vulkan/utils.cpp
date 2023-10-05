@@ -179,19 +179,21 @@ void VulkanUtil::createImage(std::shared_ptr<VulkanContext> p_context,
     image_create_info.samples       = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
 
+
     if (vkCreateImage(p_context->_device, &image_create_info, nullptr, &image) != VK_SUCCESS)
     {
         throw std::runtime_error("failed to create image!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(p_context->_device, image, &memRequirements);
+    p_context->_vkGetImageMemoryRequirements(p_context->_device, image, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize  = memRequirements.size;
     allocInfo.memoryTypeIndex = findMemoryType(p_context->_physical_device, memRequirements.memoryTypeBits,
                                                memory_property_flags);
+
 
     if (vkAllocateMemory(p_context->_device, &allocInfo, nullptr, &memory) != VK_SUCCESS)
     {

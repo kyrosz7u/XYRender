@@ -22,8 +22,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_definitions(-D_RELEASE)
 endif()
 
-add_definitions(-DMULTI_THREAD_RENDERING)
-add_definitions(-DFORWARD_RENDERING)
+#add_definitions(-DMULTI_THREAD_RENDERING)
+add_definitions(-DDEFERRED_RENDERING)
+#add_definitions(-DFORWARD_RENDERING)
 
 if(APPLE)
     set(vulkan_lib ${THIRD_PARTY_DIR}/VulkanSDK/lib/MacOS/libvulkan.1.dylib)
@@ -72,7 +73,7 @@ endforeach()
 #message(${RENDER_INCLUDES})
 
 include_directories(include)
-add_executable(${TARGET_NAME} main.cpp)
+add_executable(${TARGET_NAME} main.cpp include/render/resource/render_setting.h)
 add_dependencies(${RENDER_TARGET_NAME} ${SHADER_COMPILE_TARGET})
 target_link_libraries(${TARGET_NAME} PUBLIC ${RENDER_TARGET_NAME})
 

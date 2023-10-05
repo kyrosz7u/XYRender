@@ -97,6 +97,7 @@ namespace VulkanAPI
         PFN_vkAllocateDescriptorSets     _vkAllocateDescriptorSets;
         PFN_vkUpdateDescriptorSets       _vkUpdateDescriptorSets;
         PFN_vkFreeDescriptorSets         _vkFreeDescriptorSets;
+        PFN_vkGetImageMemoryRequirements _vkGetImageMemoryRequirements;
 
         VkFormat                 _swapchain_image_format = VK_FORMAT_UNDEFINED;
         VkExtent2D               _swapchain_extent;
@@ -139,7 +140,7 @@ namespace VulkanAPI
     private:
         const std::vector<char const *> m_validation_layers  = {"VK_LAYER_KHRONOS_validation"};
         uint32_t                        m_vulkan_api_version = VK_API_VERSION_1_3;
-        std::vector<char const *>       m_device_extensions  = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+        std::vector<char const *>       m_device_extensions  = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,"VK_KHR_portability_subset"};
 
     private:
         void createInstance();

@@ -21,6 +21,10 @@
 #include <stdlib.h>
 #endif
 
+#if defined __MACH__
+#include <vulkan/vulkan_macos.h>
+#endif
+
 using namespace VulkanAPI;
 
 // debug callback
@@ -115,8 +119,10 @@ void VulkanContext::createInstance()
 //  and your code must make use of the portability subset extension to discover your devices (again).
 //  https://stackoverflow.com/questions/72789012/why-does-vkcreateinstance-return-vk-error-incompatible-driver-on-macos-despite
     required_extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #if defined __MACH__
     required_extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    required_extensions.push_back(VK_MVK_MACOS_SURFACE_EXTENSION_NAME);
 #endif
 
     instance_create_info.enabledExtensionCount   = static_cast<uint32_t>(required_extensions.size());
@@ -326,6 +332,7 @@ void VulkanContext::createLogicalDevice()
     _vkAllocateDescriptorSets = (PFN_vkAllocateDescriptorSets) vkGetDeviceProcAddr(_device, "vkAllocateDescriptorSets");
     _vkUpdateDescriptorSets   = (PFN_vkUpdateDescriptorSets) vkGetDeviceProcAddr(_device, "vkUpdateDescriptorSets");
     _vkFreeDescriptorSets     = (PFN_vkFreeDescriptorSets) vkGetDeviceProcAddr(_device, "vkFreeDescriptorSets");
+    _vkGetImageMemoryRequirements = (PFN_vkGetImageMemoryRequirements) vkGetDeviceProcAddr(_device, "vkGetImageMemoryRequirements");
 
     _depth_image_format = findDepthFormat();
 }

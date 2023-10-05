@@ -34,6 +34,7 @@ namespace RenderSystem
         std::weak_ptr<UIOverlay>     p_ui_overlay;
         DirectionLightInfo           kDirectionalLightInfo;
     };
+
 }
 
 #endif //XEXAMPLE_RENDER_RESOURCE_H
