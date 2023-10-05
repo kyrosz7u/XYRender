@@ -39,6 +39,8 @@ highp vec3 DecodeNormal(highp vec3 enc)
     return enc * 2.0f - 1.0f;
 }
 
+
+
 highp float calculate_visibility(highp vec3 world_pos, highp int light_index)
 {
     highp vec4 light_space_pos = directional_light_proj[light_index] * vec4(world_pos, 1.0);
@@ -49,17 +51,22 @@ highp float calculate_visibility(highp vec3 world_pos, highp int light_index)
         return 1.0f;
     }
 
+    vec2 texelSize = 1.0 / (textureSize(directional_light_shadowmap_array, 0)).xy;
     highp vec3 light_space_pos_uv = light_space_pos_ndc * 0.5 + 0.5;
-    highp vec3 light_space_pos_uv_y_inverted = vec3(light_space_pos_uv.x, light_space_pos_uv.y, float(light_index));
-    highp float light_space_depth = texture(directional_light_shadowmap_array, light_space_pos_uv_y_inverted).r;
-    if(light_space_depth < light_space_pos_ndc.z - 0.005)
+
+    float shadow = 0.0;
+    for(int x = -1; x <= 1; ++x)
     {
-        return 0.0f;
+        for(int y = -1; y <= 1; ++y)
+        {
+            highp vec3 light_space_pos_uv_y_inverted = vec3(light_space_pos_uv.xy + vec2(x, y) * texelSize, float(light_index));
+            highp float light_space_depth = texture(directional_light_shadowmap_array, light_space_pos_uv_y_inverted).r;
+
+            shadow += light_space_pos_ndc.z - 0.005 > light_space_depth ? 1.0 : 0.0;
+        }
     }
-    else
-    {
-        return 1.0f;
-    }
+
+    return 1.0f - shadow / 9.0f;
 }
 
 void main()
