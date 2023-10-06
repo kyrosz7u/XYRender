@@ -94,6 +94,8 @@ namespace Scene
                 return Matrix4x4::makePerspectiveMatrix(fov, aspect, znear, zfar);
         }
 
+        void GetFrustumSphere(Vector4 &spere, float max_distance, float near_bias) const;
+
         void windowSizeChangedHandler(int width, int height)
         {
             this->width  = width;

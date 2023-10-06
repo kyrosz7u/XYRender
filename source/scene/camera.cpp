@@ -4,8 +4,10 @@
 
 #include "scene/camera.h"
 #include "scene/scene_manager.h"
+#include "render/render_base.h"
 
 using namespace Scene;
+using namespace RenderSystem;
 
 void Camera::PostInitialize()
 {
@@ -63,6 +65,32 @@ void Camera::Tick()
         Up = Forward.crossProduct(Right);
         Up.normalise();
     }
+}
+
+// https://lxjk.github.io/2017/04/15/Calculate-Minimal-Bounding-Sphere-of-Frustum.html
+void Camera::GetFrustumSphere(Vector4 &spere, float max_distance, float near_bias = 0.0f) const
+{
+    float far_plane = max_distance > 0 && max_distance < zfar ? max_distance : zfar;
+    float near_plane = znear + near_bias;
+    near_plane = near_plane > 0.0f && near_plane < far_plane ? near_plane : znear;
+    Vector3 center;
+    float   radius;
+    float k = sqrt(1.0f + 1.0f/(aspect * aspect)) * tan(fov / 2.0f);
+    float k2 = k * k;
+    float k4 = k2 * k2;
+
+    if(k2>=(far_plane-near_plane)/(far_plane+near_plane))
+    {
+        center = Vector3(0, 0, far_plane);
+        radius = far_plane * k;
+    }
+    else
+    {
+        center = Vector3(0, 0, (far_plane+near_plane)*(1+k2)/2.0f);
+        radius = 0.5f * sqrt((far_plane-near_plane)*(far_plane-near_plane) + 2.0f*(far_plane*far_plane+near_plane*near_plane)*k2 + (far_plane+near_plane)*(far_plane+near_plane)*k4);
+    }
+
+    spere = Vector4(position + center*Forward, radius);
 }
 
 void Camera::ImGuiDebugPanel()

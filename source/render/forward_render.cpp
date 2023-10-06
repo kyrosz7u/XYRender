@@ -278,7 +278,7 @@ void ForwardRender::UpdateRenderPerFrameScenceUBO(
     }
 }
 
-void ForwardRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list)
+void ForwardRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list, const std::shared_ptr<Scene::Camera> &main_camera)
 {
     if (m_render_light_project_ubo_list.ubo_data_list.size() != directional_light_list.size())
     {

@@ -38,11 +38,12 @@ void SceneManager::PostInitialize()
     m_main_camera->setParentScene(shared_from_this());
     m_main_camera->position = Math::Vector3(0, 10, -20);
     m_main_camera->rotation = Math::EulerAngle(0, 0, 0);
-    m_main_camera->fov      = 60.0f;
+    m_main_camera->fov      = 90.0f;
     m_main_camera->PostInitialize();
 
     m_ui_overlay->addDebugDrawCommand(std::bind(&_InputSystem::ImGuiDebugPanel, &_InputSystem::Instance()));
     m_ui_overlay->addDebugDrawCommand(std::bind(&Scene::Camera::ImGuiDebugPanel, m_main_camera));
+    m_ui_overlay->addDebugDrawCommand(std::bind(&Scene::DirectionLight::ImGuiDebugPanel, &m_directional_lights[0]));
 
     for (int i = 0; i < m_models.size(); ++i)
     {
@@ -100,7 +101,7 @@ void SceneManager::Tick()
     m_render->UpdateRenderPerFrameScenceUBO(m_main_camera->getProjViewMatrix(),
                                             m_main_camera->position,
                                             m_directional_lights);
-    m_render->UpdateLightProjectionList(m_directional_lights);
+    m_render->UpdateLightProjectionList(m_directional_lights, m_main_camera);
     m_render->FlushRenderbuffer();
     m_render->Tick();
 }

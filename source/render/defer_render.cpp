@@ -274,7 +274,7 @@ void DeferRender::UpdateRenderPerFrameScenceUBO(
     }
 }
 
-void DeferRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list)
+void DeferRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list, const std::shared_ptr<Scene::Camera> &main_camera)
 {
     if (m_render_light_project_ubo_list.ubo_data_list.size() != directional_light_list.size())
     {
@@ -283,24 +283,33 @@ void DeferRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight> &
 
     for (int i = 0; i < directional_light_list.size(); ++i)
     {
-        auto dummy_transform = directional_light_list[i].transform;
-        auto forward         = dummy_transform.GetForward();
-        auto projection      = Math::Matrix4x4::makeOrthogonalMatrix(
-                m_render_resource_info.kDirectionalLightInfo.camera_width,
-                m_render_resource_info.kDirectionalLightInfo.camera_height,
-                m_render_resource_info.kDirectionalLightInfo.camera_near,
-                m_render_resource_info.kDirectionalLightInfo.camera_far);
+//        auto dummy_transform = directional_light_list[i].transform;
+//        auto forward         = dummy_transform.GetForward();
+//        auto projection      = Math::Matrix4x4::makeOrthogonalMatrix(
+//                m_render_resource_info.kDirectionalLightInfo.camera_width,
+//                m_render_resource_info.kDirectionalLightInfo.camera_height,
+//                m_render_resource_info.kDirectionalLightInfo.camera_near,
+//                m_render_resource_info.kDirectionalLightInfo.camera_far);
 
 //        auto projection      = Math::Matrix4x4::makePerspectiveMatrix(90,1.33,1.0,50);
 
-        forward.normalise();
-        dummy_transform.position = Math::Vector3(10, 0, -10) - forward * 30;
+//        forward.normalise();
+//        dummy_transform.position = Math::Vector3(10, 0, -10) - forward * 30;
+//
+//        auto r_inverse   = getRotationMatrix(dummy_transform.rotation).transpose();
+//        auto t_inverse   = Matrix4x4::getTrans(-dummy_transform.position);
+//        auto view_matrix = r_inverse * t_inverse;
 
-        auto r_inverse   = getRotationMatrix(dummy_transform.rotation).transpose();
-        auto t_inverse   = Matrix4x4::getTrans(-dummy_transform.position);
-        auto view_matrix = r_inverse * t_inverse;
+        Vector4 sphere;
+        Matrix4x4 light_view_matrix;
+        Matrix4x4 light_proj_matrix;
+        directional_light_list[i].ComputeDirectionalShadowMatrices(
+                *main_camera,
+                sphere,
+                light_view_matrix,
+                light_proj_matrix);
 
-        m_render_light_project_ubo_list.ubo_data_list[i].light_proj = projection * view_matrix;
+        m_render_light_project_ubo_list.ubo_data_list[i].light_proj = light_proj_matrix*light_view_matrix;
     }
 }
 

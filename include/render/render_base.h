@@ -6,11 +6,15 @@
 #include "render/resource/render_resource.h"
 #include "render/resource/render_mesh.h"
 #include "render/resource/render_ubo.h"
-#include "scene/model.h"
-#include "scene/direction_light.h"
 #include <memory>
 
 #pragma once
+namespace Scene
+{
+    class DirectionLight;
+    class Camera;
+    class Model;
+}
 
 namespace RenderSystem
 {
@@ -60,7 +64,7 @@ namespace RenderSystem
         virtual void SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture)
         {}
 
-        virtual void UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list)
+        virtual void UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list, const std::shared_ptr<Scene::Camera> &main_camera)
         {}
 
         virtual void SetupShadowMapTexture(std::vector<Scene::DirectionLight> &directional_light_list)
