@@ -73,9 +73,10 @@ void Camera::GetFrustumSphere(Vector4 &spere, float max_distance, float near_bia
     float far_plane = max_distance > 0 && max_distance < zfar ? max_distance : zfar;
     float near_plane = znear + near_bias;
     near_plane = near_plane > 0.0f && near_plane < far_plane ? near_plane : znear;
+
     Vector3 center;
     float   radius;
-    float k = sqrt(1.0f + 1.0f/(aspect * aspect)) * tan(fov / 2.0f);
+    float k = sqrt(1.0f + (aspect * aspect)) * tan(Math_Deg2Rad*fov / 2.0f);
     float k2 = k * k;
     float k4 = k2 * k2;
 

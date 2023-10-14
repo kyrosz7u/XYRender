@@ -140,8 +140,12 @@ namespace VulkanAPI
     private:
         const std::vector<char const *> m_validation_layers  = {"VK_LAYER_KHRONOS_validation"};
         uint32_t                        m_vulkan_api_version = VK_API_VERSION_1_3;
-        std::vector<char const *>       m_device_extensions  = {VK_KHR_SWAPCHAIN_EXTENSION_NAME,"VK_KHR_portability_subset"};
-
+        std::vector<char const *>       m_device_extensions  =
+#if defined(_MSC_VER)
+        {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+#elif defined(__MACH__)
+        {VK_KHR_SWAPCHAIN_EXTENSION_NAME,"VK_KHR_portability_subset"};
+#endif
     private:
         void createInstance();
 

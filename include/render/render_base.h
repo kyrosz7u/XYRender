@@ -84,14 +84,20 @@ namespace RenderSystem
             m_last_frame_time    = m_current_frame_time;
         }
 
-        uint64_t getFrameCount() const
+        inline uint64_t getFrameCount() const
         {
             return m_frame_count;
         }
 
-        float getFrameTime() const
+        inline float getFrameTime() const
         {
             return m_frame_time;
+        }
+
+        inline Vector2 getShadowMapSize() const
+        {
+            return Vector2(m_render_resource_info.kDirectionalLightInfo.shadowmap_width,
+                           m_render_resource_info.kDirectionalLightInfo.shadowmap_height);
         }
 
     protected:

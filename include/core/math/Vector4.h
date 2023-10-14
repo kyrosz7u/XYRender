@@ -49,6 +49,11 @@ namespace Math
         const float *ptr() const
         { return &x; }
 
+        Vector3 xyz()
+        {
+            return Vector3(x, y, z);
+        }
+
         Vector4 &operator=(float scalar)
         {
             x = scalar;

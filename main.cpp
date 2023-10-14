@@ -48,8 +48,6 @@ int main()
     Scene::DirectionLight light;
     light.intensity = 1.0f;
     light.transform = Transform(Math::Vector3(0, 15, -15), Math::EulerAngle(60, -30, 0), Math::Vector3(1, 1, 1));
-//    light.transform.rotation = Math::EulerAngle(90, 0, 0);
-//    light.transform = Transform(Math::Vector3(0, 15, -15), Math::EulerAngle(0, 0, 0), Math::Vector3(1, 1, 1));
     light.color     = Color(1, float(244) / 255, float(214) / 255, 1.0f);
     scene_manager->AddLight(light);
 
