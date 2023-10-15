@@ -38,7 +38,6 @@ namespace Scene
             void ImGuiDebugPanel();
         private:
             Vector4 m_frustum_sphere;
-            Vector4 m_sphere_backup;
             Vector2 m_shadowmap_size;
             std::shared_ptr<RenderBase> m_render_context;
 

@@ -39,6 +39,18 @@ public:
         return model_matrix;
     }
 
+    Matrix4x4 GetViewTransformMatrix()
+    {
+        Matrix4x4 model_matrix = Matrix4x4::IDENTITY;
+
+        auto t_inverse   = Matrix4x4::getTrans(-position);
+        auto r_inverse   = getRotationMatrix(rotation).transpose();
+
+        model_matrix = r_inverse * t_inverse;
+
+        return model_matrix;
+    }
+
     Vector3 GetRight()
     {
         return Math::getRotationMatrix(rotation) * Vector3(1, 0, 0);

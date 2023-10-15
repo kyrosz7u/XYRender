@@ -40,8 +40,7 @@ highp vec3 DecodeNormal(highp vec3 enc)
 }
 
 
-
-highp float calculate_visibility(highp vec3 world_pos, highp int light_index)
+highp float PCF(highp vec3 world_pos, highp int light_index)
 {
     highp vec4 light_space_pos = directional_light_proj[light_index] * vec4(world_pos, 1.0);
     highp vec3 light_space_pos_ndc = light_space_pos.xyz / light_space_pos.w;
@@ -69,6 +68,30 @@ highp float calculate_visibility(highp vec3 world_pos, highp int light_index)
     return 1.0f - shadow / 9.0f;
 }
 
+
+highp float hard_shadow(highp vec3 world_pos, highp int light_index)
+{
+    highp vec4 light_space_pos = directional_light_proj[light_index] * vec4(world_pos, 1.0);
+    highp vec3 light_space_pos_ndc = light_space_pos.xyz / light_space_pos.w;
+
+    if(light_space_pos_ndc.z >= 1.0f || light_space_pos_ndc.z <= 0.0f)
+    {
+        return 1.0f;
+    }
+
+    highp vec3 light_space_pos_uv = light_space_pos_ndc * 0.5 + 0.5;
+    highp vec3 light_space_pos_uv_y_inverted = vec3(light_space_pos_uv.x, light_space_pos_uv.y, float(light_index));
+    highp float light_space_depth = texture(directional_light_shadowmap_array, light_space_pos_uv_y_inverted).r;
+    if(light_space_depth < light_space_pos_ndc.z - 0.005)
+    {
+        return 0.0f;
+    }
+    else
+    {
+        return 1.0f;
+    }
+}
+
 void main()
 {
     vec3 color = subpassLoad(gbuffer_color).xyz;
@@ -94,7 +117,7 @@ void main()
         }
         else
         {
-            visibility = calculate_visibility(position, i);
+            visibility = PCF(position, i);
         }
 
         diffuse_color += 0.6*visibility*color *light.color.xyz * light.intensity* NdotL;
