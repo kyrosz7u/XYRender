@@ -17,6 +17,13 @@ namespace RenderSystem
 
     typedef std::shared_ptr<RenderPassBase> RenderPassPtr;
 
+    enum TextureLoadAction
+    {
+        TextureLoadAction_Clear,
+        TextureLoadAction_Load,
+        TextureLoadAction_DontCare
+    };
+
     class RenderPassBase
     {
     public:

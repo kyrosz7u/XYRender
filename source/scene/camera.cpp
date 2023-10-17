@@ -68,11 +68,11 @@ void Camera::Tick()
 }
 
 // https://lxjk.github.io/2017/04/15/Calculate-Minimal-Bounding-Sphere-of-Frustum.html
-void Camera::GetFrustumSphere(Vector4 &spere, float max_distance, float near_bias = 0.0f) const
+void Camera::GetFrustumSphere(Vector4 &spere, float near_plane, float far_plane) const
 {
-    float far_plane = max_distance > 0 && max_distance < zfar ? max_distance : zfar;
-    float near_plane = znear + near_bias;
-    near_plane = near_plane > 0.0f && near_plane < far_plane ? near_plane : znear;
+    //float far_plane = max_distance > 0 && max_distance < zfar ? max_distance : zfar;
+    //float near_plane = znear + near_bias;
+    //near_plane = near_plane > 0.0f && near_plane < far_plane ? near_plane : znear;
 
     Vector3 center;
     float   radius;

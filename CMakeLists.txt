@@ -73,7 +73,7 @@ endforeach()
 #message(${RENDER_INCLUDES})
 
 include_directories(include)
-add_executable(${TARGET_NAME} main.cpp include/render/resource/render_setting.h)
+add_executable(${TARGET_NAME} main.cpp)
 add_dependencies(${RENDER_TARGET_NAME} ${SHADER_COMPILE_TARGET})
 target_link_libraries(${TARGET_NAME} PUBLIC ${RENDER_TARGET_NAME})
 

@@ -5,7 +5,6 @@
 #include "core/math/math.h"
 #include "transform.h"
 #include "camera.h"
-#include "render/render_base.h"
 
 #ifndef XEXAMPLE_LIGHT_H
 #define XEXAMPLE_LIGHT_H
@@ -25,10 +24,7 @@ namespace Scene
             {}
             ~DirectionLight() {}
 
-            void SetRenderContext(std::shared_ptr<RenderBase> render_context)
-            {
-                m_render_context = render_context;
-            }
+            void Tick();
 
             void ComputeDirectionalShadowMatrices(
                     const Camera &camera,
@@ -36,12 +32,6 @@ namespace Scene
                     Matrix4x4 &light_view_matrix,
                     Matrix4x4 &light_proj_matrix);
             void ImGuiDebugPanel();
-        private:
-            Vector4 m_frustum_sphere;
-            Vector2 m_shadowmap_size;
-            std::shared_ptr<RenderBase> m_render_context;
-
-            bool IsMatrixNeedUpdate(const Vector4 &, const Vector4 &, const Vector3 &, const Vector3 &);
     };
 }
 

@@ -9,6 +9,7 @@
 #include "renderpass/main_camera_forward_pass.h"
 #include "render/resource/render_ubo.h"
 #include "render/resource/render_resource.h"
+#include "render/shadow.h"
 #include "scene/model.h"
 #include "scene/direction_light.h"
 #include "core/threadpool.h"
@@ -90,6 +91,14 @@ namespace RenderSystem
 
         void setupRenderDescriptorSetLayout();
 
+    // render resource
+    private:
+        Matrix4x4 m_view_matrix;
+        Matrix4x4 m_proj_matrix;
+
+        std::vector<DirLightShadow> m_dirLight_shadows;
+
+    // api resource
     private:
         VkCommandPool                m_primary_command_pool{VK_NULL_HANDLE};
         std::vector<VkCommandBuffer> m_primary_command_buffers;
@@ -119,8 +128,8 @@ namespace RenderSystem
         VkDescriptorSetLayout        m_skybox_descriptor_set_layout{VK_NULL_HANDLE};
         VkDescriptorSet              m_skybox_descriptor_set{VK_NULL_HANDLE};
 
-        Matrix4x4 m_view_matrix;
-        Matrix4x4 m_proj_matrix;
+        void setupLights(std::vector<Scene::DirectionLight> &directional_light_list,
+                         const std::shared_ptr<Scene::Camera> &main_camera);
     };
 }
 #endif //XEXAMPLE_DEFER_RENDER_H

@@ -15,7 +15,6 @@ public:
     Position position;
     Rotation rotation;
     Scale scale;
-
     Transform()
     {
         position = Position(0, 0, 0);
@@ -28,6 +27,11 @@ public:
         position = pos;
         rotation = rot;
         scale    = sca;
+    }
+
+    void Tick()
+    {
+
     }
 
     Matrix4x4 GetTransformMatrix()
@@ -51,17 +55,17 @@ public:
         return model_matrix;
     }
 
-    Vector3 GetRight()
+    Vector3 GetRight() const
     {
         return Math::getRotationMatrix(rotation) * Vector3(1, 0, 0);
     }
 
-    Vector3 GetUp()
+    Vector3 GetUp() const
     {
         return Math::getRotationMatrix(rotation) * Vector3(0, 1, 0);
     }
 
-    Vector3 GetForward()
+    Vector3 GetForward() const
     {
         return Math::getRotationMatrix(rotation) * Vector3(0, 0, 1);
     }

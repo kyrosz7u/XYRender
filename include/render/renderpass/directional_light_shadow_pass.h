@@ -44,8 +44,6 @@ namespace RenderSystem
 
         void initialize(RenderPassInitInfo *renderpass_init_info) override;
 
-        void setupRenderpassAttachments();
-
         void updateAfterSwapchainRecreate() override;
 
         void draw(uint32_t render_target_index) override;
@@ -54,6 +52,8 @@ namespace RenderSystem
 
     private:
         ImageAttachment *m_p_shadowmap_attachment;
+
+        void setupRenderpassAttachments();
 
         void setupRenderPass();
 

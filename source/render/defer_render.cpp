@@ -37,6 +37,14 @@ void DeferRender::initialize()
 void DeferRender::postInitialize()
 {
     setupRenderpass();
+    // TODO
+    m_dirLight_shadows.resize();
+}
+
+void DeferRender::setupLights(std::vector<Scene::DirectionLight> &directional_light_list,
+                              const std::shared_ptr<Scene::Camera> &main_camera)
+{
+
 }
 
 void DeferRender::setupRenderTargets()

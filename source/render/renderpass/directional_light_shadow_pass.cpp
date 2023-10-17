@@ -249,6 +249,10 @@ void DirectionalLightShadowRenderPass::draw(uint32_t render_target_index)
         std::reinterpret_pointer_cast<SubPass::DirectionalLightShadowPass>(
                 m_subpass_list[_direction_light_shadow_subpass_shadow])->setDirectionalLightIndex(i);
 
+        std::reinterpret_pointer_cast<SubPass::DirectionalLightShadowPass>(
+                m_subpass_list[_direction_light_shadow_subpass_shadow])->setViewPort(extent);
+
+
         m_subpass_list[_direction_light_shadow_subpass_shadow]->draw();
         g_p_vulkan_context->_vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
     }
