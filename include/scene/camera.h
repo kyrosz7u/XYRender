@@ -63,12 +63,12 @@ namespace Scene
             m_p_parent_scene = parent_scene;
         }
 
-        Matrix4x4 getProjViewMatrix()
+        const Matrix4x4& getProjViewMatrix() const
         {
             return calculatePerspectiveMatrix() * calculateViewMatrix();
         }
 
-        Matrix4x4 calculateViewMatrix()
+        Matrix4x4 calculateViewMatrix() const
         {
             auto r_inverse = Matrix4x4::IDENTITY;
             auto t_inverse = Matrix4x4::getTrans(-position);
@@ -86,7 +86,7 @@ namespace Scene
             return r_inverse * t_inverse;
         }
 
-        Matrix4x4 calculatePerspectiveMatrix()
+        Matrix4x4 calculatePerspectiveMatrix() const
         {
             if (mode == orthogonal)
                 return Matrix4x4::makeOrthogonalMatrix(width, height, znear, zfar);

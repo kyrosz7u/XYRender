@@ -50,12 +50,20 @@ namespace RenderSystem
             m_p_ui_overlay = ui_overlay;
         }
 
-        virtual void UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
-                                   const std::vector<RenderSubmesh> &_visible_submeshes)
+        virtual void UpdateRenderResource(const std::vector<Scene::Model> &_visible_models,
+                                          const std::vector<RenderSubmesh> &_visible_submeshes,
+                                          const std::vector<Scene::DirectionLight> &directional_light_list,
+                                          const Scene::Camera &main_camera)
         {}
 
-        virtual void UpdateRenderPerFrameScenceUBO(Matrix4x4 proj_view, Vector3 camera_pos,
-                                           std::vector<Scene::DirectionLight> &directional_light_list)
+
+        virtual void UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
+                                           const std::vector<RenderSubmesh> &_visible_submeshes)
+        {}
+
+        virtual void UpdateRenderPerFrameScenceUBO(const Matrix4x4 proj_view,
+                                                   const Vector3 camera_pos,
+                                                   const std::vector<Scene::DirectionLight> &directional_light_list)
         {}
 
         virtual void SetupModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures)
@@ -64,7 +72,7 @@ namespace RenderSystem
         virtual void SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture)
         {}
 
-        virtual void UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list, const std::shared_ptr<Scene::Camera> &main_camera)
+        virtual void UpdateLightProjectionList(const std::vector<Scene::DirectionLight> &directional_light_list, const Scene::Camera &main_camera)
         {}
 
         virtual void SetupShadowMapTexture(std::vector<Scene::DirectionLight> &directional_light_list)
@@ -109,6 +117,8 @@ namespace RenderSystem
     private:
         uint64_t m_last_frame_time{0};
         uint64_t m_current_frame_time{0};
+
+        void setupCommandBuffer();
     };
 }
 

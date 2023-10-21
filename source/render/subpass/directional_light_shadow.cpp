@@ -119,6 +119,11 @@ void DirectionalLightShadowPass::setupPipelines()
         descriptorset_layouts.push_back(layout);
     }
 
+    VkPushConstantRange pushConstantRange{};
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(SpherePushConstantData);
+
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
     pipeline_layout_create_info.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_create_info.pushConstantRangeCount = 0;
@@ -283,16 +288,16 @@ void DirectionalLightShadowPass::drawSingleThread(VkCommandBuffer &command_buffe
     VK_CHECK_RESULT(g_p_vulkan_context->_vkBeginCommandBuffer(command_buffer, &command_buffer_begin_info))
 
     VkViewport viewport{};
-    viewport.x        = 0.0f;
-    viewport.y        = 0.0f;
-    viewport.width    = static_cast<float>(m_viewport_extent.width);
-    viewport.height   = static_cast<float>(m_viewport_extent.height);
+    viewport.x        = m_viewport_extent.x;
+    viewport.y        = m_viewport_extent.y;
+    viewport.width    = m_viewport_extent.z;
+    viewport.height   = m_viewport_extent.w;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = m_viewport_extent;
+    scissor.extent = {static_cast<uint32_t>(m_viewport_extent.z), static_cast<uint32_t>(m_viewport_extent.w)};
 
     g_p_vulkan_context->_vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
     g_p_vulkan_context->_vkCmdSetViewport(command_buffer, 0, 1, &viewport);
@@ -390,16 +395,16 @@ void DirectionalLightShadowPass::draw()
                                            VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
 
     VkViewport viewport{};
-    viewport.x        = 0.0f;
-    viewport.y        = 0.0f;
-    viewport.width    = static_cast<float>(m_viewport_extent.width);
-    viewport.height   = static_cast<float>(m_viewport_extent.height);
+    viewport.x        = m_viewport_extent.x;
+    viewport.y        = m_viewport_extent.y;
+    viewport.width    = m_viewport_extent.z;
+    viewport.height   = m_viewport_extent.w;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = m_viewport_extent;
+    scissor.extent = {static_cast<uint32_t>(m_viewport_extent.z), static_cast<uint32_t>(m_viewport_extent.w)};
 
     g_p_vulkan_context->_vkCmdSetViewport(*m_p_render_command_info->p_current_command_buffer, 0, 1, &viewport);
     g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->p_current_command_buffer, 0, 1, &scissor);

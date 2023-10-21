@@ -1,6 +1,7 @@
 #version 450
 
 #define m_max_direction_light_count 16
+#define m_max_cascade_count 4
 
 struct DirectionalLight
 {
@@ -23,7 +24,7 @@ layout (set = 0, binding = 1) uniform _directional_light
 
 layout (set = 0, binding = 2, row_major) uniform _directional_light_projection
 {
-    highp mat4 directional_light_proj[m_max_direction_light_count];
+    highp mat4 directional_light_proj[m_max_direction_light_count*m_max_cascade_count];
 };
 
 layout (input_attachment_index = 0, set = 1, binding = 0) uniform highp subpassInput gbuffer_color;

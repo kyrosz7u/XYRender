@@ -4,27 +4,54 @@
 
 #include "render/shadow.h"
 
-void DirLightShadow::Update()
+void DirLightShadow::UpdateShadowData(const Camera &camera)
 {
-    for (int i = 0; i < m_cascade_ratio.size(); ++i)
+    assert(m_direction_light != nullptr);
+
+    int     atlas_side = sqrt(m_cascade_count);
+    Vector2 atlas_size = Vector2(m_shadowmap_size.x / atlas_side, m_shadowmap_size.y / atlas_side);
+
+    float    cascade_ratio_sum = 0.0f;
+    for (int i                 = 0; i < m_cascade_count; ++i)
     {
-        m_cascade_view_matrix[i] = Matrix4x4::IDENTITY;
+        cascade_ratio_sum += m_direction_light->cascade_ratio[i] + 0.0001f;
     }
 
+    float cascade_ratio_sum_inv = 1.0f / cascade_ratio_sum;
+    float current_min_distance  = m_direction_light->min_shadow_distance;
 
+    for (int i = 0; i < m_cascade_count; ++i)
+    {
+        float current_max_distance = current_min_distance + (m_direction_light->cascade_ratio[i] + 0.0001f) *
+                                                            cascade_ratio_sum_inv *
+                                                            (m_direction_light->max_shadow_distance -
+                                                             m_direction_light->min_shadow_distance);
+        m_cascade_distance[i] = Vector2(current_min_distance, current_max_distance);
+        current_min_distance = current_max_distance;
+
+        int x = i % atlas_side;
+        int y = i / atlas_side;
+
+        // (x,y,w,h)
+        m_cascade_viewport[i] = Vector4(x * atlas_size.x, y * atlas_size.y, atlas_size.x, atlas_size.y);
+
+        camera.GetFrustumSphere(m_cascade_frustum_sphere[i], m_cascade_distance[i].x, m_cascade_distance[i].y);
+        ComputeDirectionalShadowMatrices(i, atlas_side, Vector2(x, y), m_cascade_frustum_sphere[i],
+                                         m_cascade_viewproj_matrix[i]);
+    }
 }
 
 void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
-                                                      const Camera &camera,
-                                                      const DirectionLight &light,
-                                                      Matrix4x4 &light_view_matrix,
-                                                      Matrix4x4 &light_proj_matrix)
+                                                      int atlas_side,
+                                                      const Vector2 &offset,
+                                                      const Vector4 &sphere,
+                                                      Matrix4x4 &light_viewproj_matrix)
 {
-    Vector4 sphere;
-    camera.GetFrustumSphere(sphere, camera.znear, 0.0f);
-    const Vector3 &light_dir   = light.transform.GetForward();
-    const Vector3 &light_up    = light.transform.GetUp();
-    const Vector3 &light_right = light.transform.GetRight();
+    assert(m_direction_light != nullptr);
+
+    const Vector3 &light_dir   = m_direction_light->transform.GetForward();
+    const Vector3 &light_up    = m_direction_light->transform.GetUp();
+    const Vector3 &light_right = m_direction_light->transform.GetRight();
 
     Vector3 &back_dummy_light_pos = m_back_dummy_light_pos_list[cascade_index];
     Vector2 pixel_size            = 2 * Vector2(sphere.w / m_shadowmap_size.x, sphere.w / m_shadowmap_size.y);
@@ -56,10 +83,30 @@ void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
     back_dummy_light_pos = back_dummy_light_pos + light_dir * move_z;
 
     auto t_inverse = Matrix4x4::getTrans(-back_dummy_light_pos);
-    auto r_inverse = getRotationMatrix(light.transform.rotation).transpose();
+    auto r_inverse = getRotationMatrix(m_direction_light->transform.rotation).transpose();
 
-    light_view_matrix = r_inverse * t_inverse;
-    light_proj_matrix = Math::Matrix4x4::makeOrthogonalMatrix(
+    Matrix4x4 light_view_matrix = r_inverse * t_inverse;
+    Matrix4x4 light_proj_matrix = Math::Matrix4x4::makeOrthogonalMatrix(
             2 * sphere.w, 2 * sphere.w, 0.1f, sphere.w * 2);
+
+    Matrix4x4 &m = light_viewproj_matrix;
+    m = light_proj_matrix * light_view_matrix;
+
+    float scale = 1.0f / atlas_side;
+
+    m[0][0] = (0.5f * (m[0][0] + m[0][3]) + offset.x * m[0][3]) * scale;
+    m[0][1] = (0.5f * (m[0][1] + m[3][1]) + offset.x * m[3][1]) * scale;
+    m[0][2] = (0.5f * (m[0][2] + m[3][2]) + offset.x * m[3][2]) * scale;
+    m[0][3] = (0.5f * (m[0][3] + m[3][3]) + offset.x * m[3][3]) * scale;
+
+    m[1][0] = (0.5f * (m[1][0] + m[3][0]) + offset.y * m[3][0]) * scale;
+    m[1][1] = (0.5f * (m[1][1] + m[3][1]) + offset.y * m[3][1]) * scale;
+    m[1][2] = (0.5f * (m[1][2] + m[3][2]) + offset.y * m[3][2]) * scale;
+    m[1][3] = (0.5f * (m[1][3] + m[3][3]) + offset.y * m[3][3]) * scale;
+
+    m[2][0] = 0.5f * (m[2][0] + m[3][0]);
+    m[2][1] = 0.5f * (m[2][1] + m[3][1]);
+    m[2][2] = 0.5f * (m[2][2] + m[3][2]);
+    m[2][3] = 0.5f * (m[2][3] + m[3][3]);
 }
 

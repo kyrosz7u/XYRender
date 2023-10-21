@@ -20,33 +20,39 @@ namespace RenderSystem
     {
     public:
         DirLightShadow(const Vector2 &shadowmap_size,
-                       const std::vector<float> &cascade_ratio)
+                       const DirectionLight &direction_light)
                 : m_shadowmap_size(shadowmap_size),
-                m_cascade_ratio(cascade_ratio)
+                  m_direction_light(&direction_light)
         {
-            m_cascade_view_matrix.resize(cascade_ratio.size());
+            m_cascade_count = direction_light.GetCascadeRatio().size();
+            m_cascade_distance.resize(m_cascade_count);
+            m_cascade_viewport.resize(m_cascade_count);
+            m_cascade_frustum_sphere.resize(m_cascade_count);
+            m_cascade_viewproj_matrix.resize(m_cascade_count);
+            m_back_dummy_light_pos_list.resize(m_cascade_count);
         }
-
 
         ~DirLightShadow() = default;
 
-        void Update();
+        void UpdateShadowData(const Camera &camera);
 
-        void ComputeDirectionalShadowMatrices(
-                int cascade_index,
-                const Camera &camera,
-                const DirectionLight &light,
-                Matrix4x4 &light_view_matrix,
-                Matrix4x4 &light_proj_matrix);
+    private:
+        void ComputeDirectionalShadowMatrices(int cascade_index, int atlas_side, const Vector2 &offset,
+                                              const Vector4 &sphere,
+                                              Matrix4x4 &light_viewproj_matrix);
 
     public:
-        float                  m_min_distance   = 0.1f;
-        float                  m_max_distance   = 100.0f;
-        Vector2                m_shadowmap_size = Vector2(1024, 1024);
-        std::vector<float>     m_cascade_ratio;
-        std::vector<Matrix4x4> m_cascade_view_matrix;
+        int                    m_cascade_count;
+        std::vector<Vector2>   m_cascade_distance;
+        std::vector<Vector4>   m_cascade_viewport;
+        std::vector<Vector4>   m_cascade_frustum_sphere;
+        std::vector<Matrix4x4> m_cascade_viewproj_matrix;
     private:
+        const DirectionLight *m_direction_light = nullptr;
+        Vector2              m_shadowmap_size;
         std::vector<Vector3> m_back_dummy_light_pos_list;
+
+
     };
 }
 

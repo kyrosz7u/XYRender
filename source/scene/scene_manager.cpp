@@ -97,11 +97,12 @@ void SceneManager::Tick()
     }
 
     updateScene();
-    m_render->UpdateRenderModelList(m_models, m_visible_submeshes);
-    m_render->UpdateRenderPerFrameScenceUBO(m_main_camera->getProjViewMatrix(),
-                                            m_main_camera->position,
-                                            m_directional_lights);
-    m_render->UpdateLightProjectionList(m_directional_lights, m_main_camera);
+    //m_render->UpdateRenderModelList(m_models, m_visible_submeshes);
+    //m_render->UpdateRenderPerFrameScenceUBO(m_main_camera->getProjViewMatrix(),
+    //                                        m_main_camera->position,
+    //                                        m_directional_lights);
+    //m_render->UpdateLightProjectionList(m_directional_lights, m_main_camera);
+    m_render->UpdateRenderResource(m_models, m_visible_submeshes, m_directional_lights, *m_main_camera);
     m_render->FlushRenderbuffer();
     m_render->Tick();
 }

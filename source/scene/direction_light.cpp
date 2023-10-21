@@ -10,7 +10,7 @@ using namespace Scene;
 void
 DirectionLight::ComputeDirectionalShadowMatrices(const Camera &camera, Vector4 &sphere,
                                                  Matrix4x4 &light_view_matrix,
-                                                 Matrix4x4 &light_proj_matrix)
+                                                 Matrix4x4 &light_proj_matrix) const
 {
     throw std::runtime_error("DirectionLight::ComputeDirectionalShadowMatrices() deprecated");
     //camera.GetFrustumSphere(sphere, 20.0f, 0.0f);

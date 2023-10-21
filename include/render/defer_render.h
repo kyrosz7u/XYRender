@@ -63,29 +63,35 @@ namespace RenderSystem
             m_proj_matrix = proj;
         }
 
-        void UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
-                                   const std::vector<RenderSubmesh> &_visible_submeshes) override;
-
-        void UpdateRenderPerFrameScenceUBO(Matrix4x4 proj_view, Vector3 camera_pos,
-                                           std::vector<Scene::DirectionLight> &directional_light_list) override;
+        void UpdateRenderResource(const std::vector<Scene::Model> &_visible_models,
+                                  const std::vector<RenderSubmesh> &_visible_submeshes,
+                                  const std::vector<Scene::DirectionLight> &directional_light_list,
+                                  const Scene::Camera &main_camera) override;
 
         void SetupModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures) override;
 
         void SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture) override;
-
-        void UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list, const std::shared_ptr<Scene::Camera> &main_camera) override;
 
         void SetupShadowMapTexture(std::vector<Scene::DirectionLight> &directional_light_list) override;
 
         void FlushRenderbuffer() override;
 
     private:
-
         void setupCommandBuffer();
 
         void setupDescriptorPool();
 
         void setupRenderpass();
+
+        void UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
+                                   const std::vector<RenderSubmesh> &_visible_submeshes) override;
+
+        void UpdateRenderPerFrameScenceUBO(const Matrix4x4 proj_view,
+                                           const Vector3 camera_pos,
+                                           const std::vector<Scene::DirectionLight> &directional_light_list) override;
+
+        void UpdateLightProjectionList(const std::vector<Scene::DirectionLight> &directional_light_list,
+                                       const Scene::Camera &main_camera) override;
 
         void updateAfterSwapchainRecreate();
 
@@ -96,7 +102,11 @@ namespace RenderSystem
         Matrix4x4 m_view_matrix;
         Matrix4x4 m_proj_matrix;
 
-        std::vector<DirLightShadow> m_dirLight_shadows;
+        std::vector<DirLightShadow> m_directional_light_shadow_list;
+        const std::vector<Scene::DirectionLight> *m_directional_light_list;
+        const std::vector<Scene::Model> *m_visible_models;
+        const std::vector<RenderSubmesh> *m_visible_submeshes;
+        const Camera *m_main_camera;
 
     // api resource
     private:
@@ -128,8 +138,8 @@ namespace RenderSystem
         VkDescriptorSetLayout        m_skybox_descriptor_set_layout{VK_NULL_HANDLE};
         VkDescriptorSet              m_skybox_descriptor_set{VK_NULL_HANDLE};
 
-        void setupLights(std::vector<Scene::DirectionLight> &directional_light_list,
-                         const std::shared_ptr<Scene::Camera> &main_camera);
+        void updateLightShadow(std::vector<Scene::DirectionLight> &directional_light_list,
+                               const std::shared_ptr<Scene::Camera> &main_camera);
     };
 }
 #endif //XEXAMPLE_DEFER_RENDER_H

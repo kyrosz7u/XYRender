@@ -48,7 +48,7 @@ namespace RenderSystem
                 m_directional_light_index = index;
             }
 
-            void setViewPort(const VkExtent2D &extent)
+            void setViewPort(const Vector4 &extent)
             {
                 m_viewport_extent = extent;
             }
@@ -64,7 +64,7 @@ namespace RenderSystem
 
             VkDescriptorSet m_dir_shadow_ubo_descriptor_set = VK_NULL_HANDLE;
             uint32_t        m_directional_light_index       = 0;
-            VkExtent2D      m_viewport_extent;
+            Vector4         m_viewport_extent;
 
             void drawSingleThread(VkCommandBuffer &command_buffer, VkCommandBufferInheritanceInfo &inheritance_info,
                                   uint32_t submesh_start_index, uint32_t submesh_end_index);
