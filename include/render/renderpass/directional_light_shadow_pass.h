@@ -64,6 +64,8 @@ namespace RenderSystem
         void setupFrameBuffer();
 
         void setupSubpass() override;
+
+        void clearShadowMap(VkCommandBuffer &command_buffer, VkImage &image);
     };
 }
 #endif //XEXAMPLE_DIRECTION_LIGHT_SHADOW_RENDERPASS_H

@@ -262,9 +262,9 @@ void ForwardRender::UpdateRenderModelList(const std::vector<Scene::Model> &_visi
 }
 
 void ForwardRender::UpdateRenderPerFrameScenceUBO(
-        Math::Matrix4x4 proj_view,
-        Math::Vector3 camera_pos,
-        std::vector<Scene::DirectionLight> &directional_light_list)
+        const Math::Matrix4x4 proj_view,
+        const Math::Vector3 camera_pos,
+        const std::vector<Scene::DirectionLight> &directional_light_list)
 {
     m_render_per_frame_ubo.scene_data_ubo.proj_view                = proj_view;
     m_render_per_frame_ubo.scene_data_ubo.camera_pos               = camera_pos;
@@ -278,7 +278,8 @@ void ForwardRender::UpdateRenderPerFrameScenceUBO(
     }
 }
 
-void ForwardRender::UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list, const std::shared_ptr<Scene::Camera> &main_camera)
+void ForwardRender::UpdateLightProjectionList(const std::vector<Scene::DirectionLight> &directional_light_list,
+                                              const Scene::Camera &main_camera)
 {
     if (m_render_light_project_ubo_list.ubo_data_list.size() != directional_light_list.size())
     {

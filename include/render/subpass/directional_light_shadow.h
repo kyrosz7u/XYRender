@@ -18,6 +18,12 @@ namespace RenderSystem
         class DirectionalLightShadowPass : public SubPassBase
         {
         public:
+            struct LightData
+            {
+                uint32_t light_index;
+                uint32_t cascade_index;
+            };
+
             enum _directional_light_shadow_pass_pipeline_layout_define
             {
                 _directional_shadow_layout = 0,
@@ -43,15 +49,9 @@ namespace RenderSystem
 
             void updateAfterSwapchainRecreate() override;
 
-            void setDirectionalLightIndex(uint32_t index)
-            {
-                m_directional_light_index = index;
-            }
+            void setDirectionalLightData(uint32_t light_index, uint32_t cascade_index);
 
-            void setViewPort(const Vector4 &extent)
-            {
-                m_viewport_extent = extent;
-            }
+            void setViewPort(const Vector4 &extent);
 
         private:
             void initialize(SubPassInitInfo *subPassInitInfo) override;
@@ -63,7 +63,7 @@ namespace RenderSystem
             void setupPipelines() override;
 
             VkDescriptorSet m_dir_shadow_ubo_descriptor_set = VK_NULL_HANDLE;
-            uint32_t        m_directional_light_index       = 0;
+            LightData       m_directional_light_data;
             Vector4         m_viewport_extent;
 
             void drawSingleThread(VkCommandBuffer &command_buffer, VkCommandBufferInheritanceInfo &inheritance_info,

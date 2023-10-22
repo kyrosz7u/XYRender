@@ -49,6 +49,9 @@ int main()
     light.intensity = 1.0f;
     light.transform = Transform(Math::Vector3(0, 15, -15), Math::EulerAngle(60, -30, 0), Math::Vector3(1, 1, 1));
     light.color     = Color(1, float(244) / 255, float(214) / 255, 1.0f);
+    light.min_shadow_distance = 0.1f;
+    light.max_shadow_distance = 100.0f;
+    light.cascade_ratio       = std::vector<float>{0.1f, 0.25f, 0.5f};
     scene_manager->AddLight(light);
 
     scene_manager->PostInitialize();

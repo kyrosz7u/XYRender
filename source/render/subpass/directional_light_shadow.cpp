@@ -24,6 +24,16 @@ void DirectionalLightShadowPass::initialize(SubPassInitInfo *subPassInitInfo)
     setupPipelines();
 }
 
+void DirectionalLightShadowPass::setDirectionalLightData(uint32_t light_index, uint32_t cascade_index)
+{
+    m_directional_light_data  = {light_index, cascade_index};
+}
+
+void DirectionalLightShadowPass::setViewPort(const Vector4 &extent)
+{
+    m_viewport_extent = extent;
+}
+
 void DirectionalLightShadowPass::setupPipeLineLayout()
 {
     auto &ubo_data_layout = m_descriptor_set_layouts[_directional_shadow_layout];
@@ -118,11 +128,6 @@ void DirectionalLightShadowPass::setupPipelines()
     {
         descriptorset_layouts.push_back(layout);
     }
-
-    VkPushConstantRange pushConstantRange{};
-    pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(SpherePushConstantData);
 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
     pipeline_layout_create_info.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -329,7 +334,8 @@ void DirectionalLightShadowPass::drawSingleThread(VkCommandBuffer &command_buffe
         // bind model and light ubo
         uint32_t dynamic_offset[2];
 
-        dynamic_offset[0] = m_directional_light_index *
+        dynamic_offset[0] = (m_directional_light_data.light_index * m_p_render_resource_info->kDirectionalLightInfo.max_cascade_count +
+                                m_directional_light_data.cascade_index) *
                             (*m_p_render_resource_info->p_render_light_project_ubo_list).dynamic_alignment;
 
         dynamic_offset[1] = parent_mesh->m_index_in_dynamic_buffer *
@@ -404,7 +410,8 @@ void DirectionalLightShadowPass::draw()
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = {static_cast<uint32_t>(m_viewport_extent.z), static_cast<uint32_t>(m_viewport_extent.w)};
+    scissor.extent = {static_cast<uint32_t>(m_p_render_resource_info->kDirectionalLightInfo.shadowmap_width),
+                      static_cast<uint32_t>(m_p_render_resource_info->kDirectionalLightInfo.shadowmap_height)};
 
     g_p_vulkan_context->_vkCmdSetViewport(*m_p_render_command_info->p_current_command_buffer, 0, 1, &viewport);
     g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->p_current_command_buffer, 0, 1, &scissor);
@@ -436,7 +443,8 @@ void DirectionalLightShadowPass::draw()
         // bind model and light ubo
         uint32_t dynamic_offset[2];
 
-        dynamic_offset[0] = m_directional_light_index *
+        dynamic_offset[0] = (m_directional_light_data.light_index * m_p_render_resource_info->kDirectionalLightInfo.max_cascade_count +
+                             m_directional_light_data.cascade_index) *
                             (*m_p_render_resource_info->p_render_light_project_ubo_list).dynamic_alignment;
 
         dynamic_offset[1] = parent_mesh->m_index_in_dynamic_buffer *

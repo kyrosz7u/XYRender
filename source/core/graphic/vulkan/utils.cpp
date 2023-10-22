@@ -318,11 +318,17 @@ void VulkanUtil::transitionImageLayout(std::shared_ptr<VulkanContext> p_context,
                                        VkImageLayout new_layout,
                                        uint32_t layer_count,
                                        uint32_t miplevels,
-                                       VkImageAspectFlags aspect_mask_bits)
+                                       VkImageAspectFlags aspect_mask_bits,
+                                       VkCommandBuffer command_buffer)
 {
     assert(p_context);
+    bool is_single_command = false;
 
-    VkCommandBuffer commandBuffer = p_context->beginSingleTimeCommands();
+    if(command_buffer == VK_NULL_HANDLE)
+    {
+        command_buffer = p_context->beginSingleTimeCommands();
+        is_single_command = true;
+    }
 
     VkImageMemoryBarrier barrier{};
     barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -382,12 +388,28 @@ void VulkanUtil::transitionImageLayout(std::shared_ptr<VulkanContext> p_context,
 
         sourceStage      = VK_PIPELINE_STAGE_TRANSFER_BIT;
         destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    } else
+    }
+    else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_GENERAL)
+    {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+        sourceStage      = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    }
+    else if(old_layout == VK_IMAGE_LAYOUT_GENERAL && new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
+    {
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+        sourceStage      = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    }
+    else
     {
         throw std::invalid_argument("unsupported layout transition!");
     }
 
-    vkCmdPipelineBarrier(commandBuffer,
+    vkCmdPipelineBarrier(command_buffer,
                          sourceStage,
                          destinationStage,
                          0,
@@ -398,7 +420,10 @@ void VulkanUtil::transitionImageLayout(std::shared_ptr<VulkanContext> p_context,
                          1,
                          &barrier);
 
-    p_context->endSingleTimeCommands(commandBuffer);
+    if(is_single_command)
+    {
+        p_context->endSingleTimeCommands(command_buffer);
+    }
 }
 
 void VulkanUtil::copyBufferToImage(std::shared_ptr<VulkanContext> p_context,

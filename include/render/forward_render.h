@@ -54,14 +54,15 @@ namespace RenderSystem
         void UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
                                    const std::vector<RenderSubmesh> &_visible_submeshes) override;
 
-        void UpdateRenderPerFrameScenceUBO(Matrix4x4 proj_view, Vector3 camera_pos,
-                                           std::vector<Scene::DirectionLight> &directional_light_list) override;
+        void UpdateRenderPerFrameScenceUBO(const Matrix4x4 proj_view, const Vector3 camera_pos,
+                                           const std::vector<Scene::DirectionLight> &directional_light_list) override;
 
         void SetupModelRenderTextures(const std::vector<Texture2DPtr> &_visible_textures) override;
 
         void SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture) override;
 
-        void UpdateLightProjectionList(std::vector<Scene::DirectionLight> &directional_light_list, const std::shared_ptr<Scene::Camera> &main_camera) override;
+        void UpdateLightProjectionList(const std::vector<Scene::DirectionLight> &directional_light_list,
+                                       const Scene::Camera &main_camera) override;
 
         void SetupShadowMapTexture(std::vector<Scene::DirectionLight> &directional_light_list) override;
 

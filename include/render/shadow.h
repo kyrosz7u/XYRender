@@ -24,11 +24,12 @@ namespace RenderSystem
                 : m_shadowmap_size(shadowmap_size),
                   m_direction_light(&direction_light)
         {
-            m_cascade_count = direction_light.GetCascadeRatio().size();
+            m_cascade_count = direction_light.GetCascadeRatio().size() + 1;
             m_cascade_distance.resize(m_cascade_count);
             m_cascade_viewport.resize(m_cascade_count);
             m_cascade_frustum_sphere.resize(m_cascade_count);
             m_cascade_viewproj_matrix.resize(m_cascade_count);
+            m_cascade_sample_matrix.resize(m_cascade_count);
             m_back_dummy_light_pos_list.resize(m_cascade_count);
         }
 
@@ -37,9 +38,10 @@ namespace RenderSystem
         void UpdateShadowData(const Camera &camera);
 
     private:
-        void ComputeDirectionalShadowMatrices(int cascade_index, int atlas_side, const Vector2 &offset,
-                                              const Vector4 &sphere,
-                                              Matrix4x4 &light_viewproj_matrix);
+        void ComputeDirectionalShadowMatrices(int cascade_index,
+                                              int atlas_side,
+                                              const Vector2 &offset,
+                                              const Vector4 &sphere);
 
     public:
         int                    m_cascade_count;
@@ -47,6 +49,7 @@ namespace RenderSystem
         std::vector<Vector4>   m_cascade_viewport;
         std::vector<Vector4>   m_cascade_frustum_sphere;
         std::vector<Matrix4x4> m_cascade_viewproj_matrix;
+        std::vector<Matrix4x4> m_cascade_sample_matrix;
     private:
         const DirectionLight *m_direction_light = nullptr;
         Vector2              m_shadowmap_size;

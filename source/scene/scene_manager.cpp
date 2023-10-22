@@ -103,7 +103,6 @@ void SceneManager::Tick()
     //                                        m_directional_lights);
     //m_render->UpdateLightProjectionList(m_directional_lights, m_main_camera);
     m_render->UpdateRenderResource(m_models, m_visible_submeshes, m_directional_lights, *m_main_camera);
-    m_render->FlushRenderbuffer();
     m_render->Tick();
 }
 

@@ -49,6 +49,14 @@ void DeferRender::UpdateRenderResource(const std::vector<Scene::Model> &_visible
     m_visible_submeshes      = &_visible_submeshes;
     m_main_camera            = &main_camera;
     m_directional_light_list = &directional_light_list;
+
+    UpdateLightProjectionList(*m_directional_light_list, *m_main_camera);
+    UpdateRenderModelList(*m_visible_models, *m_visible_submeshes);
+    UpdateRenderPerFrameScenceUBO(m_main_camera->getProjViewMatrix(),
+                                  m_main_camera->position,
+                                  *m_directional_light_list);
+
+    FlushRenderbuffer();
 }
 
 void DeferRender::setupRenderTargets()
@@ -177,7 +185,7 @@ void DeferRender::setupRenderpass()
     directional_light_shadowmap_renderpass_init_info.render_command_info  = &m_render_command_info;
     directional_light_shadowmap_renderpass_init_info.render_resource_info = &m_render_resource_info;
     directional_light_shadowmap_renderpass_init_info.descriptor_pool      = &m_descriptor_pool;
-    directional_light_shadowmap_renderpass_init_info.shadowmap_attachment = &m_directional_light_shadow;
+    directional_light_shadowmap_renderpass_init_info.shadowmap_attachment = &m_directional_light_shadowmap;
 
     MainCameraDeferRenderPassInitInfo maincamera_renderpass_init_info;
     maincamera_renderpass_init_info.render_command_info  = &m_render_command_info;
@@ -202,11 +210,11 @@ void DeferRender::Tick()
 {
     RenderBase::Tick();
 
+    UpdateLightProjectionList(*m_directional_light_list, *m_main_camera);
     UpdateRenderModelList(*m_visible_models, *m_visible_submeshes);
     UpdateRenderPerFrameScenceUBO(m_main_camera->getProjViewMatrix(),
                                   m_main_camera->position,
                                   *m_directional_light_list);
-    UpdateLightProjectionList(*m_directional_light_list, *m_main_camera);
     FlushRenderbuffer();
 
     draw();
@@ -237,6 +245,8 @@ void DeferRender::draw()
 
     // record command buffer
     m_render_command_info.p_current_command_buffer = &m_primary_command_buffers[next_image_index];
+    reinterpret_cast<DirectionalLightShadowRenderPass *>(m_render_passes[_directional_light_shadowmap_renderpass].get())->SetShadowData(
+            m_directional_light_shadow_list);
 #ifdef MULTI_THREAD_RENDERING
     m_render_passes[_directional_light_shadowmap_renderpass]->drawMultiThreading(0, next_image_index);
     m_render_passes[_main_camera_renderpass]->drawMultiThreading(0, next_image_index);
@@ -301,9 +311,10 @@ void DeferRender::UpdateLightProjectionList(const std::vector<Scene::DirectionLi
         || m_directional_light_shadow_list.size() != directional_light_list.size())
     {
         m_directional_light_shadow_list.clear();
-        Vector2  shadowmap_size = Vector2(m_render_resource_info.kDirectionalLightInfo.shadowmap_width,
-                                          m_render_resource_info.kDirectionalLightInfo.shadowmap_height);
-        for (int i              = 0; i < directional_light_list.size(); ++i)
+        Vector2 shadowmap_size = Vector2(m_render_resource_info.kDirectionalLightInfo.shadowmap_width,
+                                         m_render_resource_info.kDirectionalLightInfo.shadowmap_height);
+
+        for (int i = 0; i < directional_light_list.size(); ++i)
         {
             m_directional_light_shadow_list.emplace_back(shadowmap_size, directional_light_list[i]);
         }
@@ -312,12 +323,16 @@ void DeferRender::UpdateLightProjectionList(const std::vector<Scene::DirectionLi
                                                              m_render_resource_info.kDirectionalLightInfo.max_cascade_count);
     }
 
-    for (int i = 0; i < directional_light_list.size(); ++i)
+    for (int i = 0; i < m_directional_light_shadow_list.size(); ++i)
     {
-        Vector4   sphere;
-        m_directional_light_shadow_list[i].ComputeDirectionalShadowMatrices(0,
-                                                                            main_camera,
-                                                                            m_render_light_project_ubo_list.ubo_data_list[i].light_proj);
+        auto &directional_light_shadow = m_directional_light_shadow_list[i];
+        directional_light_shadow.UpdateShadowData(main_camera);
+        for (int j = 0; j < directional_light_shadow.m_cascade_count; ++j)
+        {
+            m_render_light_project_ubo_list.ubo_data_list[
+                    i * m_render_resource_info.kDirectionalLightInfo.max_cascade_count
+                    + j].light_proj = directional_light_shadow.m_cascade_viewproj_matrix[j];
+        }
     }
 }
 
@@ -538,26 +553,26 @@ void DeferRender::SetupShadowMapTexture(std::vector<Scene::DirectionLight> &dire
         throw std::runtime_error("failed to allocate info sets!");
     }
 
-    if (m_directional_light_shadow.image != VK_NULL_HANDLE)
+    if (m_directional_light_shadowmap.image != VK_NULL_HANDLE)
     {
-        m_directional_light_shadow.destroy();
+        m_directional_light_shadowmap.destroy();
     }
 
-    m_directional_light_shadow.width       = m_render_resource_info.kDirectionalLightInfo.shadowmap_width;
-    m_directional_light_shadow.height      = m_render_resource_info.kDirectionalLightInfo.shadowmap_height;
-    m_directional_light_shadow.layer_count = directional_light_num;
-    m_directional_light_shadow.format      = m_render_resource_info.kDirectionalLightInfo.depth_format;
-    m_directional_light_shadow.layout      = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    m_directional_light_shadow.usage =
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    m_directional_light_shadow.aspect    = VK_IMAGE_ASPECT_DEPTH_BIT;
-    m_directional_light_shadow.view_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    m_directional_light_shadow.init();
+    m_directional_light_shadowmap.width       = m_render_resource_info.kDirectionalLightInfo.shadowmap_width;
+    m_directional_light_shadowmap.height      = m_render_resource_info.kDirectionalLightInfo.shadowmap_height;
+    m_directional_light_shadowmap.layer_count = directional_light_num;
+    m_directional_light_shadowmap.format      = m_render_resource_info.kDirectionalLightInfo.depth_format;
+    m_directional_light_shadowmap.layout      = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    m_directional_light_shadowmap.usage =
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    m_directional_light_shadowmap.aspect    = VK_IMAGE_ASPECT_DEPTH_BIT;
+    m_directional_light_shadowmap.view_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    m_directional_light_shadowmap.init();
 
     VkDescriptorImageInfo info;
 
     info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-    info.imageView   = m_directional_light_shadow.view;
+    info.imageView   = m_directional_light_shadowmap.view;
     info.sampler     = VulkanUtil::getOrCreateDepthSampler(g_p_vulkan_context);
 
     VkWriteDescriptorSet descriptor_write{};

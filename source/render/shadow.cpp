@@ -11,8 +11,9 @@ void DirLightShadow::UpdateShadowData(const Camera &camera)
     int     atlas_side = sqrt(m_cascade_count);
     Vector2 atlas_size = Vector2(m_shadowmap_size.x / atlas_side, m_shadowmap_size.y / atlas_side);
 
-    float    cascade_ratio_sum = 0.0f;
-    for (int i                 = 0; i < m_cascade_count; ++i)
+    float cascade_ratio_sum = 0.0f;
+
+    for (int i = 0; i < m_cascade_count; ++i)
     {
         cascade_ratio_sum += m_direction_light->cascade_ratio[i] + 0.0001f;
     }
@@ -36,16 +37,14 @@ void DirLightShadow::UpdateShadowData(const Camera &camera)
         m_cascade_viewport[i] = Vector4(x * atlas_size.x, y * atlas_size.y, atlas_size.x, atlas_size.y);
 
         camera.GetFrustumSphere(m_cascade_frustum_sphere[i], m_cascade_distance[i].x, m_cascade_distance[i].y);
-        ComputeDirectionalShadowMatrices(i, atlas_side, Vector2(x, y), m_cascade_frustum_sphere[i],
-                                         m_cascade_viewproj_matrix[i]);
+        ComputeDirectionalShadowMatrices(i, atlas_side, Vector2(x, y), m_cascade_frustum_sphere[i]);
     }
 }
 
 void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
                                                       int atlas_side,
                                                       const Vector2 &offset,
-                                                      const Vector4 &sphere,
-                                                      Matrix4x4 &light_viewproj_matrix)
+                                                      const Vector4 &sphere)
 {
     assert(m_direction_light != nullptr);
 
@@ -89,8 +88,9 @@ void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
     Matrix4x4 light_proj_matrix = Math::Matrix4x4::makeOrthogonalMatrix(
             2 * sphere.w, 2 * sphere.w, 0.1f, sphere.w * 2);
 
-    Matrix4x4 &m = light_viewproj_matrix;
-    m = light_proj_matrix * light_view_matrix;
+    m_cascade_viewproj_matrix[cascade_index] = light_proj_matrix * light_view_matrix;
+    Matrix4x4 &m = m_cascade_sample_matrix[cascade_index];
+    m = m_cascade_viewproj_matrix[cascade_index];
 
     float scale = 1.0f / atlas_side;
 

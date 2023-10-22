@@ -95,7 +95,8 @@ namespace VulkanAPI
                                           VkImageLayout new_layout,
                                           uint32_t layer_count,
                                           uint32_t miplevels,
-                                          VkImageAspectFlags aspect_mask_bits);
+                                          VkImageAspectFlags aspect_mask_bits,
+                                          VkCommandBuffer command_buffer = VK_NULL_HANDLE);
 
         static void copyBufferToImage(std::shared_ptr<VulkanContext> p_context,
                                       VkBuffer buffer,

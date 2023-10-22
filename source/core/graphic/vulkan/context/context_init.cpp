@@ -333,6 +333,8 @@ void VulkanContext::createLogicalDevice()
     _vkUpdateDescriptorSets   = (PFN_vkUpdateDescriptorSets) vkGetDeviceProcAddr(_device, "vkUpdateDescriptorSets");
     _vkFreeDescriptorSets     = (PFN_vkFreeDescriptorSets) vkGetDeviceProcAddr(_device, "vkFreeDescriptorSets");
     _vkGetImageMemoryRequirements = (PFN_vkGetImageMemoryRequirements) vkGetDeviceProcAddr(_device, "vkGetImageMemoryRequirements");
+    _vkCmdClearColorImage     = (PFN_vkCmdClearColorImage) vkGetDeviceProcAddr(_device, "vkCmdClearColorImage");
+    _vkCmdClearDepthStencilImage = (PFN_vkCmdClearDepthStencilImage) vkGetDeviceProcAddr(_device, "vkCmdClearDepthStencilImage");
 
     _depth_image_format = findDepthFormat();
 }

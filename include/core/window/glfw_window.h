@@ -26,6 +26,7 @@ public:
     {
         glfwDestroyWindow(m_window);
         glfwTerminate();
+        LOG_DEBUG("GLFWWindow destroyed.");
     }
 
     void initialize(GLFWWindowCreateInfo create_info);

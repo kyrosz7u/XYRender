@@ -121,7 +121,7 @@ namespace RenderSystem
         // render target
         std::vector<ImageAttachment> m_render_targets;
         std::vector<ImageAttachment> m_backup_targets;
-        ImageAttachment              m_directional_light_shadow;
+        ImageAttachment              m_directional_light_shadowmap;
         // render submesh cache
         std::vector<RenderSubmesh>   m_render_submeshes;
         // ubo

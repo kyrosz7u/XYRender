@@ -98,6 +98,8 @@ namespace VulkanAPI
         PFN_vkUpdateDescriptorSets       _vkUpdateDescriptorSets;
         PFN_vkFreeDescriptorSets         _vkFreeDescriptorSets;
         PFN_vkGetImageMemoryRequirements _vkGetImageMemoryRequirements;
+        PFN_vkCmdClearColorImage         _vkCmdClearColorImage;
+        PFN_vkCmdClearDepthStencilImage  _vkCmdClearDepthStencilImage;
 
         VkFormat                 _swapchain_image_format = VK_FORMAT_UNDEFINED;
         VkExtent2D               _swapchain_extent;

@@ -26,7 +26,6 @@ namespace Scene
 
         void AddLight(DirectionLight light)
         {
-            light.SetRenderContext(m_render);
             m_directional_lights.push_back(light);
         }
 
