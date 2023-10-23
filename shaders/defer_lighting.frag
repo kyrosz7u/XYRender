@@ -53,7 +53,10 @@ highp float SampleShadowMap(highp vec3 light_space_pos, highp int light_index)
     highp vec3 sample_pos = vec3(light_space_pos.xy, float(light_index));
     highp float light_space_depth = texture(directional_light_shadowmap_array, sample_pos).r;
 
+//    return light_space_pos.z - light_space_depth;
+
     // 可以考虑不要用imageArray，然后使用sampler2DShadow优化，避免手动比较
+    // 返回可见性
     if (light_space_depth < light_space_pos.z - 0.005)
     {
         return 0.0f;
@@ -111,12 +114,10 @@ highp float GetCascadeShadow(highp vec3 world_pos, highp int light_index, highp 
         }
     }
 
-    cascade_index = 2;
-
     highp vec4 light_space_pos = shadowmap_sample_data[light_index*m_max_cascade_count+cascade_index].light_view_proj * vec4(world_pos, 1.0);
     highp vec3 light_space_pos_uvz = light_space_pos.xyz / light_space_pos.w;
 
-
+//    return light_space_pos_uvz.z;
     return hard_shadow(light_space_pos_uvz, light_index);
 }
 
@@ -139,14 +140,35 @@ void main()
         highp vec3 half_dir = normalize(light_dir + view_dir);
         highp float NdotL = max(dot(normalize(normal), light_dir), 0.0);
 
-        if (NdotL <= 0.0)
-        {
-            visibility = 0.0f;
-        }
-        else
-        {
+//        int cascade_index = 2;
+//
+//        highp vec4 light_space_pos = shadowmap_sample_data[i*m_max_cascade_count+cascade_index].light_view_proj * vec4(position, 1.0);
+//        highp vec3 light_space_pos_uvz = light_space_pos.xyz / light_space_pos.w;
+
+//        highp float rvalue = 1.0f;
+//        highp float gvalue = 0;
+//
+//        if(light_space_pos_uvz.z < 0.0f || light_space_pos_uvz.z > 1.0f)
+//        {
+//            rvalue = 0.0f;
+//        }
+//
+//        if(light_space_pos_uvz.y > 0.5f && light_space_pos_uvz.y < 1.0f)
+//        {
+//            gvalue = 1.0f;
+//        }
+//
+//        out_color = vec4(rvalue, gvalue, 0.0f, 1.0f);
+//        return ;
+
+//        if (NdotL <= 0.0)
+//        {
+//            visibility = 0.0f;
+//        }
+//        else
+//        {
             visibility = GetCascadeShadow(position, i, light.cascade_count);
-        }
+//        }
 
         diffuse_color += 0.6*visibility*color *light.color.xyz * light.intensity* NdotL;
         specular_color += 0.4*visibility*light.color.xyz*light.intensity * pow(max(dot(normalize(normal), half_dir), 0.0), 8.0);
@@ -155,5 +177,5 @@ void main()
     diffuse_color /= float(directional_light_number);
     specular_color/=float(directional_light_number);
 
-    out_color = vec4(visibility,visibility,visibility, 1.0);
+    out_color = vec4(visibility,0.0f,0.0f, 1.0);
 }
