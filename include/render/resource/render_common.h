@@ -34,11 +34,18 @@ namespace RenderSystem
         Math::Color   color;
         Math::Vector3 direction;
         float         intensity;
+        int           cascade_count;
     };
 
     struct VulkanLightProjectDefine
     {
         Math::Matrix4x4 light_proj;
+    };
+
+    struct VulkanShadowMapSampleDataDefine
+    {
+        Math::Matrix4x4 light_proj;
+        Math::Vector4   light_frustum_sphere;
     };
 }
 #endif  //XEXAMPLE_RENDER_COMMON_H

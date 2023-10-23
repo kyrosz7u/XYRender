@@ -103,6 +103,7 @@ void DeferLightPass::setupPipeLineLayout()
                                                 nullptr,
                                                 &texture_data_layout))
 
+    // shadowmap sampler
     auto &directional_light_data_layout = m_descriptor_set_layouts[_mesh_defer_lighting_pass_directional_light_shadow_layout];
 
     std::vector<VkDescriptorSetLayoutBinding> directional_light_layout_bindings;
@@ -144,6 +145,9 @@ void DeferLightPass::setupDescriptorSet()
     {
         throw std::runtime_error("failed to allocate info sets!");
     }
+
+    m_p_render_resource_info->p_render_shadow_map_sample_data_ubo_list->DescribeUpdate(this, std::bind(
+            &DeferLightPass::updateGlobalDescriptorSet, this));
 
     allocInfo.pSetLayouts = &m_descriptor_set_layouts[_mesh_defer_lighting_pass_gbuffer_layout];
     if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
@@ -188,14 +192,13 @@ void DeferLightPass::updateGlobalDescriptorSet()
     directional_light_probes_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     directional_light_probes_buffer_write.descriptorCount = 1;
     directional_light_probes_buffer_write.pBufferInfo     = &m_p_render_resource_info->
-            p_render_light_project_ubo_list->static_info;
+            p_render_shadow_map_sample_data_ubo_list->static_info;
 
     vkUpdateDescriptorSets(g_p_vulkan_context->_device,
                            write_descriptor_sets.size(),
                            write_descriptor_sets.data(),
                            0,
                            nullptr);
-
 
 
 }

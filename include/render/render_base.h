@@ -72,8 +72,8 @@ namespace RenderSystem
         virtual void SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture)
         {}
 
-        virtual void UpdateLightProjectionList(const std::vector<Scene::DirectionLight> &directional_light_list,
-                                               const Scene::Camera &main_camera)
+        virtual void UpdateLightAndShadowDataList(const std::vector<Scene::DirectionLight> &directional_light_list,
+                                                  const Scene::Camera &main_camera)
         {}
 
         virtual void SetupShadowMapTexture(std::vector<Scene::DirectionLight> &directional_light_list)

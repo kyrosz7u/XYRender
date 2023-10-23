@@ -344,7 +344,6 @@ void DirectionalLightShadowRenderPass::draw(uint32_t render_target_index)
             m_subpass_list[_direction_light_shadow_subpass_shadow]->draw();
             g_p_vulkan_context->_vkCmdEndRenderPass(*m_p_render_command_info->p_current_command_buffer);
         }
-
     }
 }
 

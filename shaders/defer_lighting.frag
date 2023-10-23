@@ -2,12 +2,20 @@
 
 #define m_max_direction_light_count 16
 #define m_max_cascade_count 4
+#define depth_bias 0.005
 
 struct DirectionalLight
 {
     highp vec4 color;
     highp vec3 direction;
     highp float intensity;
+    highp int cascade_count;
+};
+
+struct ShadowMapSampleData
+{
+    highp mat4 light_view_proj;
+    highp vec4 light_frustum_spere;
 };
 
 layout (set = 0, binding = 0, row_major) uniform _per_frame_ubo_data
@@ -24,7 +32,7 @@ layout (set = 0, binding = 1) uniform _directional_light
 
 layout (set = 0, binding = 2, row_major) uniform _directional_light_projection
 {
-    highp mat4 directional_light_proj[m_max_direction_light_count*m_max_cascade_count];
+    ShadowMapSampleData shadowmap_sample_data[m_max_direction_light_count*m_max_cascade_count];
 };
 
 layout (input_attachment_index = 0, set = 1, binding = 0) uniform highp subpassInput gbuffer_color;
@@ -40,50 +48,13 @@ highp vec3 DecodeNormal(highp vec3 enc)
     return enc * 2.0f - 1.0f;
 }
 
-
-highp float PCF(highp vec3 world_pos, highp int light_index)
+highp float SampleShadowMap(highp vec3 light_space_pos, highp int light_index)
 {
-    highp vec4 light_space_pos = directional_light_proj[light_index] * vec4(world_pos, 1.0);
-    highp vec3 light_space_pos_ndc = light_space_pos.xyz / light_space_pos.w;
+    highp vec3 sample_pos = vec3(light_space_pos.xy, float(light_index));
+    highp float light_space_depth = texture(directional_light_shadowmap_array, sample_pos).r;
 
-    if(light_space_pos_ndc.z >= 1.0f || light_space_pos_ndc.z <= 0.0f)
-    {
-        return 1.0f;
-    }
-
-    vec2 texelSize = 1.0 / (textureSize(directional_light_shadowmap_array, 0)).xy;
-    highp vec3 light_space_pos_uv = light_space_pos_ndc * 0.5 + 0.5;
-
-    float shadow = 0.0;
-    for(int x = -1; x <= 1; ++x)
-    {
-        for(int y = -1; y <= 1; ++y)
-        {
-            highp vec3 light_space_pos_uv_y_inverted = vec3(light_space_pos_uv.xy + vec2(x, y) * texelSize, float(light_index));
-            highp float light_space_depth = texture(directional_light_shadowmap_array, light_space_pos_uv_y_inverted).r;
-
-            shadow += light_space_pos_ndc.z - 0.005 > light_space_depth ? 1.0 : 0.0;
-        }
-    }
-
-    return 1.0f - shadow / 9.0f;
-}
-
-
-highp float hard_shadow(highp vec3 world_pos, highp int light_index)
-{
-    highp vec4 light_space_pos = directional_light_proj[light_index] * vec4(world_pos, 1.0);
-    highp vec3 light_space_pos_ndc = light_space_pos.xyz / light_space_pos.w;
-
-    if(light_space_pos_ndc.z >= 1.0f || light_space_pos_ndc.z <= 0.0f)
-    {
-        return 1.0f;
-    }
-
-    highp vec3 light_space_pos_uv = light_space_pos_ndc * 0.5 + 0.5;
-    highp vec3 light_space_pos_uv_y_inverted = vec3(light_space_pos_uv.x, light_space_pos_uv.y, float(light_index));
-    highp float light_space_depth = texture(directional_light_shadowmap_array, light_space_pos_uv_y_inverted).r;
-    if(light_space_depth < light_space_pos_ndc.z - 0.005)
+    // 可以考虑不要用imageArray，然后使用sampler2DShadow优化，避免手动比较
+    if (light_space_depth < light_space_pos.z - 0.005)
     {
         return 0.0f;
     }
@@ -91,6 +62,62 @@ highp float hard_shadow(highp vec3 world_pos, highp int light_index)
     {
         return 1.0f;
     }
+}
+
+
+highp float PCF(highp vec3 light_space_pos, highp int light_index)
+{
+    vec2 texelSize = 1.0 / (textureSize(directional_light_shadowmap_array, 0)).xy;
+
+    float shadow = 0.0;
+    for (int x = -1; x <= 1; ++x)
+    {
+        for (int y = -1; y <= 1; ++y)
+        {
+            highp vec3 light_space_pos_uvw = vec3(light_space_pos.xy + vec2(x, y) * texelSize, float(light_index));
+            highp float visibility = SampleShadowMap(light_space_pos_uvw, light_index);
+
+            shadow += visibility;
+        }
+    }
+
+    return 1.0f - shadow / 9.0f;
+}
+
+
+highp float hard_shadow(highp vec3 light_space_pos, highp int light_index)
+{
+    return SampleShadowMap(light_space_pos, light_index);
+}
+
+highp float GetCascadeShadow(highp vec3 world_pos, highp int light_index, highp int cascade_count)
+{
+    int cascade_index = 0;
+
+    vec3 center = shadowmap_sample_data[light_index*m_max_cascade_count].light_frustum_spere.xyz;
+    float radius = shadowmap_sample_data[light_index*m_max_cascade_count].light_frustum_spere.w;
+    float dist = length(world_pos-center);
+    float max_dist = dist;
+
+    for(int i=1; i<cascade_count; ++i)
+    {
+        center = shadowmap_sample_data[light_index*m_max_cascade_count+i].light_frustum_spere.xyz;
+        radius = shadowmap_sample_data[light_index*m_max_cascade_count+i].light_frustum_spere.w;
+        dist = length(world_pos-center);
+        if(dist < max_dist)
+        {
+            cascade_index = i;
+            max_dist = dist;
+        }
+    }
+
+    cascade_index = 2;
+
+    highp vec4 light_space_pos = shadowmap_sample_data[light_index*m_max_cascade_count+cascade_index].light_view_proj * vec4(world_pos, 1.0);
+    highp vec3 light_space_pos_uvz = light_space_pos.xyz / light_space_pos.w;
+
+
+    return hard_shadow(light_space_pos_uvz, light_index);
 }
 
 void main()
@@ -112,13 +139,13 @@ void main()
         highp vec3 half_dir = normalize(light_dir + view_dir);
         highp float NdotL = max(dot(normalize(normal), light_dir), 0.0);
 
-        if(NdotL <= 0.0)
+        if (NdotL <= 0.0)
         {
             visibility = 0.0f;
         }
         else
         {
-            visibility = PCF(position, i);
+            visibility = GetCascadeShadow(position, i, light.cascade_count);
         }
 
         diffuse_color += 0.6*visibility*color *light.color.xyz * light.intensity* NdotL;
@@ -128,7 +155,5 @@ void main()
     diffuse_color /= float(directional_light_number);
     specular_color/=float(directional_light_number);
 
-    out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
-
-//    out_color = vec4(normal.rgb*0.5f+0.5f, 1.0);
+    out_color = vec4(visibility,visibility,visibility, 1.0);
 }

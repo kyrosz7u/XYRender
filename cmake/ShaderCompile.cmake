@@ -13,9 +13,11 @@ function(compile_shader SHADERS TARGET_NAME SHADER_INCLUDE_FOLDER GENERATED_DIR 
         set(SPV_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${GENERATED_DIR}/spv/${SHADER_NAME}.spv")
         set(CPP_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${GENERATED_DIR}/cpp/${HEADER_NAME}.h")
 
+        # 增加renderdoc调试符号信息
+        # https://www.khronos.org/assets/uploads/developers/presentations/Source-level_Shader_Debugging_in_Vulkan_with_RenderDoc_VULOCT2022.pdf
         add_custom_command(
             OUTPUT ${SPV_FILE}
-            COMMAND ${GLSLANG_BIN} -I${SHADER_INCLUDE_FOLDER} -V100 -o ${SPV_FILE} ${SHADER}
+            COMMAND ${GLSLANG_BIN} -I${SHADER_INCLUDE_FOLDER} -gVS -V100 -o ${SPV_FILE} ${SHADER}
             DEPENDS ${SHADER}
             WORKING_DIRECTORY "${working_dir}")
 

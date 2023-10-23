@@ -61,8 +61,8 @@ namespace RenderSystem
 
         void SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_texture) override;
 
-        void UpdateLightProjectionList(const std::vector<Scene::DirectionLight> &directional_light_list,
-                                       const Scene::Camera &main_camera) override;
+        void UpdateLightAndShadowDataList(const std::vector<Scene::DirectionLight> &directional_light_list,
+                                          const Scene::Camera &main_camera) override;
 
         void SetupShadowMapTexture(std::vector<Scene::DirectionLight> &directional_light_list) override;
 

@@ -15,13 +15,14 @@ void DeferRender::initialize()
     m_render_command_info.p_viewport        = &m_viewport;
     m_render_command_info.p_scissor         = &m_scissor;
 
-    m_render_resource_info.p_render_submeshes              = &m_render_submeshes;
-    m_render_resource_info.p_texture_descriptor_sets       = &m_texture_descriptor_sets;
-    m_render_resource_info.p_render_model_ubo_list         = &m_render_model_ubo_list;
-    m_render_resource_info.p_render_light_project_ubo_list = &m_render_light_project_ubo_list;
-    m_render_resource_info.p_render_per_frame_ubo          = &m_render_per_frame_ubo;
-    m_render_resource_info.p_ui_overlay                    = m_p_ui_overlay;
-    m_render_resource_info.p_skybox_descriptor_set         = &m_skybox_descriptor_set;
+    m_render_resource_info.p_render_submeshes                       = &m_render_submeshes;
+    m_render_resource_info.p_texture_descriptor_sets                = &m_texture_descriptor_sets;
+    m_render_resource_info.p_render_model_ubo_list                  = &m_render_model_ubo_list;
+    m_render_resource_info.p_render_light_project_ubo_list          = &m_render_light_project_ubo_list;
+    m_render_resource_info.p_render_shadow_map_sample_data_ubo_list = &m_render_shadow_map_sample_data_ubo_list;
+    m_render_resource_info.p_render_per_frame_ubo                   = &m_render_per_frame_ubo;
+    m_render_resource_info.p_ui_overlay                             = m_p_ui_overlay;
+    m_render_resource_info.p_skybox_descriptor_set                  = &m_skybox_descriptor_set;
     m_render_resource_info.p_directional_light_shadow_map_descriptor_set =
             &m_directional_light_shadow_set;
 
@@ -50,7 +51,7 @@ void DeferRender::UpdateRenderResource(const std::vector<Scene::Model> &_visible
     m_main_camera            = &main_camera;
     m_directional_light_list = &directional_light_list;
 
-    UpdateLightProjectionList(*m_directional_light_list, *m_main_camera);
+    UpdateLightAndShadowDataList(*m_directional_light_list, *m_main_camera);
     UpdateRenderModelList(*m_visible_models, *m_visible_submeshes);
     UpdateRenderPerFrameScenceUBO(m_main_camera->getProjViewMatrix(),
                                   m_main_camera->position,
@@ -210,7 +211,7 @@ void DeferRender::Tick()
 {
     RenderBase::Tick();
 
-    UpdateLightProjectionList(*m_directional_light_list, *m_main_camera);
+    UpdateLightAndShadowDataList(*m_directional_light_list, *m_main_camera);
     UpdateRenderModelList(*m_visible_models, *m_visible_submeshes);
     UpdateRenderPerFrameScenceUBO(m_main_camera->getProjViewMatrix(),
                                   m_main_camera->position,
@@ -295,19 +296,13 @@ void DeferRender::UpdateRenderPerFrameScenceUBO(
     m_render_per_frame_ubo.scene_data_ubo.proj_view                = proj_view;
     m_render_per_frame_ubo.scene_data_ubo.camera_pos               = camera_pos;
     m_render_per_frame_ubo.scene_data_ubo.directional_light_number = directional_light_list.size();
-    assert(directional_light_list.size() <= MAX_DIRECTIONAL_LIGHT_COUNT);
-    for (int i = 0; i < directional_light_list.size(); ++i)
-    {
-        m_render_per_frame_ubo.directional_lights_ubo[i].intensity = directional_light_list[i].intensity;
-        m_render_per_frame_ubo.directional_lights_ubo[i].color     = directional_light_list[i].color;
-        m_render_per_frame_ubo.directional_lights_ubo[i].direction = -directional_light_list[i].transform.GetForward();
-    }
 }
 
-void DeferRender::UpdateLightProjectionList(const std::vector<Scene::DirectionLight> &directional_light_list,
-                                            const Scene::Camera &main_camera)
+void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::DirectionLight> &directional_light_list,
+                                               const Scene::Camera &main_camera)
 {
-    if (m_render_light_project_ubo_list.ubo_data_list.size() != directional_light_list.size()
+    int max_cascade_count = m_render_resource_info.kDirectionalLightInfo.max_cascade_count;
+    if (m_render_light_project_ubo_list.ubo_data_list.size() != directional_light_list.size() * max_cascade_count
         || m_directional_light_shadow_list.size() != directional_light_list.size())
     {
         m_directional_light_shadow_list.clear();
@@ -316,22 +311,55 @@ void DeferRender::UpdateLightProjectionList(const std::vector<Scene::DirectionLi
 
         for (int i = 0; i < directional_light_list.size(); ++i)
         {
-            m_directional_light_shadow_list.emplace_back(shadowmap_size, directional_light_list[i]);
+            m_directional_light_shadow_list.emplace_back(shadowmap_size, directional_light_list[i], i);
         }
         //
-        m_render_light_project_ubo_list.ubo_data_list.resize(directional_light_list.size() *
-                                                             m_render_resource_info.kDirectionalLightInfo.max_cascade_count);
+        m_render_light_project_ubo_list.ubo_data_list.resize(directional_light_list.size() * max_cascade_count);
     }
 
     for (int i = 0; i < m_directional_light_shadow_list.size(); ++i)
     {
         auto &directional_light_shadow = m_directional_light_shadow_list[i];
         directional_light_shadow.UpdateShadowData(main_camera);
+
         for (int j = 0; j < directional_light_shadow.m_cascade_count; ++j)
         {
             m_render_light_project_ubo_list.ubo_data_list[
-                    i * m_render_resource_info.kDirectionalLightInfo.max_cascade_count
-                    + j].light_proj = directional_light_shadow.m_cascade_viewproj_matrix[j];
+                    i * max_cascade_count + j].light_proj = directional_light_shadow.m_cascade_viewproj_matrix[j];
+        }
+    }
+
+    assert(directional_light_list.size() <= MAX_DIRECTIONAL_LIGHT_COUNT);
+    for (int i = 0; i < directional_light_list.size(); ++i)
+    {
+        m_render_per_frame_ubo.directional_lights_ubo[i].intensity = directional_light_list[i].intensity;
+        m_render_per_frame_ubo.directional_lights_ubo[i].color     = directional_light_list[i].color;
+        m_render_per_frame_ubo.directional_lights_ubo[i].direction = -directional_light_list[i].transform.GetForward();
+        m_render_per_frame_ubo.directional_lights_ubo[i].cascade_count =
+                directional_light_list[i].cascade_ratio.size() + 1;
+    }
+
+    if (m_render_shadow_map_sample_data_ubo_list.ubo_data_list.size() !=
+        directional_light_list.size() * max_cascade_count)
+    {
+        m_render_shadow_map_sample_data_ubo_list.resize(
+                directional_light_list.size() * max_cascade_count);
+    }
+    for (int i = 0; i < m_directional_light_shadow_list.size(); ++i)
+    {
+        auto &directional_light_shadow = m_directional_light_shadow_list[i];
+        int  light_index               = directional_light_shadow.GetLightIndex();
+
+        for (int j = 0; j < directional_light_shadow.m_cascade_count; ++j)
+        {
+            m_render_shadow_map_sample_data_ubo_list.ubo_data_list[
+                    light_index * max_cascade_count +
+                    j].light_proj = directional_light_shadow.m_cascade_sample_matrix[j];
+
+            m_render_shadow_map_sample_data_ubo_list.ubo_data_list[
+                    light_index * max_cascade_count +
+                    j].light_frustum_sphere = directional_light_shadow.m_cascade_frustum_sphere[j];
+
         }
     }
 }
@@ -341,6 +369,7 @@ void DeferRender::FlushRenderbuffer()
     m_render_per_frame_ubo.ToGPU();
     m_render_model_ubo_list.ToGPU();
     m_render_light_project_ubo_list.ToGPU();
+    m_render_shadow_map_sample_data_ubo_list.ToGPU();
 }
 
 void DeferRender::setupRenderDescriptorSetLayout()

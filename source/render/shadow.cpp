@@ -11,23 +11,15 @@ void DirLightShadow::UpdateShadowData(const Camera &camera)
     int     atlas_side = sqrt(m_cascade_count);
     Vector2 atlas_size = Vector2(m_shadowmap_size.x / atlas_side, m_shadowmap_size.y / atlas_side);
 
-    float cascade_ratio_sum = 0.0f;
+    float current_min_distance = m_direction_light->min_shadow_distance;
 
-    for (int i = 0; i < m_cascade_count; ++i)
-    {
-        cascade_ratio_sum += m_direction_light->cascade_ratio[i] + 0.0001f;
-    }
-
-    float cascade_ratio_sum_inv = 1.0f / cascade_ratio_sum;
-    float current_min_distance  = m_direction_light->min_shadow_distance;
-
-    for (int i = 0; i < m_cascade_count; ++i)
+    int i = 0;
+    for (; i < m_cascade_count - 1; ++i)
     {
         float current_max_distance = current_min_distance + (m_direction_light->cascade_ratio[i] + 0.0001f) *
-                                                            cascade_ratio_sum_inv *
                                                             (m_direction_light->max_shadow_distance -
-                                                             m_direction_light->min_shadow_distance);
-        m_cascade_distance[i] = Vector2(current_min_distance, current_max_distance);
+                                                             current_min_distance);
+        m_cascade_distance[i] = Vector2(m_direction_light->min_shadow_distance, current_max_distance);
         current_min_distance = current_max_distance;
 
         int x = i % atlas_side;
@@ -39,6 +31,14 @@ void DirLightShadow::UpdateShadowData(const Camera &camera)
         camera.GetFrustumSphere(m_cascade_frustum_sphere[i], m_cascade_distance[i].x, m_cascade_distance[i].y);
         ComputeDirectionalShadowMatrices(i, atlas_side, Vector2(x, y), m_cascade_frustum_sphere[i]);
     }
+
+    int x = i % atlas_side;
+    int y = i / atlas_side;
+
+    m_cascade_distance[i] = Vector2(m_direction_light->min_shadow_distance, m_direction_light->max_shadow_distance);
+    m_cascade_viewport[i] = Vector4(x * atlas_size.x, y * atlas_size.y, atlas_size.x, atlas_size.y);
+    camera.GetFrustumSphere(m_cascade_frustum_sphere[i], m_cascade_distance[i].x, m_cascade_distance[i].y);
+    ComputeDirectionalShadowMatrices(i, atlas_side, Vector2(x, y), m_cascade_frustum_sphere[i]);
 }
 
 void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
@@ -94,7 +94,7 @@ void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
 
     float scale = 1.0f / atlas_side;
 
-    m[0][0] = (0.5f * (m[0][0] + m[0][3]) + offset.x * m[0][3]) * scale;
+    m[0][0] = (0.5f * (m[0][0] + m[3][0]) + offset.x * m[3][0]) * scale;
     m[0][1] = (0.5f * (m[0][1] + m[3][1]) + offset.x * m[3][1]) * scale;
     m[0][2] = (0.5f * (m[0][2] + m[3][2]) + offset.x * m[3][2]) * scale;
     m[0][3] = (0.5f * (m[0][3] + m[3][3]) + offset.x * m[3][3]) * scale;

@@ -278,8 +278,8 @@ void ForwardRender::UpdateRenderPerFrameScenceUBO(
     }
 }
 
-void ForwardRender::UpdateLightProjectionList(const std::vector<Scene::DirectionLight> &directional_light_list,
-                                              const Scene::Camera &main_camera)
+void ForwardRender::UpdateLightAndShadowDataList(const std::vector<Scene::DirectionLight> &directional_light_list,
+                                                 const Scene::Camera &main_camera)
 {
     if (m_render_light_project_ubo_list.ubo_data_list.size() != directional_light_list.size())
     {

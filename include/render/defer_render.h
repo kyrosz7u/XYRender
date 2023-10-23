@@ -90,25 +90,25 @@ namespace RenderSystem
                                            const Vector3 camera_pos,
                                            const std::vector<Scene::DirectionLight> &directional_light_list) override;
 
-        void UpdateLightProjectionList(const std::vector<Scene::DirectionLight> &directional_light_list,
-                                       const Scene::Camera &main_camera) override;
+        void UpdateLightAndShadowDataList(const std::vector<Scene::DirectionLight> &directional_light_list,
+                                          const Scene::Camera &main_camera) override;
 
         void updateAfterSwapchainRecreate();
 
         void setupRenderDescriptorSetLayout();
 
-    // render resource
+        // render resource
     private:
         Matrix4x4 m_view_matrix;
         Matrix4x4 m_proj_matrix;
 
-        std::vector<DirLightShadow> m_directional_light_shadow_list;
+        std::vector<DirLightShadow>              m_directional_light_shadow_list;
         const std::vector<Scene::DirectionLight> *m_directional_light_list;
-        const std::vector<Scene::Model> *m_visible_models;
-        const std::vector<RenderSubmesh> *m_visible_submeshes;
-        const Camera *m_main_camera;
+        const std::vector<Scene::Model>          *m_visible_models;
+        const std::vector<RenderSubmesh>         *m_visible_submeshes;
+        const Camera                             *m_main_camera;
 
-    // api resource
+        // api resource
     private:
         VkCommandPool                m_primary_command_pool{VK_NULL_HANDLE};
         std::vector<VkCommandBuffer> m_primary_command_buffers;
@@ -116,27 +116,28 @@ namespace RenderSystem
         ThreadPool                   m_thread_pool;
         std::vector<ThreadData>      m_thread_datas;
 
-        VkDescriptorPool             m_descriptor_pool{VK_NULL_HANDLE};
-        std::vector<RenderPassPtr>   m_render_passes;
+        VkDescriptorPool                 m_descriptor_pool{VK_NULL_HANDLE};
+        std::vector<RenderPassPtr>       m_render_passes;
         // render target
-        std::vector<ImageAttachment> m_render_targets;
-        std::vector<ImageAttachment> m_backup_targets;
-        ImageAttachment              m_directional_light_shadowmap;
+        std::vector<ImageAttachment>     m_render_targets;
+        std::vector<ImageAttachment>     m_backup_targets;
+        ImageAttachment                  m_directional_light_shadowmap;
         // render submesh cache
-        std::vector<RenderSubmesh>   m_render_submeshes;
+        std::vector<RenderSubmesh>       m_render_submeshes;
         // ubo
-        RenderPerFrameUBO            m_render_per_frame_ubo;
-        RenderModelUBOList           m_render_model_ubo_list;
-        RenderLightProjectUBOList    m_render_light_project_ubo_list;
+        RenderPerFrameUBO                m_render_per_frame_ubo;
+        RenderModelUBOList               m_render_model_ubo_list;
+        RenderLightProjectUBOList        m_render_light_project_ubo_list;
+        RenderShadowMapSampleDataUBOList m_render_shadow_map_sample_data_ubo_list;
         // texture info list
-        VkDescriptorSetLayout        m_texture_descriptor_set_layout{VK_NULL_HANDLE};
-        std::vector<VkDescriptorSet> m_texture_descriptor_sets;
+        VkDescriptorSetLayout            m_texture_descriptor_set_layout{VK_NULL_HANDLE};
+        std::vector<VkDescriptorSet>     m_texture_descriptor_sets;
         // directional light info list
-        VkDescriptorSetLayout        m_directional_light_shadow_set_layout{VK_NULL_HANDLE};
-        VkDescriptorSet              m_directional_light_shadow_set{VK_NULL_HANDLE};    // use texture array
+        VkDescriptorSetLayout            m_directional_light_shadow_set_layout{VK_NULL_HANDLE};
+        VkDescriptorSet                  m_directional_light_shadow_set{VK_NULL_HANDLE};    // use texture array
         // skybox info
-        VkDescriptorSetLayout        m_skybox_descriptor_set_layout{VK_NULL_HANDLE};
-        VkDescriptorSet              m_skybox_descriptor_set{VK_NULL_HANDLE};
+        VkDescriptorSetLayout            m_skybox_descriptor_set_layout{VK_NULL_HANDLE};
+        VkDescriptorSet                  m_skybox_descriptor_set{VK_NULL_HANDLE};
 
         void updateLightShadow(std::vector<Scene::DirectionLight> &directional_light_list,
                                const std::shared_ptr<Scene::Camera> &main_camera);
