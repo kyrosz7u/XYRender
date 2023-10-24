@@ -48,6 +48,7 @@ namespace RenderSystem
         void ComputeDirectionalShadowMatrices(int cascade_index,
                                               int atlas_side,
                                               const Vector2 &offset,
+                                              const Vector2 &atlas_size,
                                               const Vector4 &sphere);
 
     public:

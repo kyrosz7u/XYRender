@@ -29,7 +29,7 @@ void DirLightShadow::UpdateShadowData(const Camera &camera)
         m_cascade_viewport[i] = Vector4(x * atlas_size.x, y * atlas_size.y, atlas_size.x, atlas_size.y);
 
         camera.GetFrustumSphere(m_cascade_frustum_sphere[i], m_cascade_distance[i].x, m_cascade_distance[i].y);
-        ComputeDirectionalShadowMatrices(i, atlas_side, Vector2(x, y), m_cascade_frustum_sphere[i]);
+        ComputeDirectionalShadowMatrices(i, atlas_side, Vector2(x, y), atlas_size, m_cascade_frustum_sphere[i]);
     }
 
     int x = i % atlas_side;
@@ -38,12 +38,13 @@ void DirLightShadow::UpdateShadowData(const Camera &camera)
     m_cascade_distance[i] = Vector2(m_direction_light->min_shadow_distance, m_direction_light->max_shadow_distance);
     m_cascade_viewport[i] = Vector4(x * atlas_size.x, y * atlas_size.y, atlas_size.x, atlas_size.y);
     camera.GetFrustumSphere(m_cascade_frustum_sphere[i], m_cascade_distance[i].x, m_cascade_distance[i].y);
-    ComputeDirectionalShadowMatrices(i, atlas_side, Vector2(x, y), m_cascade_frustum_sphere[i]);
+    ComputeDirectionalShadowMatrices(i, atlas_side, Vector2(x, y), atlas_size, m_cascade_frustum_sphere[i]);
 }
 
 void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
                                                       int atlas_side,
                                                       const Vector2 &offset,
+                                                      const Vector2 &atlas_size,
                                                       const Vector4 &sphere)
 {
     assert(m_direction_light != nullptr);
@@ -53,7 +54,7 @@ void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
     const Vector3 &light_right = m_direction_light->transform.GetRight();
 
     Vector3 &back_dummy_light_pos = m_back_dummy_light_pos_list[cascade_index];
-    Vector2 pixel_size            = 2 * Vector2(sphere.w / m_shadowmap_size.x, sphere.w / m_shadowmap_size.y);
+    Vector2 pixel_size            = 2 * Vector2(sphere.w / atlas_size.x, sphere.w / atlas_size.y);
     Vector3 cur_dummy_light_pos   = Vector3(sphere.x, sphere.y, sphere.z) - light_dir * sphere.w;
     Vector3 move_dir              = cur_dummy_light_pos - back_dummy_light_pos;
 

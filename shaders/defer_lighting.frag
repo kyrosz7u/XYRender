@@ -50,6 +50,11 @@ highp vec3 DecodeNormal(highp vec3 enc)
 
 highp float SampleShadowMap(highp vec3 light_space_pos, highp int light_index)
 {
+    if(light_space_pos.z <= 0.0f || light_space_pos.z >= 1.0f)
+    {
+        return 1.0f;
+    }
+
     highp vec3 sample_pos = vec3(light_space_pos.xy, float(light_index));
     highp float light_space_depth = texture(directional_light_shadowmap_array, sample_pos).r;
 
@@ -95,26 +100,24 @@ highp float hard_shadow(highp vec3 light_space_pos, highp int light_index)
 
 highp float GetCascadeShadow(highp vec3 world_pos, highp int light_index, highp int cascade_count)
 {
-    int cascade_index = 0;
-
-    vec3 center = shadowmap_sample_data[light_index*m_max_cascade_count].light_frustum_spere.xyz;
-    float radius = shadowmap_sample_data[light_index*m_max_cascade_count].light_frustum_spere.w;
-    float dist = length(world_pos-center);
-    float max_dist = dist;
-
-    for(int i=1; i<cascade_count; ++i)
+    int i;
+    for(i=0; i<cascade_count; ++i)
     {
-        center = shadowmap_sample_data[light_index*m_max_cascade_count+i].light_frustum_spere.xyz;
-        radius = shadowmap_sample_data[light_index*m_max_cascade_count+i].light_frustum_spere.w;
-        dist = length(world_pos-center);
-        if(dist < max_dist)
+        vec3 center = shadowmap_sample_data[light_index*m_max_cascade_count+i].light_frustum_spere.xyz;
+        float radius = shadowmap_sample_data[light_index*m_max_cascade_count+i].light_frustum_spere.w;
+        float dist = length(world_pos-center);
+        if(dist < radius)
         {
-            cascade_index = i;
-            max_dist = dist;
+            break;
         }
     }
 
-    highp vec4 light_space_pos = shadowmap_sample_data[light_index*m_max_cascade_count+cascade_index].light_view_proj * vec4(world_pos, 1.0);
+    if(i == cascade_count)
+    {
+        return 1.0f;
+    }
+
+    highp vec4 light_space_pos = shadowmap_sample_data[light_index*m_max_cascade_count+i].light_view_proj * vec4(world_pos, 1.0);
     highp vec3 light_space_pos_uvz = light_space_pos.xyz / light_space_pos.w;
 
 //    return light_space_pos_uvz.z;
