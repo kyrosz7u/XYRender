@@ -8,6 +8,11 @@ void DirLightShadow::UpdateShadowData(const Camera &camera)
 {
     assert(m_direction_light != nullptr);
 
+//    static bool isUpdate = false;
+//
+//    if(isUpdate) return ;
+//    isUpdate = true;
+
     int     atlas_side = sqrt(m_cascade_count);
     Vector2 atlas_size = Vector2(m_shadowmap_size.x / atlas_side, m_shadowmap_size.y / atlas_side);
 

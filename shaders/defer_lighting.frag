@@ -62,7 +62,7 @@ highp float SampleShadowMap(highp vec3 light_space_pos, highp int light_index)
 
     // 可以考虑不要用imageArray，然后使用sampler2DShadow优化，避免手动比较
     // 返回可见性
-    if (light_space_depth < light_space_pos.z - 0.005)
+    if (light_space_depth < light_space_pos.z - 0.02)
     {
         return 0.0f;
     }
@@ -180,5 +180,6 @@ void main()
     diffuse_color /= float(directional_light_number);
     specular_color/=float(directional_light_number);
 
-    out_color = vec4(visibility,0.0f,0.0f, 1.0);
+    out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
+//    out_color = vec4(visibility,0.0f,0.0f, 1.0);
 }
