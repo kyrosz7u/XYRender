@@ -12,6 +12,8 @@
 
 namespace Math
 {
+#define FLOAT_NON_FRACTIONAL (8388608.f) /* All single-precision floating point numbers greater than or equal to this have no fractional value. */
+
     static const float Math_POS_INFINITY = std::numeric_limits<float>::infinity();
     static const float Math_NEG_INFINITY = -std::numeric_limits<float>::infinity();
     static const float Math_PI           = 3.14159265358979323846264338327950288f;
@@ -25,6 +27,7 @@ namespace Math
 
     static const float Float_EPSILON  = FLT_EPSILON;
     static const float Double_EPSILON = DBL_EPSILON;
+
 
     bool realEqual(float a, float b, float tolerance);
 }

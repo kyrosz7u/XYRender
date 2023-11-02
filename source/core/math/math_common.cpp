@@ -67,6 +67,39 @@ namespace Math
         return result;
     }
 
+    /** Clamps X to be between Min and Max, inclusive */
+    template< class T >
+    static inline T Clamp( const T X, const T Min, const T Max )
+    {
+        return X<Min ? Min : X<Max ? X : Max;
+    }
+
+    // from ue4 source UnrealMathUtility.h
+    float FMod(float X, float Y)
+    {
+        const float AbsY = fabsf(Y);
+        if (AbsY <= 1.e-8f)
+        {
+            return 0.0f;
+        }
+        const float Div = (X / Y);
+        // All floats where abs(f) >= 2^23 (8388608) are whole numbers so do not need truncation, and avoid overflow in TruncToFloat as they get even larger.
+        const float Quotient = fabsf(Div) < FLOAT_NON_FRACTIONAL ? truncf(Div) : Div;
+        float IntPortion = Y * Quotient;
+
+        // Rounding and imprecision could cause IntPortion to exceed X and cause the result to be outside the expected range.
+        // For example Fmod(55.8, 9.3) would result in a very small negative value!
+        if (fabsf(IntPortion) > fabsf(X))
+        {
+            IntPortion = X;
+        }
+
+        const float Result = X - IntPortion;
+        // Clamp to [-AbsY, AbsY] because of possible failures for very large numbers (>1e10) due to precision loss.
+        // We could instead fall back to stock fmodf() for large values, however this would diverge from the SIMD VectorMod() which has no similar fallback with reasonable performance.
+        return Clamp(Result, -AbsY, AbsY);
+    }
+
     inline std::ostream &operator<<(std::ostream &os, const Vector3 &v)
     {
         char buf[128];
