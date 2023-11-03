@@ -44,6 +44,8 @@ namespace RenderSystem
             return m_light_index;
         }
 
+        void ImGuiDebugPanel();
+
     private:
         void ComputeDirectionalShadowMatrices(int cascade_index,
                                               int atlas_side,
