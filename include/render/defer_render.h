@@ -138,9 +138,6 @@ namespace RenderSystem
         // skybox info
         VkDescriptorSetLayout            m_skybox_descriptor_set_layout{VK_NULL_HANDLE};
         VkDescriptorSet                  m_skybox_descriptor_set{VK_NULL_HANDLE};
-
-        void updateLightShadow(std::vector<Scene::DirectionLight> &directional_light_list,
-                               const std::shared_ptr<Scene::Camera> &main_camera);
     };
 }
 #endif //XEXAMPLE_DEFER_RENDER_H

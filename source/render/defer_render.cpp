@@ -315,6 +315,9 @@ void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::Directio
         }
         //
         m_render_light_project_ubo_list.ubo_data_list.resize(directional_light_list.size() * max_cascade_count);
+
+        auto p_ui = m_render_resource_info.p_ui_overlay.lock();
+        p_ui->addDebugDrawCommand(std::bind(&DirLightShadow::ImGuiDebugPanel, &m_directional_light_shadow_list[0]));
     }
 
     for (int i = 0; i < m_directional_light_shadow_list.size(); ++i)

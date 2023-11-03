@@ -8,11 +8,6 @@ void DirLightShadow::UpdateShadowData(const Camera &camera)
 {
     assert(m_direction_light != nullptr);
 
-//    static bool isUpdate = false;
-//
-//    if(isUpdate) return ;
-//    isUpdate = true;
-
     int     atlas_side = sqrt(m_cascade_count);
     Vector2 atlas_size = Vector2(m_shadowmap_size.x / atlas_side, m_shadowmap_size.y / atlas_side);
 
@@ -44,6 +39,8 @@ void DirLightShadow::UpdateShadowData(const Camera &camera)
     m_cascade_viewport[i] = Vector4(x * atlas_size.x, y * atlas_size.y, atlas_size.x, atlas_size.y);
     camera.GetFrustumSphere(m_cascade_frustum_sphere[i], m_cascade_distance[i].x, m_cascade_distance[i].y);
     ComputeDirectionalShadowMatrices(i, atlas_side, Vector2(x, y), atlas_size, m_cascade_frustum_sphere[i]);
+
+
 }
 
 void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
@@ -114,5 +111,39 @@ void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
 //    m[2][1] = 0.5f * (m[2][1] + m[3][1]);
 //    m[2][2] = 0.5f * (m[2][2] + m[3][2]);
 //    m[2][3] = 0.5f * (m[2][3] + m[3][3]);
+
+    Vector3 center = Vector3(sphere.x, sphere.y, sphere.z);
+    if(back_dummy_light_pos.distance(center) > 0.1f + sphere.w)
+    {
+        std::cout << "distance: " << back_dummy_light_pos.distance(center) << std::endl;
+    }
+}
+
+void DirLightShadow::ImGuiDebugPanel()
+{
+    ImGui::Begin("Directional Light Shadow[0]");
+    ImGui::Text("Light Position: %f, %f, %f", m_direction_light->transform.position.x,
+                m_direction_light->transform.position.y,
+                m_direction_light->transform.position.z);
+    ImGui::Text("Light Direction: %f, %f, %f", m_direction_light->transform.GetForward().x,
+                m_direction_light->transform.GetForward().y,
+                m_direction_light->transform.GetForward().z);
+    ImGui::Text("Light Up: %f, %f, %f", m_direction_light->transform.GetUp().x,
+                m_direction_light->transform.GetUp().y,
+                m_direction_light->transform.GetUp().z);
+    ImGui::Text("Light Right: %f, %f, %f", m_direction_light->transform.GetRight().x,
+                m_direction_light->transform.GetRight().y,
+                m_direction_light->transform.GetRight().z);
+
+    ImGui::Text("Project Matrix: ");
+    ImGui::Text("%f, %f, %f, %f", m_cascade_viewproj_matrix[0][0][0], m_cascade_viewproj_matrix[0][0][1],
+                m_cascade_viewproj_matrix[0][0][2], m_cascade_viewproj_matrix[0][0][3]);
+    ImGui::Text("%f, %f, %f, %f", m_cascade_viewproj_matrix[0][1][0], m_cascade_viewproj_matrix[0][1][1],
+                m_cascade_viewproj_matrix[0][1][2], m_cascade_viewproj_matrix[0][1][3]);
+    ImGui::Text("%f, %f, %f, %f", m_cascade_viewproj_matrix[0][2][0], m_cascade_viewproj_matrix[0][2][1],
+                m_cascade_viewproj_matrix[0][2][2], m_cascade_viewproj_matrix[0][2][3]);
+    ImGui::Text("%f, %f, %f, %f", m_cascade_viewproj_matrix[0][3][0], m_cascade_viewproj_matrix[0][3][1],
+                m_cascade_viewproj_matrix[0][3][2], m_cascade_viewproj_matrix[0][3][3]);
+    ImGui::End();
 }
 

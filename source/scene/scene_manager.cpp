@@ -41,8 +41,8 @@ void SceneManager::PostInitialize()
     m_main_camera->fov      = 90.0f;
     m_main_camera->PostInitialize();
 
-    m_ui_overlay->addDebugDrawCommand(std::bind(&_InputSystem::ImGuiDebugPanel, &_InputSystem::Instance()));
-    m_ui_overlay->addDebugDrawCommand(std::bind(&Scene::Camera::ImGuiDebugPanel, m_main_camera));
+    //m_ui_overlay->addDebugDrawCommand(std::bind(&_InputSystem::ImGuiDebugPanel, &_InputSystem::Instance()));
+    //m_ui_overlay->addDebugDrawCommand(std::bind(&Scene::Camera::ImGuiDebugPanel, m_main_camera));
     m_ui_overlay->addDebugDrawCommand(std::bind(&Scene::DirectionLight::ImGuiDebugPanel, &m_directional_lights[0]));
 
     for (int i = 0; i < m_models.size(); ++i)
