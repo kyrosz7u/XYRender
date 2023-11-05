@@ -58,40 +58,32 @@ void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
     Vector3 &back_dummy_light_pos = m_back_dummy_light_pos_list[cascade_index];
     Vector2 pixel_size            = 2 * Vector2(sphere.w / atlas_size.x, sphere.w / atlas_size.y);
     Vector3 cur_dummy_light_pos   = Vector3(sphere.x, sphere.y, sphere.z) - light_dir * sphere.w;
-    Vector3 move_dir              = cur_dummy_light_pos - back_dummy_light_pos;
+    Vector3 move_dir              = 0.9*(cur_dummy_light_pos - back_dummy_light_pos);
 
-    float move_x = move_dir.dotProduct(light_right);
-    float move_y = move_dir.dotProduct(light_up);
-    float move_z = move_dir.dotProduct(light_dir);
+    const Matrix4x4 &light_view_matrix = m_direction_light->transform.GetViewTransformMatrix();
+    const Vector4 center_pos = Vector4(sphere.x, sphere.y, sphere.z, 1.0f);
+    const Vector4 sphere_in_light_space = light_view_matrix * center_pos;
 
-    if (abs(move_x) > pixel_size.x)
-    {
-        float size = abs(move_x) / pixel_size.x;
-        size = ceil(size);
+    const int max_downsample = 4;
+    float snap_x = ::fmod(sphere_in_light_space.x, pixel_size.x);
+    float snap_y = ::fmod(sphere_in_light_space.y, pixel_size.y);
 
-        float move = move_x > 0 ? pixel_size.x : -pixel_size.x;
-        back_dummy_light_pos = back_dummy_light_pos + light_right * size * move;
-    }
 
-    if (abs(move_y) > pixel_size.y)
-    {
-        float size = abs(move_y) / pixel_size.y;
-        size = ceil(size);
+    //snap_x = 0.0f;
+    //snap_y = 0.0f;
 
-        float move = move_y > 0 ? pixel_size.y : -pixel_size.y;
-        back_dummy_light_pos = back_dummy_light_pos + light_up * size * move;
-    }
+    const Matrix4x4 light_view_inverse = light_view_matrix.inverse();
+    const Vector4 snapped_center_pos = light_view_inverse * Vector4(sphere_in_light_space.x - snap_x, sphere_in_light_space.y - snap_y, sphere_in_light_space.z, 1.0f);
 
-    back_dummy_light_pos = back_dummy_light_pos + light_dir * move_z;
+    back_dummy_light_pos = snapped_center_pos.xyz() - 2.0f*light_dir * sphere.w;
 
     auto t_inverse = Matrix4x4::getTrans(-back_dummy_light_pos);
-    auto r_inverse = getRotationMatrix(m_direction_light->transform.rotation).transpose();
+    auto r_inverse = m_direction_light->transform.GetRotationMatrix().transpose();
 
-    Matrix4x4 light_view_matrix = r_inverse * t_inverse;
     Matrix4x4 light_proj_matrix = Math::Matrix4x4::makeOrthogonalMatrix(
-            2 * sphere.w, 2 * sphere.w, 0.1f, sphere.w * 2);
+            2 * sphere.w, 2 * sphere.w, 0.1f, sphere.w * 3.0f);
 
-    m_cascade_viewproj_matrix[cascade_index] = light_proj_matrix * light_view_matrix;
+    m_cascade_viewproj_matrix[cascade_index] = light_proj_matrix * r_inverse * t_inverse;;
     Matrix4x4 &m = m_cascade_sample_matrix[cascade_index];
     m = m_cascade_viewproj_matrix[cascade_index];
 
@@ -112,11 +104,11 @@ void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
 //    m[2][2] = 0.5f * (m[2][2] + m[3][2]);
 //    m[2][3] = 0.5f * (m[2][3] + m[3][3]);
 
-    Vector3 center = Vector3(sphere.x, sphere.y, sphere.z);
-    if(back_dummy_light_pos.distance(center) > 0.1f + sphere.w)
-    {
-        std::cout << "distance: " << back_dummy_light_pos.distance(center) << std::endl;
-    }
+    //Vector3 center = Vector3(sphere.x, sphere.y, sphere.z);
+    //if(back_dummy_light_pos.distance(center) > 0.1f + sphere.w)
+    //{
+    //    std::cout << "distance: " << back_dummy_light_pos.distance(center) << std::endl;
+    //}
 }
 
 void DirLightShadow::ImGuiDebugPanel()
@@ -144,6 +136,18 @@ void DirLightShadow::ImGuiDebugPanel()
                 m_cascade_viewproj_matrix[0][2][2], m_cascade_viewproj_matrix[0][2][3]);
     ImGui::Text("%f, %f, %f, %f", m_cascade_viewproj_matrix[0][3][0], m_cascade_viewproj_matrix[0][3][1],
                 m_cascade_viewproj_matrix[0][3][2], m_cascade_viewproj_matrix[0][3][3]);
+
+    ImGui::Text("Sample Matrix: ");
+    ImGui::Text("%f, %f, %f, %f", m_cascade_sample_matrix[0][0][0], m_cascade_sample_matrix[0][0][1],
+                m_cascade_sample_matrix[0][0][2], m_cascade_sample_matrix[0][0][3]);
+    ImGui::Text("%f, %f, %f, %f", m_cascade_sample_matrix[0][1][0], m_cascade_sample_matrix[0][1][1],
+                m_cascade_sample_matrix[0][1][2], m_cascade_sample_matrix[0][1][3]);
+    ImGui::Text("%f, %f, %f, %f", m_cascade_sample_matrix[0][2][0], m_cascade_sample_matrix[0][2][1],
+                m_cascade_sample_matrix[0][2][2], m_cascade_sample_matrix[0][2][3]);
+    ImGui::Text("%f, %f, %f, %f", m_cascade_sample_matrix[0][3][0], m_cascade_sample_matrix[0][3][1],
+                m_cascade_sample_matrix[0][3][2], m_cascade_sample_matrix[0][3][3]);
+
+
     ImGui::End();
 }
 

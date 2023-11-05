@@ -49,7 +49,7 @@ namespace Math
         const float *ptr() const
         { return &x; }
 
-        Vector3 xyz()
+        Vector3 xyz() const
         {
             return Vector3(x, y, z);
         }

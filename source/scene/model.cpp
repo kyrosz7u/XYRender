@@ -11,6 +11,7 @@ using namespace Scene;
 
 void Model::Tick()
 {
+    transform.Tick();
     model_matrix = transform.GetTransformMatrix();
     // 快速计算法线矩阵
     Matrix3x3 _normal = Matrix3x3::IDENTITY;

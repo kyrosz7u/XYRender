@@ -25,17 +25,17 @@ namespace RenderSystem
     class RenderDynamicBuffer
     {
     public:
-        VkDeviceSize           dynamic_alignment;
-        VkDeviceSize           buffer_size;
+        VkDeviceSize           dynamic_alignment{};
+        VkDeviceSize           buffer_size{};
         std::vector<T>         ubo_data_list;
-        VkBuffer               dynamic_buffer;
-        VkDeviceMemory         dynamic_buffer_memory;
-        void                   *mapped_buffer_ptr;
-        VkDescriptorBufferInfo dynamic_info;
-        VkDescriptorBufferInfo static_info;
+        VkBuffer               dynamic_buffer{};
+        VkDeviceMemory         dynamic_buffer_memory{};
+        void                   *mapped_buffer_ptr{};
+        VkDescriptorBufferInfo dynamic_info{};
+        VkDescriptorBufferInfo static_info{};
 
     public:
-        RenderDynamicBuffer(VkDeviceSize buffer_size = -1)
+        explicit RenderDynamicBuffer(VkDeviceSize buffer_size = -1)
         {
             // Calculate required alignment based on minimum device offset alignment
             VkDeviceSize min_ubo_alignment        = g_p_vulkan_context->_physical_device_properties.limits.minUniformBufferOffsetAlignment;
@@ -73,6 +73,25 @@ namespace RenderSystem
             vkDestroyBuffer(g_p_vulkan_context->_device, dynamic_buffer, nullptr);
             vkFreeMemory(g_p_vulkan_context->_device, dynamic_buffer_memory, nullptr);
         }
+
+        RenderDynamicBuffer(RenderDynamicBuffer &&other)
+        {
+            dynamic_alignment = other.dynamic_alignment;
+            buffer_size       = other.buffer_size;
+            ubo_data_list     = std::move(other.ubo_data_list);
+            dynamic_buffer    = other.dynamic_buffer;
+            dynamic_buffer_memory = other.dynamic_buffer_memory;
+            mapped_buffer_ptr = other.mapped_buffer_ptr;
+            dynamic_info      = other.dynamic_info;
+            static_info       = other.static_info;
+
+            other.dynamic_buffer = VK_NULL_HANDLE;
+            other.dynamic_buffer_memory = VK_NULL_HANDLE;
+            other.mapped_buffer_ptr = nullptr;
+            other.dynamic_info.buffer = VK_NULL_HANDLE;
+            other.static_info.buffer = VK_NULL_HANDLE;
+        }
+
 
         RenderDynamicBuffer(const RenderDynamicBuffer &other) = delete;
 
@@ -217,11 +236,11 @@ namespace RenderSystem
         };
         VkDeviceSize                         buffer_size;
         VulkanPerFrameSceneDefine            scene_data_ubo;
-        VkDeviceSize                         per_frame_ubo_offset[_info_block_count];
+        VkDeviceSize                         per_frame_ubo_offset[_info_block_count]{};
         VulkanPerFrameDirectionalLightDefine directional_lights_ubo[MAX_DIRECTIONAL_LIGHT_COUNT];
-        VkBuffer                             per_frame_buffer;
-        VkDeviceMemory                       per_frame_buffer_memory;
-        void                                 *mapped_buffer_ptr;
+        VkBuffer                             per_frame_buffer{};
+        VkDeviceMemory                       per_frame_buffer_memory{};
+        void                                 *mapped_buffer_ptr{};
         std::vector<VkDescriptorBufferInfo>  buffer_infos;
 
         RenderPerFrameUBO()
@@ -281,7 +300,7 @@ namespace RenderSystem
             vkFreeMemory(g_p_vulkan_context->_device, per_frame_buffer_memory, nullptr);
         }
 
-        RenderPerFrameUBO(const RenderPerFrameUBO &other) = delete;
+        RenderPerFrameUBO(const RenderPerFrameUBO &other) = default;
 
         RenderPerFrameUBO &operator=(const RenderPerFrameUBO &other) = delete;
 

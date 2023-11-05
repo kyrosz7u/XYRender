@@ -59,7 +59,7 @@ DirectionLight::ComputeDirectionalShadowMatrices(const Camera &camera, Vector4 &
 
 void DirectionLight::Tick()
 {
-
+    transform.Tick();
 }
 
 void DirectionLight::ImGuiDebugPanel()

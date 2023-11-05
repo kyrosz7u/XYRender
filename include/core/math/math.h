@@ -23,6 +23,8 @@ namespace Math
 
     bool realEqual(float a, float b, float tolerance /* = std::numeric_limits<float>::epsilon() */);
 
+    float FMod(float X, float Y);
+
     Matrix4x4 getRotationMatrix(const EulerAngle &eulerAngle);
 }
 

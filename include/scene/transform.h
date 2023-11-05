@@ -15,6 +15,16 @@ public:
     Position position;
     Rotation rotation;
     Scale scale;
+private:
+    Matrix4x4 transform_matrix;
+    Matrix4x4 rotation_matrix;
+    Matrix4x4 scale_matrix;
+    Matrix4x4 view_transform_matrix;
+    Vector3 right;
+    Vector3 up;
+    Vector3 forward;
+
+ public:
     Transform()
     {
         position = Position(0, 0, 0);
@@ -31,43 +41,50 @@ public:
 
     void Tick()
     {
+        transform_matrix = Matrix4x4::IDENTITY;
+        rotation_matrix = Math::getRotationMatrix(rotation);
+        scale_matrix = Matrix4x4::getScale(scale);
+
+        transform_matrix = scale_matrix * transform_matrix;
+        transform_matrix = rotation_matrix * transform_matrix;
+        transform_matrix = Matrix4x4::getTrans(position)*transform_matrix;
+
+        right   = rotation_matrix * Vector3(1, 0, 0);
+        up      = rotation_matrix * Vector3(0, 1, 0);
+        forward = rotation_matrix * Vector3(0, 0, 1);
+
+        view_transform_matrix = getRotationMatrix(rotation).transpose()*Matrix4x4::getTrans(-position);
 
     }
 
-    Matrix4x4 GetTransformMatrix()
+    Matrix4x4 GetTransformMatrix() const
     {
-        Matrix4x4 model_matrix = Matrix4x4::IDENTITY;
-        model_matrix = Matrix4x4::getScale(scale)*model_matrix;
-        model_matrix = Math::getRotationMatrix(rotation) * model_matrix;
-        model_matrix = Matrix4x4::getTrans(position)*model_matrix;
-        return model_matrix;
+        return transform_matrix;
     }
 
-    Matrix4x4 GetViewTransformMatrix()
+    Matrix4x4 GetViewTransformMatrix() const
     {
-        Matrix4x4 model_matrix = Matrix4x4::IDENTITY;
+        return view_transform_matrix;
+    }
 
-        auto t_inverse   = Matrix4x4::getTrans(-position);
-        auto r_inverse   = getRotationMatrix(rotation).transpose();
-
-        model_matrix = r_inverse * t_inverse;
-
-        return model_matrix;
+    Matrix4x4 GetRotationMatrix() const
+    {
+        return rotation_matrix;
     }
 
     Vector3 GetRight() const
     {
-        return Math::getRotationMatrix(rotation) * Vector3(1, 0, 0);
+        return right;
     }
 
     Vector3 GetUp() const
     {
-        return Math::getRotationMatrix(rotation) * Vector3(0, 1, 0);
+        return up;
     }
 
     Vector3 GetForward() const
     {
-        return Math::getRotationMatrix(rotation) * Vector3(0, 0, 1);
+        return forward;
     }
 };
 

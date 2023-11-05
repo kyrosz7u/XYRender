@@ -102,6 +102,10 @@ void SceneManager::Tick()
     //                                        m_main_camera->position,
     //                                        m_directional_lights);
     //m_render->UpdateLightAndShadowDataList(m_directional_lights, m_main_camera);
+    for (auto &light: m_directional_lights)
+    {
+        light.Tick();
+    }
     m_render->UpdateRenderResource(m_models,
                                    m_visible_submeshes,
                                    m_directional_lights,
