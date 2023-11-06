@@ -20,7 +20,7 @@ namespace RenderSystem
 {
     typedef RenderDynamicBuffer<VulkanModelDefine>              RenderModelUBOList;
     typedef RenderDynamicBuffer<VulkanLightProjectDefine>       RenderLightProjectUBOList;
-    typedef RenderStaticBuffer<VulkanShadowMapSampleDataDefine> RenderShadowMapSampleDataUBOList;
+    typedef RenderDynamicBuffer<VulkanShadowMapSampleDataDefine> RenderShadowMapSampleDataUBOList;
 
 
     struct RenderGlobalResourceInfo

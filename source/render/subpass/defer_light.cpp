@@ -192,7 +192,7 @@ void DeferLightPass::updateGlobalDescriptorSet()
     directional_light_probes_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     directional_light_probes_buffer_write.descriptorCount = 1;
     directional_light_probes_buffer_write.pBufferInfo     = &m_p_render_resource_info->
-            p_render_shadow_map_sample_data_ubo_list->static_info;
+            p_render_shadow_map_sample_data_ubo_list->dynamic_info;
 
     vkUpdateDescriptorSets(g_p_vulkan_context->_device,
                            write_descriptor_sets.size(),
@@ -267,10 +267,15 @@ void DeferLightPass::setupPipelines()
         descriptorset_layouts.push_back(layout);
     }
 
+    VkPushConstantRange pushConstantRange{};
+    pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    pushConstantRange.offset = 0;
+    pushConstantRange.size = sizeof(uint32_t);
+
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
     pipeline_layout_create_info.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_create_info.pushConstantRangeCount = 0;
-    pipeline_layout_create_info.pPushConstantRanges    = nullptr;
+    pipeline_layout_create_info.pushConstantRangeCount = 1;
+    pipeline_layout_create_info.pPushConstantRanges    = &pushConstantRange;
     pipeline_layout_create_info.setLayoutCount         = descriptorset_layouts.size();
     pipeline_layout_create_info.pSetLayouts            = descriptorset_layouts.data();
 
@@ -451,6 +456,13 @@ void DeferLightPass::draw()
                                                      0,
                                                      nullptr);
     }
+
+    vkCmdPushConstants(*m_p_render_command_info->p_current_command_buffer,
+                       pipeline_layout,
+                       VK_SHADER_STAGE_FRAGMENT_BIT,
+                       0,
+                       sizeof(uint32_t),
+                       &m_p_render_command_info->current_command_index);
 
     g_p_vulkan_context->_vkCmdDraw(*m_p_render_command_info->p_current_command_buffer,
                                    3,

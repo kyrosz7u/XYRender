@@ -26,7 +26,7 @@ void DirectionalLightShadowPass::initialize(SubPassInitInfo *subPassInitInfo)
 
 void DirectionalLightShadowPass::setDirectionalLightData(uint32_t light_index, uint32_t cascade_index)
 {
-    m_directional_light_data  = {light_index, cascade_index};
+    m_directional_light_data = {light_index, cascade_index};
 }
 
 void DirectionalLightShadowPass::setViewPort(const Vector4 &extent)
@@ -334,8 +334,9 @@ void DirectionalLightShadowPass::drawSingleThread(VkCommandBuffer &command_buffe
         // bind model and light ubo
         uint32_t dynamic_offset[2];
 
-        dynamic_offset[0] = (m_directional_light_data.light_index * m_p_render_resource_info->kDirectionalLightInfo.max_cascade_count +
-                                m_directional_light_data.cascade_index) *
+        dynamic_offset[0] = (m_directional_light_data.light_index *
+                             m_p_render_resource_info->kDirectionalLightInfo.max_cascade_count +
+                             m_directional_light_data.cascade_index) *
                             (*m_p_render_resource_info->p_render_light_project_ubo_list).dynamic_alignment;
 
         dynamic_offset[1] = parent_mesh->m_index_in_dynamic_buffer *
@@ -443,9 +444,15 @@ void DirectionalLightShadowPass::draw()
         // bind model and light ubo
         uint32_t dynamic_offset[2];
 
-        dynamic_offset[0] = (m_directional_light_data.light_index * m_p_render_resource_info->kDirectionalLightInfo.max_cascade_count +
-                             m_directional_light_data.cascade_index) *
-                            (*m_p_render_resource_info->p_render_light_project_ubo_list).dynamic_alignment;
+        uint32_t ubo_offset = m_directional_light_data.light_index *
+                              m_p_render_resource_info->kDirectionalLightInfo.max_cascade_count +
+                              m_directional_light_data.cascade_index;
+
+        ubo_offset *= m_p_render_command_info->render_target_nums;
+        ubo_offset += m_p_render_command_info->current_command_index;
+        ubo_offset *= m_p_render_resource_info->p_render_light_project_ubo_list->dynamic_alignment;
+
+        dynamic_offset[0] = ubo_offset;
 
         dynamic_offset[1] = parent_mesh->m_index_in_dynamic_buffer *
                             (*m_p_render_resource_info->p_render_model_ubo_list).dynamic_alignment;

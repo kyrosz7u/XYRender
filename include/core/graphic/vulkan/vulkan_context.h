@@ -23,6 +23,8 @@ namespace VulkanAPI
 {
     struct RenderCommandInfo
     {
+        uint32_t         render_target_nums{0};
+        uint32_t         current_command_index{0};
         VkCommandBuffer  *p_current_command_buffer{nullptr};
         VkDescriptorPool *p_descriptor_pool{nullptr};
         const VkViewport *p_viewport{nullptr};
@@ -144,7 +146,7 @@ namespace VulkanAPI
         uint32_t                        m_vulkan_api_version = VK_API_VERSION_1_3;
         std::vector<char const *>       m_device_extensions  =
 #if defined(_MSC_VER)
-        {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+                                                {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 #elif defined(__MACH__)
         {VK_KHR_SWAPCHAIN_EXTENSION_NAME,"VK_KHR_portability_subset"};
 #endif

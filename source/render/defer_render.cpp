@@ -11,9 +11,12 @@ using namespace RenderSystem;
 
 void DeferRender::initialize()
 {
-    m_render_command_info.p_descriptor_pool = &m_descriptor_pool;
-    m_render_command_info.p_viewport        = &m_viewport;
-    m_render_command_info.p_scissor         = &m_scissor;
+    m_swapchain_image_count = g_p_vulkan_context->_swapchain_images.size();
+    m_render_command_info.render_target_nums    = m_swapchain_image_count;
+    m_render_command_info.current_command_index = -1;
+    m_render_command_info.p_descriptor_pool     = &m_descriptor_pool;
+    m_render_command_info.p_viewport            = &m_viewport;
+    m_render_command_info.p_scissor             = &m_scissor;
 
     m_render_resource_info.p_render_submeshes                       = &m_render_submeshes;
     m_render_resource_info.p_texture_descriptor_sets                = &m_texture_descriptor_sets;
@@ -210,6 +213,7 @@ void DeferRender::setupRenderpass()
 void DeferRender::Tick()
 {
     RenderBase::Tick();
+    getNextImageInSwapChain();
 
     UpdateLightAndShadowDataList(*m_directional_light_list, *m_main_camera);
     UpdateRenderModelList(*m_visible_models, *m_visible_submeshes);
@@ -221,7 +225,7 @@ void DeferRender::Tick()
     draw();
 }
 
-void DeferRender::draw()
+void DeferRender::getNextImageInSwapChain()
 {
     uint32_t next_image_index = g_p_vulkan_context->getNextSwapchainImageIndex(
             [this]
@@ -229,9 +233,13 @@ void DeferRender::draw()
     if (next_image_index == -1)
     {
         LOG_INFO("next image index is -1");
-        return;
     }
-    vkResetCommandBuffer(m_primary_command_buffers[next_image_index], 0);
+    m_current_image_index = next_image_index;
+}
+
+void DeferRender::draw()
+{
+    vkResetCommandBuffer(m_primary_command_buffers[m_current_image_index], 0);
 
     // begin command buffer
     VkCommandBufferBeginInfo command_buffer_begin_info{};
@@ -240,31 +248,97 @@ void DeferRender::draw()
     command_buffer_begin_info.pInheritanceInfo = nullptr;
 
     VkResult res_begin_command_buffer =
-                     g_p_vulkan_context->_vkBeginCommandBuffer(m_primary_command_buffers[next_image_index],
+                     g_p_vulkan_context->_vkBeginCommandBuffer(m_primary_command_buffers[m_current_image_index],
                                                                &command_buffer_begin_info);
     assert(VK_SUCCESS == res_begin_command_buffer);
 
     // record command buffer
-    m_render_command_info.p_current_command_buffer = &m_primary_command_buffers[next_image_index];
+    m_render_command_info.current_command_index    = m_current_image_index;
+    m_render_command_info.p_current_command_buffer = &m_primary_command_buffers[m_current_image_index];
     reinterpret_cast<DirectionalLightShadowRenderPass *>(m_render_passes[_directional_light_shadowmap_renderpass].get())->SetShadowData(
             m_directional_light_shadow_list);
 #ifdef MULTI_THREAD_RENDERING
-    m_render_passes[_directional_light_shadowmap_renderpass]->drawMultiThreading(0, next_image_index);
-    m_render_passes[_main_camera_renderpass]->drawMultiThreading(0, next_image_index);
+    m_render_passes[_directional_light_shadowmap_renderpass]->drawMultiThreading(0, m_current_image_index);
+    m_render_passes[_main_camera_renderpass]->drawMultiThreading(0, m_current_image_index);
 #else
     m_render_passes[_directional_light_shadowmap_renderpass]->draw(0);
     m_render_passes[_main_camera_renderpass]->draw(0);
 #endif
-    m_render_passes[_ui_overlay_renderpass]->draw(next_image_index);
+    m_render_passes[_ui_overlay_renderpass]->draw(m_current_image_index);
 
     // end command buffer
     VkResult res_end_command_buffer = g_p_vulkan_context->_vkEndCommandBuffer(
-            m_primary_command_buffers[next_image_index]);
+            m_primary_command_buffers[m_current_image_index]);
     assert(VK_SUCCESS == res_end_command_buffer);
 
-    g_p_vulkan_context->submitDrawSwapchainImageCmdBuffer(&m_primary_command_buffers[next_image_index]);
-    g_p_vulkan_context->presentSwapchainImage(next_image_index, [this]
+    g_p_vulkan_context->submitDrawSwapchainImageCmdBuffer(&m_primary_command_buffers[m_current_image_index]);
+    g_p_vulkan_context->presentSwapchainImage(m_current_image_index, [this]
     { updateAfterSwapchainRecreate(); });
+}
+
+void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::DirectionLight> &directional_light_list,
+                                               const Scene::Camera &main_camera)
+{
+    int max_cascade_count = m_render_resource_info.kDirectionalLightInfo.max_cascade_count;
+    if (m_render_light_project_ubo_list.ubo_data_list.size() != directional_light_list.size() * max_cascade_count * m_swapchain_image_count
+        || m_directional_light_shadow_list.size() != directional_light_list.size())
+    {
+        m_directional_light_shadow_list.clear();
+        Vector2 shadowmap_size = Vector2(m_render_resource_info.kDirectionalLightInfo.shadowmap_width,
+                                         m_render_resource_info.kDirectionalLightInfo.shadowmap_height);
+
+        for (int i = 0; i < directional_light_list.size(); ++i)
+        {
+            m_directional_light_shadow_list.emplace_back(shadowmap_size, directional_light_list[i], i);
+        }
+        //
+        m_render_light_project_ubo_list.ubo_data_list.resize(directional_light_list.size() * max_cascade_count * m_swapchain_image_count);
+
+        //auto p_ui = m_render_resource_info.p_ui_overlay.lock();
+        //p_ui->addDebugDrawCommand(std::bind(&DirLightShadow::ImGuiDebugPanel, &m_directional_light_shadow_list[0]));
+    }
+
+    for (int i = 0; i < m_directional_light_shadow_list.size(); ++i)
+    {
+        auto &directional_light_shadow = m_directional_light_shadow_list[i];
+        directional_light_shadow.UpdateShadowData(main_camera);
+
+        for (int j = 0; j < directional_light_shadow.m_cascade_count; ++j)
+        {
+            uint32_t offset    = (i * max_cascade_count + j) * m_swapchain_image_count + m_current_image_index;
+
+            m_render_light_project_ubo_list.ubo_data_list[offset].light_proj = directional_light_shadow.m_cascade_viewproj_matrix[j];
+        }
+    }
+
+    assert(directional_light_list.size() <= MAX_DIRECTIONAL_LIGHT_COUNT);
+    for (int i = 0; i < directional_light_list.size(); ++i)
+    {
+        m_render_per_frame_ubo.directional_lights_ubo[i].intensity = directional_light_list[i].intensity;
+        m_render_per_frame_ubo.directional_lights_ubo[i].color     = directional_light_list[i].color;
+        m_render_per_frame_ubo.directional_lights_ubo[i].direction = -directional_light_list[i].transform.GetForward();
+        m_render_per_frame_ubo.directional_lights_ubo[i].cascade_count =
+                directional_light_list[i].cascade_ratio.size() + 1;
+    }
+
+    if (m_render_shadow_map_sample_data_ubo_list.ubo_data_list.size() !=
+        directional_light_list.size() * max_cascade_count * m_swapchain_image_count)
+    {
+        m_render_shadow_map_sample_data_ubo_list.resize(
+                directional_light_list.size() * max_cascade_count * m_swapchain_image_count);
+    }
+    for (int i = 0; i < m_directional_light_shadow_list.size(); ++i)
+    {
+        auto &directional_light_shadow = m_directional_light_shadow_list[i];
+        int  light_index               = directional_light_shadow.GetLightIndex();
+
+        for (int j = 0; j < directional_light_shadow.m_cascade_count; ++j)
+        {
+            uint32_t offset = (light_index * max_cascade_count + j) * m_swapchain_image_count + m_current_image_index;
+            m_render_shadow_map_sample_data_ubo_list.ubo_data_list[offset].light_proj = directional_light_shadow.m_cascade_sample_matrix[j];
+            m_render_shadow_map_sample_data_ubo_list.ubo_data_list[offset].light_frustum_sphere = directional_light_shadow.m_cascade_frustum_sphere[j];
+        }
+    }
 }
 
 void DeferRender::UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
@@ -296,75 +370,7 @@ void DeferRender::UpdateRenderPerFrameScenceUBO(
     m_render_per_frame_ubo.scene_data_ubo.proj_view                = proj_view;
     m_render_per_frame_ubo.scene_data_ubo.camera_pos               = camera_pos;
     m_render_per_frame_ubo.scene_data_ubo.directional_light_number = directional_light_list.size();
-}
-
-void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::DirectionLight> &directional_light_list,
-                                               const Scene::Camera &main_camera)
-{
-    int max_cascade_count = m_render_resource_info.kDirectionalLightInfo.max_cascade_count;
-    if (m_render_light_project_ubo_list.ubo_data_list.size() != directional_light_list.size() * max_cascade_count
-        || m_directional_light_shadow_list.size() != directional_light_list.size())
-    {
-        m_directional_light_shadow_list.clear();
-        Vector2 shadowmap_size = Vector2(m_render_resource_info.kDirectionalLightInfo.shadowmap_width,
-                                         m_render_resource_info.kDirectionalLightInfo.shadowmap_height);
-
-        for (int i = 0; i < directional_light_list.size(); ++i)
-        {
-            m_directional_light_shadow_list.emplace_back(shadowmap_size, directional_light_list[i], i);
-        }
-        //
-        m_render_light_project_ubo_list.ubo_data_list.resize(directional_light_list.size() * max_cascade_count);
-
-        auto p_ui = m_render_resource_info.p_ui_overlay.lock();
-        p_ui->addDebugDrawCommand(std::bind(&DirLightShadow::ImGuiDebugPanel, &m_directional_light_shadow_list[0]));
-    }
-
-    for (int i = 0; i < m_directional_light_shadow_list.size(); ++i)
-    {
-        auto &directional_light_shadow = m_directional_light_shadow_list[i];
-        directional_light_shadow.UpdateShadowData(main_camera);
-
-        for (int j = 0; j < directional_light_shadow.m_cascade_count; ++j)
-        {
-            m_render_light_project_ubo_list.ubo_data_list[
-                    i * max_cascade_count + j].light_proj = directional_light_shadow.m_cascade_viewproj_matrix[j];
-        }
-    }
-
-    assert(directional_light_list.size() <= MAX_DIRECTIONAL_LIGHT_COUNT);
-    for (int i = 0; i < directional_light_list.size(); ++i)
-    {
-        m_render_per_frame_ubo.directional_lights_ubo[i].intensity = directional_light_list[i].intensity;
-        m_render_per_frame_ubo.directional_lights_ubo[i].color     = directional_light_list[i].color;
-        m_render_per_frame_ubo.directional_lights_ubo[i].direction = -directional_light_list[i].transform.GetForward();
-        m_render_per_frame_ubo.directional_lights_ubo[i].cascade_count =
-                directional_light_list[i].cascade_ratio.size() + 1;
-    }
-
-    if (m_render_shadow_map_sample_data_ubo_list.ubo_data_list.size() !=
-        directional_light_list.size() * max_cascade_count)
-    {
-        m_render_shadow_map_sample_data_ubo_list.resize(
-                directional_light_list.size() * max_cascade_count);
-    }
-    for (int i = 0; i < m_directional_light_shadow_list.size(); ++i)
-    {
-        auto &directional_light_shadow = m_directional_light_shadow_list[i];
-        int  light_index               = directional_light_shadow.GetLightIndex();
-
-        for (int j = 0; j < directional_light_shadow.m_cascade_count; ++j)
-        {
-            m_render_shadow_map_sample_data_ubo_list.ubo_data_list[
-                    light_index * max_cascade_count +
-                    j].light_proj = directional_light_shadow.m_cascade_sample_matrix[j];
-
-            m_render_shadow_map_sample_data_ubo_list.ubo_data_list[
-                    light_index * max_cascade_count +
-                    j].light_frustum_sphere = directional_light_shadow.m_cascade_frustum_sphere[j];
-
-        }
-    }
+    m_render_per_frame_ubo.scene_data_ubo.command_buffer_index     = m_current_image_index;
 }
 
 void DeferRender::FlushRenderbuffer()

@@ -23,6 +23,7 @@ layout (set = 0, binding = 0, row_major) uniform _per_frame_ubo_data
     highp mat4 camera_proj_view;
     highp vec3 camera_pos;
     highp int directional_light_number;
+    highp int cmdBuffer_index;
 };
 
 layout (set = 0, binding = 1) uniform _directional_light
@@ -40,6 +41,10 @@ layout (input_attachment_index = 1, set = 1, binding = 1) uniform highp subpassI
 layout (input_attachment_index = 2, set = 1, binding = 2) uniform highp subpassInput gbuffer_position;
 
 layout (set = 2, binding = 0) uniform highp sampler2DArray directional_light_shadowmap_array;
+
+layout(push_constant) uniform PushConsts {
+    int cmdBuffer_index;
+} pushConsts;
 
 layout (location = 0) out highp vec4 out_color;
 
@@ -117,6 +122,8 @@ highp float GetCascadeShadow(highp vec3 world_pos, highp int light_index, highp 
         return 1.0f;
     }
 
+    i=2;
+
     highp vec4 light_space_pos = shadowmap_sample_data[light_index*m_max_cascade_count+i].light_view_proj * vec4(world_pos, 1.0);
     highp vec3 light_space_pos_uvz = light_space_pos.xyz / light_space_pos.w;
 
@@ -180,6 +187,15 @@ void main()
     diffuse_color /= float(directional_light_number);
     specular_color/=float(directional_light_number);
 
-    out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
-//    out_color = vec4(visibility,0.0f,0.0f, 1.0);
+//    out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
+//    out_color = vec4(visibility/2.0f,0.0f,0.0f, 1.0);
+
+    if(pushConsts.cmdBuffer_index != cmdBuffer_index)
+    {
+        out_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    }
+    else
+    {
+        out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
+    }
 }

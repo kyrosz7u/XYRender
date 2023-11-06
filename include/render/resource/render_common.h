@@ -11,6 +11,7 @@
 #include <memory>
 
 #define MAX_DIRECTIONAL_LIGHT_COUNT 16
+#define MAX_SHADOWMAP_CASCADE_COUNT 4
 
 using namespace Math;
 
@@ -27,6 +28,7 @@ namespace RenderSystem
         Math::Matrix4x4 proj_view;
         Math::Vector3   camera_pos;
         uint32_t        directional_light_number;
+        uint32_t        command_buffer_index;
     };
 
     struct VulkanPerFrameDirectionalLightDefine

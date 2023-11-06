@@ -102,6 +102,10 @@ void _InputSystem::onMouseButton(int button, int action, int mods)
         {
             case GLFW_MOUSE_BUTTON_LEFT:
             {
+                break;
+            }
+            case GLFW_MOUSE_BUTTON_RIGHT:
+            {
                 if (!m_is_focus_mode)
                 {
                     m_is_focus_mode = true;
@@ -109,8 +113,6 @@ void _InputSystem::onMouseButton(int button, int action, int mods)
                 }
                 break;
             }
-            case GLFW_MOUSE_BUTTON_RIGHT:
-                break;
             case GLFW_MOUSE_BUTTON_MIDDLE:
                 break;
         }
