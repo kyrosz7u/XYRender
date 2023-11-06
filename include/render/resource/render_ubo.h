@@ -20,25 +20,29 @@ namespace RenderSystem
 {
     extern std::shared_ptr<VulkanContext> g_p_vulkan_context;
 
-    class RenderGeneralDynamicBuffer
+    class RenderReinterpretDynamicBuffer
     {
     public:
+        uint32_t               data_size{};
+        uint32_t               block_size{};
         VkDeviceSize           dynamic_alignment{};
         VkDeviceSize           buffer_size{};
-        std::vector<uint8_t>         ubo_data_list;
         VkBuffer               dynamic_buffer{};
         VkDeviceMemory         dynamic_buffer_memory{};
         void                   *mapped_buffer_ptr{};
         VkDescriptorBufferInfo dynamic_info{};
         VkDescriptorBufferInfo static_info{};
     private:
-        VkDeviceSize max_uniform_buffer_range;
+        std::vector<uint8_t>                        ubo_data_list;
+        VkDeviceSize                                min_ubo_alignment;
+        VkDeviceSize                                max_uniform_buffer_range{};
         std::map<void *, std::function<void(void)>> update_callback_map;
     public:
-        explicit RenderGeneralDynamicBuffer(uint32_t size, uint32_t block_size)
+        // buffer size = size * dynamic_alignment
+        explicit RenderReinterpretDynamicBuffer(uint32_t size = 1, uint32_t block_size = 1)
         {
             // Calculate required alignment based on minimum device offset alignment
-            VkDeviceSize min_ubo_alignment = g_p_vulkan_context->_physical_device_properties.limits.minUniformBufferOffsetAlignment;
+            min_ubo_alignment = g_p_vulkan_context->_physical_device_properties.limits.minUniformBufferOffsetAlignment;
             max_uniform_buffer_range = g_p_vulkan_context->_physical_device_properties.limits.maxUniformBufferRange;
 
             dynamic_alignment = block_size;
@@ -50,11 +54,16 @@ namespace RenderSystem
             if (size * dynamic_alignment > max_uniform_buffer_range)
                 size = max_uniform_buffer_range / dynamic_alignment;
 
+            data_size   = size;
+            buffer_size = size * dynamic_alignment;
+
             VulkanUtil::createBuffer(g_p_vulkan_context,
-                                     size * dynamic_alignment,
+                                     buffer_size,
                                      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                      dynamic_buffer, dynamic_buffer_memory);
+
+            ubo_data_list.resize(data_size * dynamic_alignment);
 
             dynamic_info.buffer = dynamic_buffer;
             // dynamic buffer的offset必须是dynamic_alignment的整数倍
@@ -66,16 +75,16 @@ namespace RenderSystem
             // 最好还是不要这么做，避免平台兼容性问题
             static_info.buffer  = dynamic_buffer;
             static_info.offset  = 0;
-            static_info.range   = size * dynamic_alignment;
+            static_info.range   = data_size * dynamic_alignment;
         }
 
-        ~RenderGeneralDynamicBuffer()
+        ~RenderReinterpretDynamicBuffer()
         {
             vkDestroyBuffer(g_p_vulkan_context->_device, dynamic_buffer, nullptr);
             vkFreeMemory(g_p_vulkan_context->_device, dynamic_buffer_memory, nullptr);
         }
 
-        RenderGeneralDynamicBuffer(RenderGeneralDynamicBuffer &&other)
+        RenderReinterpretDynamicBuffer(RenderReinterpretDynamicBuffer &&other)
         {
             dynamic_alignment     = other.dynamic_alignment;
             buffer_size           = other.buffer_size;
@@ -94,13 +103,13 @@ namespace RenderSystem
         }
 
 
-        RenderGeneralDynamicBuffer(const RenderGeneralDynamicBuffer &other) = delete;
+        RenderReinterpretDynamicBuffer(const RenderReinterpretDynamicBuffer &other) = delete;
 
-        RenderGeneralDynamicBuffer &operator=(const RenderGeneralDynamicBuffer &other) = delete;
+        RenderReinterpretDynamicBuffer &operator=(const RenderReinterpretDynamicBuffer &other) = delete;
 
-        void resize(uint32_t size)
+        void resize(uint32_t _size, uint32_t _block_size)
         {
-            if (size <= 0 || size == ubo_data_list.size())
+            if (_size <= 0 || (_size == data_size && block_size == _block_size))
                 return;
 
             if (dynamic_buffer != VK_NULL_HANDLE)
@@ -113,10 +122,19 @@ namespace RenderSystem
                 vkFreeMemory(g_p_vulkan_context->_device, dynamic_buffer_memory, nullptr);
             }
 
-            ubo_data_list.resize(size);
-            buffer_size = ubo_data_list.size() * dynamic_alignment;
+            data_size         = _size;
+            block_size        = _block_size;
+            dynamic_alignment = block_size;
 
-            assert(buffer_size <= max_uniform_buffer_range);
+            if (min_ubo_alignment > 0)
+            {
+                dynamic_alignment = (dynamic_alignment + min_ubo_alignment - 1) & ~(min_ubo_alignment - 1);
+            }
+
+            if (data_size * dynamic_alignment > max_uniform_buffer_range)
+                data_size = max_uniform_buffer_range / dynamic_alignment;
+
+            buffer_size = data_size * dynamic_alignment;
 
             VulkanUtil::createBuffer(g_p_vulkan_context,
                                      buffer_size,
@@ -124,9 +142,14 @@ namespace RenderSystem
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                      dynamic_buffer, dynamic_buffer_memory);
 
+            ubo_data_list.resize(data_size * dynamic_alignment);
             dynamic_info.buffer = dynamic_buffer;
             dynamic_info.offset = 0;
             dynamic_info.range  = dynamic_alignment;
+
+            static_info.buffer  = dynamic_buffer;
+            static_info.offset  = 0;
+            static_info.range   = data_size * dynamic_alignment;
 
             for (auto &pair: update_callback_map)
             {
@@ -139,18 +162,21 @@ namespace RenderSystem
             update_callback_map[key] = std::move(update_callback);
         }
 
+        // index是第几个block，size是block的大小
+        void SetData(uint32_t index, void *data, uint32_t size)
+        {
+            assert(index < data_size);
+            assert(size <= dynamic_alignment);
+            memcpy(ubo_data_list.data() + index * dynamic_alignment, data, size);
+        }
+
         void ToGPU()
         {
-            uint32_t mapped_size = ubo_data_list.size() * dynamic_alignment;
+            uint32_t mapped_size = ubo_data_list.size();
             vkMapMemory(g_p_vulkan_context->_device, dynamic_buffer_memory, 0,
                         mapped_size, 0, &mapped_buffer_ptr);
 
-            // Aligned offset
-            for (int i = 0; i < ubo_data_list.size(); ++i)
-            {
-                auto *data_ptr = (T *) ((uint64_t) mapped_buffer_ptr + (i * dynamic_alignment));
-                *data_ptr = ubo_data_list[i];
-            }
+            memcpy(mapped_buffer_ptr, ubo_data_list.data(), mapped_size);
 
             VkMappedMemoryRange mappedMemoryRange{};
             mappedMemoryRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
@@ -176,7 +202,7 @@ namespace RenderSystem
         VkDescriptorBufferInfo dynamic_info{};
         VkDescriptorBufferInfo static_info{};
     private:
-        VkDeviceSize max_uniform_buffer_range;
+        VkDeviceSize                                max_uniform_buffer_range;
         std::map<void *, std::function<void(void)>> update_callback_map;
     public:
         explicit RenderDynamicBuffer(VkDeviceSize size = -1)
@@ -271,6 +297,10 @@ namespace RenderSystem
             dynamic_info.buffer = dynamic_buffer;
             dynamic_info.offset = 0;
             dynamic_info.range  = dynamic_alignment;
+
+            static_info.buffer = dynamic_buffer;
+            static_info.offset = 0;
+            static_info.range  = size * dynamic_alignment;
 
             for (auto &pair: update_callback_map)
             {

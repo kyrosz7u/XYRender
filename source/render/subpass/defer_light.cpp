@@ -269,8 +269,8 @@ void DeferLightPass::setupPipelines()
 
     VkPushConstantRange pushConstantRange{};
     pushConstantRange.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    pushConstantRange.offset = 0;
-    pushConstantRange.size = sizeof(uint32_t);
+    pushConstantRange.offset     = 0;
+    pushConstantRange.size       = sizeof(uint32_t);
 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{};
     pipeline_layout_create_info.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -433,6 +433,12 @@ void DeferLightPass::draw()
     g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->p_current_command_buffer, 0, 1,
                                          m_p_render_command_info->p_scissor);
 
+//    uint32_t dynamic_offset[] = {m_p_render_command_info->current_command_index *;
+    // hack way!!!
+    uint32_t light_nums       = m_p_render_resource_info->p_render_per_frame_ubo->scene_data_ubo.directional_light_number;
+    uint32_t alignment        = m_p_render_resource_info->p_render_shadow_map_sample_data_ubo_list->dynamic_alignment;
+    uint32_t dynamic_offset[] = {m_p_render_command_info->current_command_index * light_nums * alignment};
+
     VkDescriptorSet descriptor_sets[] = {m_scence_ubo_descriptor_set, m_gbuffer_descriptor_set};
 
     g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
@@ -441,8 +447,8 @@ void DeferLightPass::draw()
                                                  0,
                                                  2,
                                                  descriptor_sets,
-                                                 0,
-                                                 nullptr);
+                                                 1,
+                                                 dynamic_offset);
 
     //bind directional light shadow map
     if (m_p_render_resource_info->p_directional_light_shadow_map_descriptor_set != nullptr)

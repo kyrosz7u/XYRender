@@ -18,9 +18,9 @@ using namespace VulkanAPI;
 
 namespace RenderSystem
 {
-    typedef RenderDynamicBuffer<VulkanModelDefine>              RenderModelUBOList;
-    typedef RenderDynamicBuffer<VulkanLightProjectDefine>       RenderLightProjectUBOList;
-    typedef RenderDynamicBuffer<VulkanShadowMapSampleDataDefine> RenderShadowMapSampleDataUBOList;
+    typedef RenderDynamicBuffer<VulkanModelDefine>        RenderModelUBOList;
+    typedef RenderDynamicBuffer<VulkanLightProjectDefine> RenderLightProjectUBOList;
+    typedef RenderReinterpretDynamicBuffer                RenderShadowMapSampleDataUBOList;
 
 
     struct RenderGlobalResourceInfo

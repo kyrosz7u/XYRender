@@ -321,23 +321,29 @@ void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::Directio
                 directional_light_list[i].cascade_ratio.size() + 1;
     }
 
-    if (m_render_shadow_map_sample_data_ubo_list.ubo_data_list.size() !=
-        directional_light_list.size() * max_cascade_count * m_swapchain_image_count)
+    if (m_render_shadow_map_sample_data_ubo_list.data_size !=
+        directional_light_list.size() * m_swapchain_image_count)
     {
         m_render_shadow_map_sample_data_ubo_list.resize(
-                directional_light_list.size() * max_cascade_count * m_swapchain_image_count);
+                directional_light_list.size() * m_swapchain_image_count, max_cascade_count * sizeof(VulkanShadowMapSampleDataDefine));
     }
     for (int i = 0; i < m_directional_light_shadow_list.size(); ++i)
     {
         auto &directional_light_shadow = m_directional_light_shadow_list[i];
         int  light_index               = directional_light_shadow.GetLightIndex();
 
+        std::vector<VulkanShadowMapSampleDataDefine> sample_data(max_cascade_count);
         for (int j = 0; j < directional_light_shadow.m_cascade_count; ++j)
         {
-            uint32_t offset = (light_index * max_cascade_count + j) * m_swapchain_image_count + m_current_image_index;
-            m_render_shadow_map_sample_data_ubo_list.ubo_data_list[offset].light_proj = directional_light_shadow.m_cascade_sample_matrix[j];
-            m_render_shadow_map_sample_data_ubo_list.ubo_data_list[offset].light_frustum_sphere = directional_light_shadow.m_cascade_frustum_sphere[j];
+            VulkanShadowMapSampleDataDefine &sample_data_define = sample_data[j];
+            sample_data_define.light_proj                       = directional_light_shadow.m_cascade_sample_matrix[j];
+            sample_data_define.light_frustum_sphere             = directional_light_shadow.m_cascade_frustum_sphere[j];
         }
+
+
+
+        uint32_t offset = m_current_image_index * m_swapchain_image_count + light_index;
+        m_render_shadow_map_sample_data_ubo_list.SetData(offset, sample_data.data(), sample_data.size() * sizeof(VulkanShadowMapSampleDataDefine));
     }
 }
 
