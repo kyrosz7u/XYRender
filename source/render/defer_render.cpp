@@ -340,9 +340,7 @@ void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::Directio
             sample_data_define.light_frustum_sphere             = directional_light_shadow.m_cascade_frustum_sphere[j];
         }
 
-
-
-        uint32_t offset = m_current_image_index * m_swapchain_image_count + light_index;
+        uint32_t offset = m_current_image_index * directional_light_list.size() + light_index;
         m_render_shadow_map_sample_data_ubo_list.SetData(offset, sample_data.data(), sample_data.size() * sizeof(VulkanShadowMapSampleDataDefine));
     }
 }

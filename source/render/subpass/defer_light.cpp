@@ -51,7 +51,7 @@ void DeferLightPass::setupPipeLineLayout()
 
     VkDescriptorSetLayoutBinding &direction_light_projection_binding = ubo_layout_bindings[2];
 
-    direction_light_projection_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    direction_light_projection_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     direction_light_projection_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
     direction_light_projection_binding.binding         = 2;
     direction_light_projection_binding.descriptorCount = 1;
@@ -189,7 +189,7 @@ void DeferLightPass::updateGlobalDescriptorSet()
     directional_light_probes_buffer_write.dstSet          = m_scence_ubo_descriptor_set;
     directional_light_probes_buffer_write.dstBinding      = 2;
     directional_light_probes_buffer_write.dstArrayElement = 0;
-    directional_light_probes_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    directional_light_probes_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     directional_light_probes_buffer_write.descriptorCount = 1;
     directional_light_probes_buffer_write.pBufferInfo     = &m_p_render_resource_info->
             p_render_shadow_map_sample_data_ubo_list->dynamic_info;
