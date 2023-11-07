@@ -37,14 +37,14 @@ void DeferLightPass::setupPipeLineLayout()
 
     VkDescriptorSetLayoutBinding &perframe_buffer_binding = ubo_layout_bindings[0];
 
-    perframe_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    perframe_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     perframe_buffer_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
     perframe_buffer_binding.binding         = 0;
     perframe_buffer_binding.descriptorCount = 1;
 
     VkDescriptorSetLayoutBinding &directional_light_info_binding = ubo_layout_bindings[1];
 
-    directional_light_info_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    directional_light_info_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     directional_light_info_binding.stageFlags      = VK_SHADER_STAGE_FRAGMENT_BIT;
     directional_light_info_binding.binding         = 1;
     directional_light_info_binding.descriptorCount = 1;
@@ -168,7 +168,7 @@ void DeferLightPass::updateGlobalDescriptorSet()
     perframe_buffer_write.dstSet          = m_scence_ubo_descriptor_set;
     perframe_buffer_write.dstBinding      = 0;
     perframe_buffer_write.dstArrayElement = 0;
-    perframe_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    perframe_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     perframe_buffer_write.descriptorCount = 1;
     perframe_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_per_frame_ubo
             ->buffer_infos[RenderPerFrameUBO::_scene_info_block];
@@ -179,7 +179,7 @@ void DeferLightPass::updateGlobalDescriptorSet()
     directional_light_info_write.dstSet          = m_scence_ubo_descriptor_set;
     directional_light_info_write.dstBinding      = 1;
     directional_light_info_write.dstArrayElement = 0;
-    directional_light_info_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    directional_light_info_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     directional_light_info_write.descriptorCount = 1;
     directional_light_info_write.pBufferInfo     = &m_p_render_resource_info->p_render_per_frame_ubo
             ->buffer_infos[RenderPerFrameUBO::_light_info_block];
@@ -433,11 +433,7 @@ void DeferLightPass::draw()
     g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->p_current_command_buffer, 0, 1,
                                          m_p_render_command_info->p_scissor);
 
-//    uint32_t dynamic_offset[] = {m_p_render_command_info->current_command_index *;
-    // hack way!!!
-    uint32_t light_nums       = m_p_render_resource_info->p_render_per_frame_ubo->scene_data_ubo.directional_light_number;
-    uint32_t alignment        = m_p_render_resource_info->p_render_shadow_map_sample_data_ubo_list->dynamic_alignment;
-    uint32_t dynamic_offset[] = {m_p_render_command_info->current_command_index * light_nums * alignment};
+    uint32_t dynamic_offset[] = {m_p_render_command_info->scene_ubo_data_offset, m_p_render_command_info->scene_ubo_data_offset,m_p_render_command_info->shadowmap_sample_data_offset};
 
     VkDescriptorSet descriptor_sets[] = {m_scence_ubo_descriptor_set, m_gbuffer_descriptor_set};
 
@@ -447,7 +443,7 @@ void DeferLightPass::draw()
                                                  0,
                                                  2,
                                                  descriptor_sets,
-                                                 1,
+                                                 3,
                                                  dynamic_offset);
 
     //bind directional light shadow map

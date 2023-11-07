@@ -42,7 +42,7 @@ namespace RenderSystem
         explicit RenderReinterpretDynamicBuffer(uint32_t size = 1, uint32_t block_size = 1)
         {
             // Calculate required alignment based on minimum device offset alignment
-            min_ubo_alignment = g_p_vulkan_context->_physical_device_properties.limits.minUniformBufferOffsetAlignment;
+            min_ubo_alignment        = g_p_vulkan_context->_physical_device_properties.limits.minUniformBufferOffsetAlignment;
             max_uniform_buffer_range = g_p_vulkan_context->_physical_device_properties.limits.maxUniformBufferRange;
 
             dynamic_alignment = block_size;
@@ -147,9 +147,9 @@ namespace RenderSystem
             dynamic_info.offset = 0;
             dynamic_info.range  = dynamic_alignment;
 
-            static_info.buffer  = dynamic_buffer;
-            static_info.offset  = 0;
-            static_info.range   = data_size * dynamic_alignment;
+            static_info.buffer = dynamic_buffer;
+            static_info.offset = 0;
+            static_info.range  = data_size * dynamic_alignment;
 
             for (auto &pair: update_callback_map)
             {
@@ -450,43 +450,56 @@ namespace RenderSystem
             _light_info_block,
             _info_block_count
         };
-        VkDeviceSize                         buffer_size;
-        VulkanPerFrameSceneDefine            scene_data_ubo;
-        VkDeviceSize                         per_frame_ubo_offset[_info_block_count]{};
-        VulkanPerFrameDirectionalLightDefine directional_lights_ubo[MAX_DIRECTIONAL_LIGHT_COUNT];
-        VkBuffer                             per_frame_buffer{};
-        VkDeviceMemory                       per_frame_buffer_memory{};
-        void                                 *mapped_buffer_ptr{};
-        std::vector<VkDescriptorBufferInfo>  buffer_infos;
+        uint32_t                            data_size{};
+        uint32_t                            block_size{};
+        VkDeviceSize                        buffer_size;
+        VkDeviceSize                        dynamic_alignment{};
+        VkDeviceSize                        per_frame_ubo_range[_info_block_count]{};
+        VkBuffer                            per_frame_buffer{};
+        VkDeviceMemory                      per_frame_buffer_memory{};
+        void                                *mapped_buffer_ptr{};
+        std::vector<VkDescriptorBufferInfo> buffer_infos;
+    private:
+        std::vector<uint8_t> ubo_data_list;
+        VkDeviceSize         min_ubo_alignment;
+        VkDeviceSize         max_uniform_buffer_range{};
 
+    public:
         RenderPerFrameUBO()
         {
             // VUID-VkWriteDescriptorSet-descriptorType-00327
             // 描述符中的offset必须按照minUniformBufferOffsetAlignment对齐
-            VkDeviceSize min_ubo_offset_align = g_p_vulkan_context->_physical_device_properties.limits.minUniformBufferOffsetAlignment;
+            min_ubo_alignment        = g_p_vulkan_context->_physical_device_properties.limits.minUniformBufferOffsetAlignment;
+            max_uniform_buffer_range = g_p_vulkan_context->_physical_device_properties.limits.maxUniformBufferRange;
 
-            per_frame_ubo_offset[_scene_info_block] = sizeof(VulkanPerFrameSceneDefine);
-            if (min_ubo_offset_align > 0)
+            data_size = 3;
+
+            per_frame_ubo_range[_scene_info_block] = sizeof(VulkanPerFrameSceneDefine);
+            if (min_ubo_alignment > 0)
             {
-                per_frame_ubo_offset[_scene_info_block] =
-                        (per_frame_ubo_offset[_scene_info_block] + min_ubo_offset_align - 1) &
-                        ~(min_ubo_offset_align - 1);
+                per_frame_ubo_range[_scene_info_block] =
+                        (per_frame_ubo_range[_scene_info_block] + min_ubo_alignment - 1) &
+                        ~(min_ubo_alignment - 1);
             }
 
-            per_frame_ubo_offset[_light_info_block] =
+            per_frame_ubo_range[_light_info_block] =
                     sizeof(VulkanPerFrameDirectionalLightDefine) * MAX_DIRECTIONAL_LIGHT_COUNT;
-            if (min_ubo_offset_align > 0)
+            if (min_ubo_alignment > 0)
             {
-                per_frame_ubo_offset[_light_info_block] =
-                        (per_frame_ubo_offset[_light_info_block] + min_ubo_offset_align - 1) &
-                        ~(min_ubo_offset_align - 1);
+                per_frame_ubo_range[_light_info_block] =
+                        (per_frame_ubo_range[_light_info_block] + min_ubo_alignment - 1) &
+                        ~(min_ubo_alignment - 1);
             }
 
-            buffer_size = per_frame_ubo_offset[_scene_info_block] + per_frame_ubo_offset[_light_info_block];
+            block_size = per_frame_ubo_range[_scene_info_block] + per_frame_ubo_range[_light_info_block];
 
-            VkDeviceSize no_coherent_atom_size = g_p_vulkan_context->_physical_device_properties.limits.nonCoherentAtomSize;
-            buffer_size = (buffer_size + no_coherent_atom_size - 1) & ~(no_coherent_atom_size - 1);
-//            block = (block + min_ubo_offset_align - 1) & ~(min_ubo_offset_align - 1);
+            dynamic_alignment = block_size;
+
+            buffer_size = dynamic_alignment * data_size;
+
+//            VkDeviceSize no_coherent_atom_size = g_p_vulkan_context->_physical_device_properties.limits.nonCoherentAtomSize;
+//            buffer_size = (buffer_size + no_coherent_atom_size - 1) & ~(no_coherent_atom_size - 1);
+//            block = (block + min_ubo_alignment - 1) & ~(min_ubo_alignment - 1);
 
 
             VulkanUtil::createBuffer(g_p_vulkan_context,
@@ -494,6 +507,8 @@ namespace RenderSystem
                                      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                      per_frame_buffer, per_frame_buffer_memory);
+
+            ubo_data_list.resize(buffer_size);
 
             vkMapMemory(g_p_vulkan_context->_device, per_frame_buffer_memory, 0,
                         buffer_size, 0, &mapped_buffer_ptr);
@@ -504,10 +519,9 @@ namespace RenderSystem
             buffer_infos[_scene_info_block].range  = sizeof(VulkanPerFrameSceneDefine);
 
             buffer_infos[_light_info_block].buffer = per_frame_buffer;
-            buffer_infos[_light_info_block].offset = per_frame_ubo_offset[_scene_info_block];
-            buffer_infos[_light_info_block].range  = sizeof(VulkanPerFrameDirectionalLightDefine);
+            buffer_infos[_light_info_block].offset = per_frame_ubo_range[_scene_info_block];
+            buffer_infos[_light_info_block].range  = sizeof(VulkanPerFrameDirectionalLightDefine) * MAX_DIRECTIONAL_LIGHT_COUNT;
         }
-
 
         ~RenderPerFrameUBO()
         {
@@ -520,14 +534,48 @@ namespace RenderSystem
 
         RenderPerFrameUBO &operator=(const RenderPerFrameUBO &other) = delete;
 
+        void resize(uint32_t size)
+        {
+            if (size <= 0 || size == data_size)
+                return;
+
+            if (per_frame_buffer != VK_NULL_HANDLE)
+            {
+                vkDestroyBuffer(g_p_vulkan_context->_device, per_frame_buffer, nullptr);
+            }
+
+            if (per_frame_buffer_memory != VK_NULL_HANDLE)
+            {
+                vkFreeMemory(g_p_vulkan_context->_device, per_frame_buffer_memory, nullptr);
+            }
+
+            data_size   = size;
+            buffer_size = data_size * dynamic_alignment;
+
+            VulkanUtil::createBuffer(g_p_vulkan_context,
+                                     buffer_size,
+                                     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                     per_frame_buffer, per_frame_buffer_memory);
+
+            ubo_data_list.resize(buffer_size);
+
+            vkMapMemory(g_p_vulkan_context->_device, per_frame_buffer_memory, 0,
+                        buffer_size, 0, &mapped_buffer_ptr);
+
+        }
+
+        void SetData(uint32_t data_index, void *data, uint32_t size, _preframe_buffer_data_block block)
+        {
+            assert(data_index < data_size);
+            assert(size <= per_frame_ubo_range[block]);
+            memcpy(ubo_data_list.data() + data_index * dynamic_alignment + per_frame_ubo_range[block], data, size);
+        }
+
         void ToGPU()
         {
-            assert(scene_data_ubo.directional_light_number > 0 &&
-                   scene_data_ubo.directional_light_number <= MAX_DIRECTIONAL_LIGHT_COUNT);
-            memcpy(mapped_buffer_ptr, &scene_data_ubo, sizeof(VulkanPerFrameSceneDefine));
-            memcpy((void *) ((uint64_t) mapped_buffer_ptr + per_frame_ubo_offset[_scene_info_block]),
-                   &directional_lights_ubo,
-                   scene_data_ubo.directional_light_number * sizeof(VulkanPerFrameDirectionalLightDefine));
+            uint32_t mapped_size = ubo_data_list.size();
+            memcpy(mapped_buffer_ptr, ubo_data_list.data(), mapped_size);
 
             VkMappedMemoryRange mappedMemoryRange{};
             mappedMemoryRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;

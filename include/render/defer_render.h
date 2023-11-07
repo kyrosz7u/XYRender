@@ -98,9 +98,6 @@ namespace RenderSystem
         void setupRenderDescriptorSetLayout();
 
     private:
-        // inner state
-        uint32_t  m_swapchain_image_count = 0;
-        uint32_t  m_current_image_index   = 0;
         // render resource
         Matrix4x4 m_view_matrix;
         Matrix4x4 m_proj_matrix;

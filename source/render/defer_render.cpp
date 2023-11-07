@@ -312,14 +312,24 @@ void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::Directio
     }
 
     assert(directional_light_list.size() <= MAX_DIRECTIONAL_LIGHT_COUNT);
+
+    VulkanPerFrameDirectionalLightDefine directional_light_ubo_list[MAX_DIRECTIONAL_LIGHT_COUNT];
     for (int i = 0; i < directional_light_list.size(); ++i)
     {
-        m_render_per_frame_ubo.directional_lights_ubo[i].intensity = directional_light_list[i].intensity;
-        m_render_per_frame_ubo.directional_lights_ubo[i].color     = directional_light_list[i].color;
-        m_render_per_frame_ubo.directional_lights_ubo[i].direction = -directional_light_list[i].transform.GetForward();
-        m_render_per_frame_ubo.directional_lights_ubo[i].cascade_count =
+//        m_render_per_frame_ubo.directional_lights_ubo[i].intensity = directional_light_list[i].intensity;
+//        m_render_per_frame_ubo.directional_lights_ubo[i].color     = directional_light_list[i].color;
+//        m_render_per_frame_ubo.directional_lights_ubo[i].direction = -directional_light_list[i].transform.GetForward();
+//        m_render_per_frame_ubo.directional_lights_ubo[i].cascade_count =
+//                directional_light_list[i].cascade_ratio.size() + 1;
+
+        directional_light_ubo_list[i].intensity = directional_light_list[i].intensity;
+        directional_light_ubo_list[i].color     = directional_light_list[i].color;
+        directional_light_ubo_list[i].direction = -directional_light_list[i].transform.GetForward();
+        directional_light_ubo_list[i].cascade_count =
                 directional_light_list[i].cascade_ratio.size() + 1;
     }
+
+    m_render_per_frame_ubo.SetData(m_current_image_index, directional_light_ubo_list, sizeof(VulkanPerFrameDirectionalLightDefine) * directional_light_list.size(), RenderPerFrameUBO::_light_info_block);
 
     if (m_render_shadow_map_sample_data_ubo_list.data_size !=
         directional_light_list.size() * m_swapchain_image_count)
@@ -343,6 +353,10 @@ void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::Directio
         uint32_t offset = m_current_image_index * directional_light_list.size() + light_index;
         m_render_shadow_map_sample_data_ubo_list.SetData(offset, sample_data.data(), sample_data.size() * sizeof(VulkanShadowMapSampleDataDefine));
     }
+
+    m_render_command_info.shadowmap_sample_data_offset = m_current_image_index * directional_light_list.size() * m_render_shadow_map_sample_data_ubo_list.dynamic_alignment;
+
+    m_render_command_info.scene_ubo_data_offset = m_current_image_index * m_render_per_frame_ubo.dynamic_alignment;
 }
 
 void DeferRender::UpdateRenderModelList(const std::vector<Scene::Model> &_visible_models,
@@ -371,10 +385,19 @@ void DeferRender::UpdateRenderPerFrameScenceUBO(
         const Math::Vector3 camera_pos,
         const std::vector<Scene::DirectionLight> &directional_light_list)
 {
-    m_render_per_frame_ubo.scene_data_ubo.proj_view                = proj_view;
-    m_render_per_frame_ubo.scene_data_ubo.camera_pos               = camera_pos;
-    m_render_per_frame_ubo.scene_data_ubo.directional_light_number = directional_light_list.size();
-    m_render_per_frame_ubo.scene_data_ubo.command_buffer_index     = m_current_image_index;
+//    m_render_per_frame_ubo.scene_data_ubo.proj_view                = proj_view;
+//    m_render_per_frame_ubo.scene_data_ubo.camera_pos               = camera_pos;
+//    m_render_per_frame_ubo.scene_data_ubo.directional_light_number = directional_light_list.size();
+//    m_render_per_frame_ubo.scene_data_ubo.command_buffer_index     = m_current_image_index;
+
+    VulkanPerFrameSceneDefine scene_data_ubo;
+    scene_data_ubo.proj_view                = proj_view;
+    scene_data_ubo.camera_pos               = camera_pos;
+    scene_data_ubo.directional_light_number = directional_light_list.size();
+    scene_data_ubo.command_buffer_index     = m_current_image_index;
+
+    m_render_per_frame_ubo.SetData(m_current_image_index, &scene_data_ubo, sizeof(VulkanPerFrameSceneDefine), RenderPerFrameUBO::_scene_info_block);
+
 }
 
 void DeferRender::FlushRenderbuffer()
@@ -412,7 +435,7 @@ void DeferRender::setupRenderDescriptorSetLayout()
     skybox_layout_bindings.resize(2);
 
     VkDescriptorSetLayoutBinding &skybox_ubodata_binding = skybox_layout_bindings[0];
-    skybox_ubodata_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    skybox_ubodata_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     skybox_ubodata_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
     skybox_ubodata_binding.binding         = 0;
     skybox_ubodata_binding.descriptorCount = 1;
@@ -548,7 +571,7 @@ void DeferRender::SetupSkyboxTexture(const std::shared_ptr<TextureCube> &skybox_
     ubo_descriptor_write.dstSet          = m_skybox_descriptor_set;
     ubo_descriptor_write.dstBinding      = 0;
     ubo_descriptor_write.dstArrayElement = 0;
-    ubo_descriptor_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    ubo_descriptor_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     ubo_descriptor_write.descriptorCount = 1;
     ubo_descriptor_write.pBufferInfo     = &m_render_per_frame_ubo.buffer_infos[RenderPerFrameUBO::_scene_info_block];
 

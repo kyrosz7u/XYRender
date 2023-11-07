@@ -29,6 +29,9 @@ namespace VulkanAPI
         VkDescriptorPool *p_descriptor_pool{nullptr};
         const VkViewport *p_viewport{nullptr};
         const VkRect2D   *p_scissor{nullptr};
+
+        uint32_t shadowmap_sample_data_offset{0};
+        uint32_t scene_ubo_data_offset{0};
     };
 
     struct QueueFamilyIndices

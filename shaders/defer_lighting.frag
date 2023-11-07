@@ -122,8 +122,6 @@ highp float GetCascadeShadow(highp vec3 world_pos, highp int light_index, highp 
         return 1.0f;
     }
 
-    i=2;
-
     highp vec4 light_space_pos = shadowmap_sample_data[light_index*m_max_cascade_count+i].light_view_proj * vec4(world_pos, 1.0);
     highp vec3 light_space_pos_uvz = light_space_pos.xyz / light_space_pos.w;
 

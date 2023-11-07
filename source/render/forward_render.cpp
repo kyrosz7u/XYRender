@@ -194,19 +194,26 @@ void ForwardRender::setupRenderpass()
 void ForwardRender::Tick()
 {
     RenderBase::Tick();
+    getNextImageInSwapChain();
     draw();
+}
+
+void ForwardRender::getNextImageInSwapChain()
+{
+    uint32_t next_image_index = g_p_vulkan_context->getNextSwapchainImageIndex(
+            [this]
+            { updateAfterSwapchainRecreate(); });
+    m_current_image_index = next_image_index;
 }
 
 void ForwardRender::draw()
 {
-    uint32_t next_image_index = g_p_vulkan_context->getNextSwapchainImageIndex(
-            std::bind(&ForwardRender::updateAfterSwapchainRecreate, this));
-    if (next_image_index == -1)
+    if (m_current_image_index == -1)
     {
         LOG_INFO("next image index is -1");
         return;
     }
-    vkResetCommandBuffer(m_command_buffers[next_image_index], 0);
+    vkResetCommandBuffer(m_command_buffers[m_current_image_index], 0);
 
     // begin command buffer
     VkCommandBufferBeginInfo command_buffer_begin_info{};
@@ -215,28 +222,28 @@ void ForwardRender::draw()
     command_buffer_begin_info.pInheritanceInfo = nullptr;
 
     VkResult res_begin_command_buffer =
-                     g_p_vulkan_context->_vkBeginCommandBuffer(m_command_buffers[next_image_index],
+                     g_p_vulkan_context->_vkBeginCommandBuffer(m_command_buffers[m_current_image_index],
                                                                &command_buffer_begin_info);
     assert(VK_SUCCESS == res_begin_command_buffer);
 
     // record command buffer
-    m_render_command_info.p_current_command_buffer = &m_command_buffers[next_image_index];
+    m_render_command_info.p_current_command_buffer = &m_command_buffers[m_current_image_index];
 
 #ifdef MULTI_THREAD_RENDERING
-    m_render_passes[_directional_light_shadowmap_renderpass]->drawMultiThreading(0, next_image_index);
-    m_render_passes[_main_camera_renderpass]->drawMultiThreading(0, next_image_index);
+    m_render_passes[_directional_light_shadowmap_renderpass]->drawMultiThreading(0, m_current_image_index);
+    m_render_passes[_main_camera_renderpass]->drawMultiThreading(0, m_current_image_index);
 #else
     m_render_passes[_directional_light_shadowmap_renderpass]->draw(0);
     m_render_passes[_main_camera_renderpass]->draw(0);
 #endif
-    m_render_passes[_ui_overlay_renderpass]->draw(next_image_index);
+    m_render_passes[_ui_overlay_renderpass]->draw(m_current_image_index);
 
     // end command buffer
-    VkResult res_end_command_buffer = g_p_vulkan_context->_vkEndCommandBuffer(m_command_buffers[next_image_index]);
+    VkResult res_end_command_buffer = g_p_vulkan_context->_vkEndCommandBuffer(m_command_buffers[m_current_image_index]);
     assert(VK_SUCCESS == res_end_command_buffer);
 
-    g_p_vulkan_context->submitDrawSwapchainImageCmdBuffer(&m_command_buffers[next_image_index]);
-    g_p_vulkan_context->presentSwapchainImage(next_image_index, [this]
+    g_p_vulkan_context->submitDrawSwapchainImageCmdBuffer(&m_command_buffers[m_current_image_index]);
+    g_p_vulkan_context->presentSwapchainImage(m_current_image_index, [this]
     { updateAfterSwapchainRecreate(); });
 }
 
@@ -266,16 +273,32 @@ void ForwardRender::UpdateRenderPerFrameScenceUBO(
         const Math::Vector3 camera_pos,
         const std::vector<Scene::DirectionLight> &directional_light_list)
 {
-    m_render_per_frame_ubo.scene_data_ubo.proj_view                = proj_view;
-    m_render_per_frame_ubo.scene_data_ubo.camera_pos               = camera_pos;
-    m_render_per_frame_ubo.scene_data_ubo.directional_light_number = directional_light_list.size();
+//    m_render_per_frame_ubo.scene_data_ubo.proj_view                = proj_view;
+//    m_render_per_frame_ubo.scene_data_ubo.camera_pos               = camera_pos;
+//    m_render_per_frame_ubo.scene_data_ubo.directional_light_number = directional_light_list.size();
+//    assert(directional_light_list.size() <= MAX_DIRECTIONAL_LIGHT_COUNT);
+//    for (int i = 0; i < directional_light_list.size(); ++i)
+//    {
+//        m_render_per_frame_ubo.directional_lights_ubo[i].intensity = directional_light_list[i].intensity;
+//        m_render_per_frame_ubo.directional_lights_ubo[i].color     = directional_light_list[i].color;
+//        m_render_per_frame_ubo.directional_lights_ubo[i].direction = -directional_light_list[i].transform.GetForward();
+//    }
+//
+    VulkanPerFrameDirectionalLightDefine directional_light_ubo_list[MAX_DIRECTIONAL_LIGHT_COUNT];
+    VulkanPerFrameSceneDefine scene_data_ubo;
+
+    scene_data_ubo.proj_view                = proj_view;
+    scene_data_ubo.camera_pos               = camera_pos;
+    scene_data_ubo.directional_light_number = directional_light_list.size();
     assert(directional_light_list.size() <= MAX_DIRECTIONAL_LIGHT_COUNT);
     for (int i = 0; i < directional_light_list.size(); ++i)
     {
-        m_render_per_frame_ubo.directional_lights_ubo[i].intensity = directional_light_list[i].intensity;
-        m_render_per_frame_ubo.directional_lights_ubo[i].color     = directional_light_list[i].color;
-        m_render_per_frame_ubo.directional_lights_ubo[i].direction = -directional_light_list[i].transform.GetForward();
+        directional_light_ubo_list[i].intensity = directional_light_list[i].intensity;
+        directional_light_ubo_list[i].color     = directional_light_list[i].color;
+        directional_light_ubo_list[i].direction = -directional_light_list[i].transform.GetForward();
     }
+
+    m_render_per_frame_ubo.SetData(m_current_image_index, &scene_data_ubo, sizeof(VulkanPerFrameSceneDefine), RenderPerFrameUBO::_scene_info_block);
 }
 
 void ForwardRender::UpdateLightAndShadowDataList(const std::vector<Scene::DirectionLight> &directional_light_list,

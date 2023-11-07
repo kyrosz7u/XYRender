@@ -27,7 +27,10 @@ namespace RenderSystem
         VkViewport m_viewport = {0, 0, 1280, 768, 0, 1};
         VkRect2D   m_scissor  = {{0,    0},
                                  {1280, 768}};
-
+    protected:
+        // inner state
+        uint32_t  m_swapchain_image_count = 0;
+        uint32_t  m_current_image_index   = 0;
 
     public:
         RenderBase()

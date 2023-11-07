@@ -107,6 +107,8 @@ namespace RenderSystem
 
         Matrix4x4 m_view_matrix;
         Matrix4x4 m_proj_matrix;
+
+        void getNextImageInSwapChain();
     };
 }
 #endif //XEXAMPLE_FORWARD_RENDER_H

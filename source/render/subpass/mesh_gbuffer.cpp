@@ -33,7 +33,7 @@ void MeshGBufferPass::setupPipeLineLayout()
 
     VkDescriptorSetLayoutBinding &perframe_buffer_binding = ubo_layout_bindings[0];
 
-    perframe_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    perframe_buffer_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     perframe_buffer_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
     perframe_buffer_binding.binding         = 0;
     perframe_buffer_binding.descriptorCount = 1;
@@ -111,7 +111,7 @@ void MeshGBufferPass::updateGlobalRenderDescriptorSet()
     perframe_buffer_write.dstSet          = m_mesh_ubo_descriptor_set;
     perframe_buffer_write.dstBinding      = 0;
     perframe_buffer_write.dstArrayElement = 0;
-    perframe_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    perframe_buffer_write.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     perframe_buffer_write.descriptorCount = 1;
     perframe_buffer_write.pBufferInfo     = &m_p_render_resource_info->p_render_per_frame_ubo
             ->buffer_infos[RenderPerFrameUBO::_scene_info_block];
@@ -460,16 +460,17 @@ void MeshGBufferPass::draw()
                                                   VK_INDEX_TYPE_UINT16);
 
         // bind model ubo
-        uint32_t dynamicOffset = parent_mesh->m_index_in_dynamic_buffer *
-                                 (*m_p_render_resource_info->p_render_model_ubo_list).dynamic_alignment;
+        uint32_t parent_mesh_offset = parent_mesh->m_index_in_dynamic_buffer *
+                                      (*m_p_render_resource_info->p_render_model_ubo_list).dynamic_alignment;
+        uint32_t dynamicOffset[2] = {m_p_render_command_info->scene_ubo_data_offset, parent_mesh_offset};
         g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
                                                      VK_PIPELINE_BIND_POINT_GRAPHICS,
                                                      pipeline_layout,
                                                      0,
                                                      1,
                                                      &m_mesh_ubo_descriptor_set,
-                                                     1,
-                                                     &dynamicOffset);
+                                                     2,
+                                                     dynamicOffset);
 
         g_p_vulkan_context->_vkCmdDrawIndexed(*m_p_render_command_info->p_current_command_buffer,
                                               submesh.index_count,
