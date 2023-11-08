@@ -329,7 +329,7 @@ void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::Directio
                 directional_light_list[i].cascade_ratio.size() + 1;
     }
 
-    m_render_per_frame_ubo.SetData(m_current_image_index, directional_light_ubo_list, sizeof(VulkanPerFrameDirectionalLightDefine) * directional_light_list.size(), RenderPerFrameUBO::_light_info_block);
+//    m_render_per_frame_ubo.SetData(m_current_image_index, directional_light_ubo_list, sizeof(VulkanPerFrameDirectionalLightDefine) * directional_light_list.size(), RenderPerFrameUBO::_light_info_block);
 
     if (m_render_shadow_map_sample_data_ubo_list.data_size !=
         directional_light_list.size() * m_swapchain_image_count)

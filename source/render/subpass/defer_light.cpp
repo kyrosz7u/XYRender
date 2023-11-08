@@ -441,9 +441,9 @@ void DeferLightPass::draw()
                                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
                                                  pipeline_layout,
                                                  0,
-                                                 2,
+                                                 sizeof(descriptor_sets) / sizeof(descriptor_sets[0]),
                                                  descriptor_sets,
-                                                 3,
+                                                 sizeof(dynamic_offset) / sizeof(dynamic_offset[0]),
                                                  dynamic_offset);
 
     //bind directional light shadow map

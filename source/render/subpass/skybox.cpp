@@ -31,7 +31,7 @@ void SkyBoxPass::setupDescriptorSetLayout()
 
     VkDescriptorSetLayoutBinding &ubo_layout_binding = layout_bindings[0];
     ubo_layout_binding.binding            = _skybox_pass_ubo_data_binding;
-    ubo_layout_binding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    ubo_layout_binding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     ubo_layout_binding.descriptorCount    = 1;
     ubo_layout_binding.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT;
     ubo_layout_binding.pImmutableSamplers = nullptr;
@@ -230,6 +230,7 @@ void SkyBoxPass::draw()
     g_p_vulkan_context->_vkCmdSetScissor(*m_p_render_command_info->p_current_command_buffer, 0, 1,
                                          m_p_render_command_info->p_scissor);
 
+    uint32_t offset[] = {m_p_render_command_info->scene_ubo_data_offset};
 
     g_p_vulkan_context->_vkCmdBindDescriptorSets(*m_p_render_command_info->p_current_command_buffer,
                                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -237,8 +238,8 @@ void SkyBoxPass::draw()
                                                  0,
                                                  1,
                                                  m_p_render_resource_info->p_skybox_descriptor_set,
-                                                 0,
-                                                 nullptr);
+                                                 1,
+                                                 offset);
 
     g_p_vulkan_context->_vkCmdDraw(*m_p_render_command_info->p_current_command_buffer,
                                           36,
