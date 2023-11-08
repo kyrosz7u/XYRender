@@ -455,6 +455,7 @@ namespace RenderSystem
         VkDeviceSize                        buffer_size;
         VkDeviceSize                        dynamic_alignment{};
         VkDeviceSize                        per_frame_ubo_range[_info_block_count]{};
+        VkDeviceSize                        per_frame_ubo_offset[_info_block_count]{};
         VkBuffer                            per_frame_buffer{};
         VkDeviceMemory                      per_frame_buffer_memory{};
         void                                *mapped_buffer_ptr{};
@@ -491,8 +492,9 @@ namespace RenderSystem
                         ~(min_ubo_alignment - 1);
             }
 
+            per_frame_ubo_offset[_scene_info_block] = 0;
+            per_frame_ubo_offset[_light_info_block] = per_frame_ubo_range[_scene_info_block];
             block_size = per_frame_ubo_range[_scene_info_block] + per_frame_ubo_range[_light_info_block];
-
             dynamic_alignment = block_size;
 
             buffer_size = dynamic_alignment * data_size;
@@ -515,12 +517,13 @@ namespace RenderSystem
 
             buffer_infos.resize(_info_block_count);
             buffer_infos[_scene_info_block].buffer = per_frame_buffer;
-            buffer_infos[_scene_info_block].offset = 0;
+            buffer_infos[_scene_info_block].offset = per_frame_ubo_offset[_scene_info_block];
             buffer_infos[_scene_info_block].range  = sizeof(VulkanPerFrameSceneDefine);
 
             buffer_infos[_light_info_block].buffer = per_frame_buffer;
-            buffer_infos[_light_info_block].offset = per_frame_ubo_range[_scene_info_block];
-            buffer_infos[_light_info_block].range  = sizeof(VulkanPerFrameDirectionalLightDefine) * MAX_DIRECTIONAL_LIGHT_COUNT;
+            buffer_infos[_light_info_block].offset = per_frame_ubo_offset[_light_info_block];
+            buffer_infos[_light_info_block].range  =
+                    sizeof(VulkanPerFrameDirectionalLightDefine) * MAX_DIRECTIONAL_LIGHT_COUNT;
         }
 
         ~RenderPerFrameUBO()
@@ -569,7 +572,7 @@ namespace RenderSystem
         {
             assert(data_index < data_size);
             assert(size <= per_frame_ubo_range[block]);
-            memcpy(ubo_data_list.data() + data_index * dynamic_alignment + per_frame_ubo_range[block], data, size);
+            memcpy(ubo_data_list.data() + data_index * dynamic_alignment + per_frame_ubo_offset[block], data, size);
         }
 
         void ToGPU()

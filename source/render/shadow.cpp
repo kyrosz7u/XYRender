@@ -11,16 +11,27 @@ void DirLightShadow::UpdateShadowData(const Camera &camera)
     int     atlas_side = sqrt(m_cascade_count);
     Vector2 atlas_size = Vector2(m_shadowmap_size.x / atlas_side, m_shadowmap_size.y / atlas_side);
 
-    float current_min_distance = m_direction_light->min_shadow_distance;
+    float min_distance = m_direction_light->min_shadow_distance;
+    float max_distance = m_direction_light->max_shadow_distance;
 
-    int i = 0;
-    for (; i < m_cascade_count - 1; ++i)
+    // use ue4's method to calculate cascade ratio
+    float current_scale = 1.0f;
+    float total_scale = 0.0f;
+
+    std::vector<float> cascade_ratio(m_cascade_count);
+
+    for (int i = 0; i < m_cascade_count; ++i)
     {
-        float current_max_distance = current_min_distance + (m_direction_light->cascade_ratio[i] + 0.0001f) *
-                                                            (m_direction_light->max_shadow_distance -
-                                                             current_min_distance);
-        m_cascade_distance[i] = Vector2(m_direction_light->min_shadow_distance, current_max_distance);
-        current_min_distance = current_max_distance;
+        cascade_ratio[i] = current_scale;
+        total_scale += current_scale;
+        current_scale*= m_direction_light->cascade_exponent;
+    }
+
+    for (int i=0; i < m_cascade_count; ++i)
+    {
+        float current_max_distance = min_distance + (max_distance - min_distance) * cascade_ratio[i] / total_scale;
+        m_cascade_distance[i] = Vector2(min_distance, current_max_distance);
+        min_distance = current_max_distance;
 
         int x = i % atlas_side;
         int y = i / atlas_side;
@@ -31,16 +42,6 @@ void DirLightShadow::UpdateShadowData(const Camera &camera)
         camera.GetFrustumSphere(m_cascade_frustum_sphere[i], m_cascade_distance[i].x, m_cascade_distance[i].y);
         ComputeDirectionalShadowMatrices(i, atlas_side, Vector2(x, y), atlas_size, m_cascade_frustum_sphere[i]);
     }
-
-    int x = i % atlas_side;
-    int y = i / atlas_side;
-
-    m_cascade_distance[i] = Vector2(m_direction_light->min_shadow_distance, m_direction_light->max_shadow_distance);
-    m_cascade_viewport[i] = Vector4(x * atlas_size.x, y * atlas_size.y, atlas_size.x, atlas_size.y);
-    camera.GetFrustumSphere(m_cascade_frustum_sphere[i], m_cascade_distance[i].x, m_cascade_distance[i].y);
-    ComputeDirectionalShadowMatrices(i, atlas_side, Vector2(x, y), atlas_size, m_cascade_frustum_sphere[i]);
-
-
 }
 
 void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
@@ -58,15 +59,14 @@ void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
     Vector3 &back_dummy_light_pos = m_back_dummy_light_pos_list[cascade_index];
     Vector2 pixel_size            = 2 * Vector2(sphere.w / atlas_size.x, sphere.w / atlas_size.y);
     Vector3 cur_dummy_light_pos   = Vector3(sphere.x, sphere.y, sphere.z) - light_dir * sphere.w;
-    Vector3 move_dir              = 0.9*(cur_dummy_light_pos - back_dummy_light_pos);
 
     const Matrix4x4 &light_view_matrix = m_direction_light->transform.GetViewTransformMatrix();
     const Vector4 center_pos = Vector4(sphere.x, sphere.y, sphere.z, 1.0f);
     const Vector4 sphere_in_light_space = light_view_matrix * center_pos;
 
     const int max_downsample = 4;
-    float snap_x = ::fmod(sphere_in_light_space.x, pixel_size.x);
-    float snap_y = ::fmod(sphere_in_light_space.y, pixel_size.y);
+    float snap_x = ::fmod(sphere_in_light_space.x, max_downsample*pixel_size.x);
+    float snap_y = ::fmod(sphere_in_light_space.y, max_downsample*pixel_size.y);
 
 
     //snap_x = 0.0f;

@@ -316,20 +316,13 @@ void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::Directio
     VulkanPerFrameDirectionalLightDefine directional_light_ubo_list[MAX_DIRECTIONAL_LIGHT_COUNT];
     for (int i = 0; i < directional_light_list.size(); ++i)
     {
-//        m_render_per_frame_ubo.directional_lights_ubo[i].intensity = directional_light_list[i].intensity;
-//        m_render_per_frame_ubo.directional_lights_ubo[i].color     = directional_light_list[i].color;
-//        m_render_per_frame_ubo.directional_lights_ubo[i].direction = -directional_light_list[i].transform.GetForward();
-//        m_render_per_frame_ubo.directional_lights_ubo[i].cascade_count =
-//                directional_light_list[i].cascade_ratio.size() + 1;
-
         directional_light_ubo_list[i].intensity = directional_light_list[i].intensity;
         directional_light_ubo_list[i].color     = directional_light_list[i].color;
         directional_light_ubo_list[i].direction = -directional_light_list[i].transform.GetForward();
-        directional_light_ubo_list[i].cascade_count =
-                directional_light_list[i].cascade_ratio.size() + 1;
+        directional_light_ubo_list[i].cascade_count = directional_light_list[i].cascade_count;
     }
 
-//    m_render_per_frame_ubo.SetData(m_current_image_index, directional_light_ubo_list, sizeof(VulkanPerFrameDirectionalLightDefine) * directional_light_list.size(), RenderPerFrameUBO::_light_info_block);
+    m_render_per_frame_ubo.SetData(m_current_image_index, directional_light_ubo_list, sizeof(VulkanPerFrameDirectionalLightDefine) * directional_light_list.size(), RenderPerFrameUBO::_light_info_block);
 
     if (m_render_shadow_map_sample_data_ubo_list.data_size !=
         directional_light_list.size() * m_swapchain_image_count)
@@ -385,11 +378,6 @@ void DeferRender::UpdateRenderPerFrameScenceUBO(
         const Math::Vector3 camera_pos,
         const std::vector<Scene::DirectionLight> &directional_light_list)
 {
-//    m_render_per_frame_ubo.scene_data_ubo.proj_view                = proj_view;
-//    m_render_per_frame_ubo.scene_data_ubo.camera_pos               = camera_pos;
-//    m_render_per_frame_ubo.scene_data_ubo.directional_light_number = directional_light_list.size();
-//    m_render_per_frame_ubo.scene_data_ubo.command_buffer_index     = m_current_image_index;
-
     VulkanPerFrameSceneDefine scene_data_ubo;
     scene_data_ubo.proj_view                = proj_view;
     scene_data_ubo.camera_pos               = camera_pos;

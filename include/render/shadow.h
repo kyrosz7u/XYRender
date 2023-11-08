@@ -26,7 +26,7 @@ namespace RenderSystem
                   m_direction_light(&direction_light),
                   m_light_index(light_index)
         {
-            m_cascade_count = direction_light.GetCascadeRatio().size() + 1;
+            m_cascade_count = direction_light.cascade_count;
             m_cascade_distance.resize(m_cascade_count);
             m_cascade_viewport.resize(m_cascade_count);
             m_cascade_frustum_sphere.resize(m_cascade_count);

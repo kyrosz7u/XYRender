@@ -20,7 +20,8 @@ namespace Scene
             Transform transform;
             float min_shadow_distance;
             float max_shadow_distance;
-            std::vector<float> cascade_ratio;
+            float cascade_exponent;
+            int cascade_count;
 
         public:
             DirectionLight()
@@ -29,9 +30,9 @@ namespace Scene
 
             void Tick();
 
-            const std::vector<float>& GetCascadeRatio() const
+            const float GetCascadeRatio() const
             {
-                return cascade_ratio;
+                return cascade_exponent;
             }
 
             const Vector2& GetMaxShadowDistance() const

@@ -18,8 +18,15 @@ int main()
     
     Scene::Model model;
     model.LoadModelFile("assets/models/Kong.fbx","Kong");
+    model.transform.position = Math::Vector3(0, 0, -10.0f);
     model.ToGPU();
     scene_manager->AddModel(model);
+
+    model.LoadModelFile("assets/models/Kong.fbx","Kong1");
+    model.transform.position = Math::Vector3(0, 0, 0.0f);
+    model.ToGPU();
+    scene_manager->AddModel(model);
+
 
 //    mainCamera.m_render->loadSingleMesh(model.mesh_loaded);
     model.LoadModelFile("assets/models/capsule.obj", "capsule");
@@ -50,8 +57,9 @@ int main()
     light.transform = Transform(Math::Vector3(0, 15, -15), Math::EulerAngle(60, -30, 0), Math::Vector3(1, 1, 1));
     light.color     = Color(1, float(244) / 255, float(214) / 255, 1.0f);
     light.min_shadow_distance = 0.1f;
-    light.max_shadow_distance = 100.0f;
-    light.cascade_ratio       = std::vector<float>{0.1f, 0.25f, 0.5f};
+    light.max_shadow_distance = 50.0f;
+    light.cascade_exponent    = 3.0f;
+    light.cascade_count       = 4;
     scene_manager->AddLight(light);
 
     scene_manager->PostInitialize();
