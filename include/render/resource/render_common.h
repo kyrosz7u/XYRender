@@ -37,6 +37,9 @@ namespace RenderSystem
         Math::Vector3 direction;
         float         intensity;
         int           cascade_count;
+        float         __padding__0;
+        float         __padding__1;
+        float         __padding__2;
     };
 
     struct VulkanLightProjectDefine

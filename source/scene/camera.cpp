@@ -37,7 +37,7 @@ void Camera::Tick()
 
     if (InputSystem.Focused)
     {
-        float speed   = InputSystem.SpeedUp ? 10.0f : 5.0f;
+        float speed   = InputSystem.SpeedUp ? 20.0f : 5.0f;
         auto  moveDir = rotMat * InputSystem.Move;
         position = position + moveDir * speed * render_ptr->getFrameTime();
 

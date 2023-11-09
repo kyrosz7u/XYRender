@@ -325,10 +325,10 @@ void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::Directio
     m_render_per_frame_ubo.SetData(m_current_image_index, directional_light_ubo_list, sizeof(VulkanPerFrameDirectionalLightDefine) * directional_light_list.size(), RenderPerFrameUBO::_light_info_block);
 
     if (m_render_shadow_map_sample_data_ubo_list.data_size !=
-        directional_light_list.size() * m_swapchain_image_count)
+            MAX_DIRECTIONAL_LIGHT_COUNT * m_swapchain_image_count)
     {
         m_render_shadow_map_sample_data_ubo_list.resize(
-                directional_light_list.size() * m_swapchain_image_count, max_cascade_count * sizeof(VulkanShadowMapSampleDataDefine));
+                m_swapchain_image_count, MAX_DIRECTIONAL_LIGHT_COUNT*max_cascade_count * sizeof(VulkanShadowMapSampleDataDefine));
     }
     for (int i = 0; i < m_directional_light_shadow_list.size(); ++i)
     {
@@ -343,11 +343,10 @@ void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::Directio
             sample_data_define.light_frustum_sphere             = directional_light_shadow.m_cascade_frustum_sphere[j];
         }
 
-        uint32_t offset = m_current_image_index * directional_light_list.size() + light_index;
-        m_render_shadow_map_sample_data_ubo_list.SetData(offset, sample_data.data(), sample_data.size() * sizeof(VulkanShadowMapSampleDataDefine));
+        m_render_shadow_map_sample_data_ubo_list.SetData(m_current_image_index, sample_data.data(), sample_data.size() * sizeof(VulkanShadowMapSampleDataDefine));
     }
 
-    m_render_command_info.shadowmap_sample_data_offset = m_current_image_index * directional_light_list.size() * m_render_shadow_map_sample_data_ubo_list.dynamic_alignment;
+    m_render_command_info.shadowmap_sample_data_offset = m_current_image_index * m_render_shadow_map_sample_data_ubo_list.dynamic_alignment;
 
     m_render_command_info.scene_ubo_data_offset = m_current_image_index * m_render_per_frame_ubo.dynamic_alignment;
 }

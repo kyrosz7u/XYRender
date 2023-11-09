@@ -2,7 +2,7 @@
 
 #define m_max_direction_light_count 16
 #define m_max_cascade_count 4
-#define depth_bias 0.005
+#define depth_bias 0.001
 
 struct DirectionalLight
 {
@@ -178,6 +178,8 @@ void main()
             visibility = GetCascadeShadow(position, i, light.cascade_count);
 //        }
 
+//        visibility = 1.0f;
+
         diffuse_color += 0.6*visibility*color *light.color.xyz * light.intensity* NdotL;
         specular_color += 0.4*visibility*light.color.xyz*light.intensity * pow(max(dot(normalize(normal), half_dir), 0.0), 8.0);
     }
@@ -185,15 +187,16 @@ void main()
     diffuse_color /= float(directional_light_number);
     specular_color/=float(directional_light_number);
 
-//    out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
+    out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
 //    out_color = vec4(visibility/2.0f,0.0f,0.0f, 1.0);
 
-    if(pushConsts.cmdBuffer_index != cmdBuffer_index)
-    {
-        out_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-    }
-    else
-    {
-        out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
-    }
+//    if(pushConsts.cmdBuffer_index != cmdBuffer_index)
+//    {
+//        out_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+//    }
+//    else
+//    {
+//        out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
+//    }
+//    out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
 }
