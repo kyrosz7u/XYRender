@@ -187,16 +187,16 @@ void main()
     diffuse_color /= float(directional_light_number);
     specular_color/=float(directional_light_number);
 
-    out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
+//    out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
 //    out_color = vec4(visibility/2.0f,0.0f,0.0f, 1.0);
 
-//    if(pushConsts.cmdBuffer_index != cmdBuffer_index)
-//    {
-//        out_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-//    }
-//    else
-//    {
-//        out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
-//    }
+    if(pushConsts.cmdBuffer_index != cmdBuffer_index)
+    {
+        out_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    }
+    else
+    {
+        out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
+    }
 //    out_color = vec4(ambient_color+diffuse_color+specular_color, 1.0);
 }

@@ -230,10 +230,10 @@ VkPresentModeKHR VulkanContext::chooseSwapchainPresentModeFromDetails(
     // 会导致报错
     for (VkPresentModeKHR present_mode : available_present_modes)
     {
-        if (VK_PRESENT_MODE_MAILBOX_KHR == present_mode)
-        {
-            return VK_PRESENT_MODE_MAILBOX_KHR;
-        }
+//        if (VK_PRESENT_MODE_MAILBOX_KHR == present_mode)
+//        {
+//            return VK_PRESENT_MODE_MAILBOX_KHR;
+//        }
     }
     return VK_PRESENT_MODE_FIFO_KHR;
 }

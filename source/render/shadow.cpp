@@ -69,8 +69,8 @@ void DirLightShadow::ComputeDirectionalShadowMatrices(int cascade_index,
     float snap_y = ::fmod(sphere_in_light_space.y, max_downsample*pixel_size.y);
 
 
-    //snap_x = 0.0f;
-    //snap_y = 0.0f;
+//    snap_x = 0.0f;
+//    snap_y = 0.0f;
 
     const Matrix4x4 light_view_inverse = light_view_matrix.inverse();
     const Vector4 snapped_center_pos = light_view_inverse * Vector4(sphere_in_light_space.x - snap_x, sphere_in_light_space.y - snap_y, sphere_in_light_space.z, 1.0f);

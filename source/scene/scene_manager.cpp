@@ -111,6 +111,7 @@ void SceneManager::Tick()
                                    m_directional_lights,
                                    *m_main_camera);
     m_render->Tick();
+
 }
 
 

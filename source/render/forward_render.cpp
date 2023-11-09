@@ -304,9 +304,9 @@ void ForwardRender::UpdateRenderPerFrameScenceUBO(
 void ForwardRender::UpdateLightAndShadowDataList(const std::vector<Scene::DirectionLight> &directional_light_list,
                                                  const Scene::Camera &main_camera)
 {
-    if (m_render_light_project_ubo_list.ubo_data_list.size() != directional_light_list.size())
+    if (m_render_light_project_ubo_list.buffer_size != MAX_DIRECTIONAL_LIGHT_COUNT * MAX_SHADOWMAP_CASCADE_COUNT * m_swapchain_image_count * sizeof(VulkanLightProjectDefine))
     {
-        m_render_light_project_ubo_list.ubo_data_list.resize(directional_light_list.size());
+        m_render_light_project_ubo_list.resize(MAX_DIRECTIONAL_LIGHT_COUNT * MAX_SHADOWMAP_CASCADE_COUNT * m_swapchain_image_count, sizeof(VulkanLightProjectDefine));
     }
 
     for (int i = 0; i < directional_light_list.size(); ++i)
@@ -327,15 +327,15 @@ void ForwardRender::UpdateLightAndShadowDataList(const std::vector<Scene::Direct
         auto t_inverse   = Matrix4x4::getTrans(-dummy_transform.position);
         auto view_matrix = r_inverse * t_inverse;
 
-        m_render_light_project_ubo_list.ubo_data_list[i].light_proj = projection * view_matrix;
+
     }
 }
 
 void ForwardRender::FlushRenderbuffer()
 {
-    m_render_per_frame_ubo.ToGPU();
+    m_render_per_frame_ubo.ToGPU(m_current_image_index);
     m_render_model_ubo_list.ToGPU();
-    m_render_light_project_ubo_list.ToGPU();
+//    m_render_light_project_ubo_list.ToGPU(m_current_image_index);
 }
 
 void ForwardRender::setupRenderDescriptorSetLayout()

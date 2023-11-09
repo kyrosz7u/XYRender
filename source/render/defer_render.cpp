@@ -280,7 +280,7 @@ void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::Directio
                                                const Scene::Camera &main_camera)
 {
     int max_cascade_count = m_render_resource_info.kDirectionalLightInfo.max_cascade_count;
-    if (m_render_light_project_ubo_list.ubo_data_list.size() != directional_light_list.size() * max_cascade_count * m_swapchain_image_count
+    if (m_render_light_project_ubo_list.buffer_size != MAX_DIRECTIONAL_LIGHT_COUNT * MAX_SHADOWMAP_CASCADE_COUNT * m_swapchain_image_count * sizeof(VulkanLightProjectDefine)
         || m_directional_light_shadow_list.size() != directional_light_list.size())
     {
         m_directional_light_shadow_list.clear();
@@ -292,7 +292,7 @@ void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::Directio
             m_directional_light_shadow_list.emplace_back(shadowmap_size, directional_light_list[i], i);
         }
         //
-        m_render_light_project_ubo_list.ubo_data_list.resize(directional_light_list.size() * max_cascade_count * m_swapchain_image_count);
+        m_render_light_project_ubo_list.resize(MAX_DIRECTIONAL_LIGHT_COUNT * MAX_SHADOWMAP_CASCADE_COUNT * m_swapchain_image_count, sizeof(VulkanLightProjectDefine));
 
         //auto p_ui = m_render_resource_info.p_ui_overlay.lock();
         //p_ui->addDebugDrawCommand(std::bind(&DirLightShadow::ImGuiDebugPanel, &m_directional_light_shadow_list[0]));
@@ -305,9 +305,9 @@ void DeferRender::UpdateLightAndShadowDataList(const std::vector<Scene::Directio
 
         for (int j = 0; j < directional_light_shadow.m_cascade_count; ++j)
         {
-            uint32_t offset    = (i * max_cascade_count + j) * m_swapchain_image_count + m_current_image_index;
+            uint32_t offset    = m_current_image_index * MAX_DIRECTIONAL_LIGHT_COUNT * MAX_SHADOWMAP_CASCADE_COUNT + i * MAX_SHADOWMAP_CASCADE_COUNT + j;
 
-            m_render_light_project_ubo_list.ubo_data_list[offset].light_proj = directional_light_shadow.m_cascade_viewproj_matrix[j];
+            m_render_light_project_ubo_list.SetData(offset, &directional_light_shadow.m_cascade_viewproj_matrix[j], sizeof(VulkanLightProjectDefine));
         }
     }
 
@@ -389,10 +389,10 @@ void DeferRender::UpdateRenderPerFrameScenceUBO(
 
 void DeferRender::FlushRenderbuffer()
 {
-    m_render_per_frame_ubo.ToGPU();
+    m_render_per_frame_ubo.ToGPU(m_current_image_index);
     m_render_model_ubo_list.ToGPU();
-    m_render_light_project_ubo_list.ToGPU();
-    m_render_shadow_map_sample_data_ubo_list.ToGPU();
+//    m_render_light_project_ubo_list.ToGPU(m_current_image_index);
+//    m_render_shadow_map_sample_data_ubo_list.ToGPU(m_current_image_index);
 }
 
 void DeferRender::setupRenderDescriptorSetLayout()

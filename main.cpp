@@ -58,7 +58,7 @@ int main()
     light.color     = Color(1, float(244) / 255, float(214) / 255, 1.0f);
     light.min_shadow_distance = 0.1f;
     light.max_shadow_distance = 50.0f;
-    light.cascade_exponent    = 3.0f;
+    light.cascade_exponent    = 2.0f;
     light.cascade_count       = 4;
     scene_manager->AddLight(light);
 

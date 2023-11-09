@@ -80,6 +80,9 @@ void DirectionalLightShadowPass::setupDescriptorSet()
     // 每个set的布局
     allocInfo.pSetLayouts        = &m_descriptor_set_layouts[_directional_shadow_layout];
 
+    m_p_render_resource_info->p_render_light_project_ubo_list->DescribeUpdate(this, std::bind(
+            &DirectionalLightShadowPass::updateGlobalRenderDescriptorSet, this));
+
     if (vkAllocateDescriptorSets(g_p_vulkan_context->_device,
                                  &allocInfo,
                                  &m_dir_shadow_ubo_descriptor_set) != VK_SUCCESS)
@@ -444,13 +447,12 @@ void DirectionalLightShadowPass::draw()
         // bind model and light ubo
         uint32_t dynamic_offset[2];
 
-        uint32_t ubo_offset = m_directional_light_data.light_index *
-                              m_p_render_resource_info->kDirectionalLightInfo.max_cascade_count +
-                              m_directional_light_data.cascade_index;
+        uint32_t ubo_offset = m_p_render_command_info->current_command_index *
+                              MAX_DIRECTIONAL_LIGHT_COUNT * MAX_SHADOWMAP_CASCADE_COUNT +
+                              m_directional_light_data.light_index *
+                              MAX_SHADOWMAP_CASCADE_COUNT + m_directional_light_data.cascade_index;
 
-        ubo_offset *= m_p_render_command_info->render_target_nums;
-        ubo_offset += m_p_render_command_info->current_command_index;
-        ubo_offset *= m_p_render_resource_info->p_render_light_project_ubo_list->dynamic_alignment;
+        ubo_offset *= (*m_p_render_resource_info->p_render_light_project_ubo_list).dynamic_alignment;
 
         dynamic_offset[0] = ubo_offset;
 

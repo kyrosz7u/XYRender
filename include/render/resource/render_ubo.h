@@ -63,6 +63,9 @@ namespace RenderSystem
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                      dynamic_buffer, dynamic_buffer_memory);
 
+            vkMapMemory(g_p_vulkan_context->_device, dynamic_buffer_memory, 0,
+                        buffer_size, 0, &mapped_buffer_ptr);
+
             ubo_data_list.resize(data_size * dynamic_alignment);
 
             dynamic_info.buffer = dynamic_buffer;
@@ -80,6 +83,8 @@ namespace RenderSystem
 
         ~RenderReinterpretDynamicBuffer()
         {
+            vkUnmapMemory(g_p_vulkan_context->_device, dynamic_buffer_memory);
+            mapped_buffer_ptr = nullptr;
             vkDestroyBuffer(g_p_vulkan_context->_device, dynamic_buffer, nullptr);
             vkFreeMemory(g_p_vulkan_context->_device, dynamic_buffer_memory, nullptr);
         }
@@ -142,6 +147,9 @@ namespace RenderSystem
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                      dynamic_buffer, dynamic_buffer_memory);
 
+            vkMapMemory(g_p_vulkan_context->_device, dynamic_buffer_memory, 0,
+                        buffer_size, 0, &mapped_buffer_ptr);
+
             ubo_data_list.resize(data_size * dynamic_alignment);
             dynamic_info.buffer = dynamic_buffer;
             dynamic_info.offset = 0;
@@ -167,25 +175,51 @@ namespace RenderSystem
         {
             assert(index < data_size);
             assert(size <= dynamic_alignment);
-            memcpy(ubo_data_list.data() + index * dynamic_alignment, data, size);
+            void *dst_ptr = (uint8_t *) mapped_buffer_ptr + index * dynamic_alignment;
+
+            memcpy(dst_ptr, data, size);
+
+            VkMappedMemoryRange mappedMemoryRange{};
+            mappedMemoryRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+            mappedMemoryRange.memory = dynamic_buffer_memory;
+            mappedMemoryRange.size   = size;
+            mappedMemoryRange.offset = index * dynamic_alignment;
+
+            vkFlushMappedMemoryRanges(g_p_vulkan_context->_device, 1, &mappedMemoryRange);
         }
 
-        void ToGPU()
+        void ToGPU(uint32_t index)
         {
-            uint32_t mapped_size = ubo_data_list.size();
-            vkMapMemory(g_p_vulkan_context->_device, dynamic_buffer_memory, 0,
-                        mapped_size, 0, &mapped_buffer_ptr);
+            assert(index < data_size);
+            uint32_t mapped_size = dynamic_alignment;
 
-            memcpy(mapped_buffer_ptr, ubo_data_list.data(), mapped_size);
+            void *dst_ptr = (uint8_t *) mapped_buffer_ptr + index * dynamic_alignment;
+
+            memcpy(dst_ptr, ubo_data_list.data() + index * dynamic_alignment, mapped_size);
 
             VkMappedMemoryRange mappedMemoryRange{};
             mappedMemoryRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
             mappedMemoryRange.memory = dynamic_buffer_memory;
             mappedMemoryRange.size   = mapped_size;
+            mappedMemoryRange.offset = index * dynamic_alignment;
 
             vkFlushMappedMemoryRanges(g_p_vulkan_context->_device, 1, &mappedMemoryRange);
-            vkUnmapMemory(g_p_vulkan_context->_device, dynamic_buffer_memory);
         }
+//        {
+//            uint32_t mapped_size = ubo_data_list.size();
+//            vkMapMemory(g_p_vulkan_context->_device, dynamic_buffer_memory, 0,
+//                        mapped_size, 0, &mapped_buffer_ptr);
+//
+//            memcpy(mapped_buffer_ptr, ubo_data_list.data(), mapped_size);
+//
+//            VkMappedMemoryRange mappedMemoryRange{};
+//            mappedMemoryRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+//            mappedMemoryRange.memory = dynamic_buffer_memory;
+//            mappedMemoryRange.size   = mapped_size;
+//
+//            vkFlushMappedMemoryRanges(g_p_vulkan_context->_device, 1, &mappedMemoryRange);
+//            vkUnmapMemory(g_p_vulkan_context->_device, dynamic_buffer_memory);
+//        }
     };
 
     // 保存场景中所有的模型的model_matrix、normal_matrix
@@ -575,18 +609,32 @@ namespace RenderSystem
             memcpy(ubo_data_list.data() + data_index * dynamic_alignment + per_frame_ubo_offset[block], data, size);
         }
 
-        void ToGPU()
+        void ToGPU(uint32_t data_index)
         {
-            uint32_t mapped_size = ubo_data_list.size();
-            memcpy(mapped_buffer_ptr, ubo_data_list.data(), mapped_size);
+            assert(data_index < data_size);
+            uint32_t mapped_size = dynamic_alignment;
+            void *mapped_ptr = (uint8_t *)mapped_buffer_ptr + data_index * dynamic_alignment;
+            memcpy(mapped_ptr, ubo_data_list.data() + data_index * dynamic_alignment, mapped_size);
 
             VkMappedMemoryRange mappedMemoryRange{};
             mappedMemoryRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
             mappedMemoryRange.memory = per_frame_buffer_memory;
-            mappedMemoryRange.size   = buffer_size;
+            mappedMemoryRange.size   = dynamic_alignment;
+            mappedMemoryRange.offset = data_index * dynamic_alignment;
 
             vkFlushMappedMemoryRanges(g_p_vulkan_context->_device, 1, &mappedMemoryRange);
         }
+//        {
+//            uint32_t mapped_size = ubo_data_list.size();
+//            memcpy(mapped_buffer_ptr, ubo_data_list.data(), mapped_size);
+//
+//            VkMappedMemoryRange mappedMemoryRange{};
+//            mappedMemoryRange.sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+//            mappedMemoryRange.memory = per_frame_buffer_memory;
+//            mappedMemoryRange.size   = buffer_size;
+//
+//            vkFlushMappedMemoryRanges(g_p_vulkan_context->_device, 1, &mappedMemoryRange);
+//        }
     };
 }
 #endif //XEXAMPLE_RENDER_UBO_H
